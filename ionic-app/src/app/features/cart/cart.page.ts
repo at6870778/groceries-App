@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonButtons, IonBackButton, IonText } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
 import { CartState } from '../../core/state/cart.state';
+import { ActivityState } from '../../core/state/activity.state';
 import { LocationService } from '../../core/services/location.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -285,6 +286,7 @@ export class CartPage implements OnInit, OnDestroy {
   constructor(
     private api: ApiService, 
     public cartState: CartState,
+    private activityState: ActivityState,
     public locationService: LocationService
   ) {
     // Auto-detect location on cart page load
@@ -352,10 +354,12 @@ export class CartPage implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
         next: () => {
+          const placedAmount = this.cartState.subtotal();
           this.checking = false;
           this.orderMsg = this.paymentMode() === 'UPI' 
             ? '✅ UPI payment recorded and order placed! 🎉' 
             : '✅ Cash on delivery order placed! 🎉';
+          this.activityState.log('checkout', `Placed ${this.paymentMode()} order for Rs ${placedAmount}`);
           this.loadCart();
         },
         error: (err) => {

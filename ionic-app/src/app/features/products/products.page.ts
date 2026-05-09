@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonBadge, IonToast, IonButtons, IonBackButton, IonSearchbar } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
+import { CartState } from '../../core/state/cart.state';
+import { ActivityState } from '../../core/state/activity.state';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -58,11 +60,11 @@ import { takeUntil } from 'rxjs/operators';
             </div>
             <div class="delivery-time">📦 10 mins</div>
             <div class="action-row">
-              <ion-button size="small" fill="outline" color="medium" (click)="addToCart(p.id)" [disabled]="adding() === p.id" class="add-btn">
+              <ion-button size="small" fill="outline" color="medium" (click)="addToCart(p)" [disabled]="adding() === p.id" class="add-btn">
                 <span *ngIf="adding() !== p.id">➕ Add</span>
                 <span *ngIf="adding() === p.id">Adding...</span>
               </ion-button>
-              <ion-button size="small" (click)="buyNow(p.id)" [disabled]="adding() === p.id" class="buy-btn" expand="block">
+              <ion-button size="small" (click)="buyNow(p)" [disabled]="adding() === p.id" class="buy-btn" expand="block">
                 <span *ngIf="adding() !== p.id">Buy Now</span>
                 <span *ngIf="adding() === p.id">Opening...</span>
               </ion-button>
@@ -282,7 +284,13 @@ export class ProductsPage implements OnInit, OnDestroy {
     return 'https://upload.wikimedia.org/wikipedia/commons/d/de/Bananavarieties.jpg';
   }
 
-  constructor(private api: ApiService, private route: ActivatedRoute, private router: Router) {}
+  constructor(
+    private api: ApiService,
+    private route: ActivatedRoute,
+    private router: Router,
+    private cartState: CartState,
+    private activityState: ActivityState
+  ) {}
 
   ngOnInit(): void {
     this.route.queryParamMap
@@ -354,14 +362,16 @@ export class ProductsPage implements OnInit, OnDestroy {
     return 'linear-gradient(135deg,#edf3ff,#dde8fb)';
   }
 
-  addToCart(productId: number) {
-    this.adding.set(productId);
-    this.api.post('/customer/cart/items', { productId, quantity: 1 })
+  addToCart(product: any) {
+    this.adding.set(product.id);
+    this.api.post('/customer/cart/items', { productId: product.id, quantity: 1 })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.adding.set(null);
           this.cartCount.set(this.cartCount() + 1);
+          this.cartState.addOrIncrement(product);
+          this.activityState.log('cart_add', `Added ${product.name} to cart`, { productId: product.id });
           this.toastMsg.set('Added to cart!');
           this.toastColor.set('success');
           this.toastOpen.set(true);
@@ -376,14 +386,16 @@ export class ProductsPage implements OnInit, OnDestroy {
       });
   }
 
-  buyNow(productId: number) {
-    this.adding.set(productId);
-    this.api.post('/customer/cart/items', { productId, quantity: 1 })
+  buyNow(product: any) {
+    this.adding.set(product.id);
+    this.api.post('/customer/cart/items', { productId: product.id, quantity: 1 })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.adding.set(null);
           this.cartCount.set(this.cartCount() + 1);
+          this.cartState.addOrIncrement(product);
+          this.activityState.log('buy_now', `Started quick checkout for ${product.name}`, { productId: product.id });
           this.router.navigateByUrl('/cart');
         },
         error: () => {

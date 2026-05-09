@@ -53,7 +53,11 @@ export class AuthService {
     return this.http.post(`${this.baseUrl}/auth/request-otp`, { phone });
   }
 
-  saveToken(token: string, role: AppRole) {
+  private notifyScopeChanged() {
+    window.dispatchEvent(new Event('app-user-scope-changed'));
+  }
+
+  saveToken(token: string, role: AppRole, phone?: string) {
     if (role === 'DELIVERY_BOY') {
       this.deliveryToken.set(token);
       localStorage.setItem('delivery_token', token);
@@ -63,6 +67,10 @@ export class AuthService {
     }
     this.activeRole.set(role);
     localStorage.setItem('active_role', role);
+    if (phone) {
+      localStorage.setItem('active_phone', phone);
+    }
+    this.notifyScopeChanged();
   }
 
   clearTokens() {
@@ -72,5 +80,7 @@ export class AuthService {
     localStorage.removeItem('customer_token');
     localStorage.removeItem('delivery_token');
     localStorage.removeItem('active_role');
+    localStorage.removeItem('active_phone');
+    this.notifyScopeChanged();
   }
 }

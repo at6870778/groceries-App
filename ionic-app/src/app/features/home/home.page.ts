@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardHeader, IonCardTitle, IonButtons, IonButton, IonSearchbar, IonBadge } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
 import { Router, RouterLink } from '@angular/router';
+import { CartState } from '../../core/state/cart.state';
+import { ActivityState } from '../../core/state/activity.state';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -67,7 +69,7 @@ import { takeUntil } from 'rxjs/operators';
                   <span class="sale-price">₹{{ p.sellingPrice }}</span>
                 </div>
                 <div class="card-actions">
-                  <ion-button size="small" class="buy-now-btn" (click)="$event.stopPropagation(); buyNow(p.id)" [disabled]="adding() === p.id">
+                  <ion-button size="small" class="buy-now-btn" (click)="$event.stopPropagation(); buyNow(p)" [disabled]="adding() === p.id">
                     {{ adding() === p.id ? 'Adding...' : 'Buy Now' }}
                   </ion-button>
                 </div>
@@ -144,7 +146,7 @@ import { takeUntil } from 'rxjs/operators';
                   <span class="sale-price">₹{{ p.sellingPrice }}</span>
                 </div>
                 <div class="card-actions">
-                  <ion-button size="small" class="buy-now-btn" (click)="$event.stopPropagation(); buyNow(p.id)" [disabled]="adding() === p.id">
+                  <ion-button size="small" class="buy-now-btn" (click)="$event.stopPropagation(); buyNow(p)" [disabled]="adding() === p.id">
                     {{ adding() === p.id ? 'Adding...' : 'Buy Now' }}
                   </ion-button>
                 </div>
@@ -655,7 +657,12 @@ export class HomePage implements OnInit, OnDestroy {
     'pooja-spiritual': 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Incenselonghua.jpg'
   };
 
-  constructor(private api: ApiService, private router: Router) {}
+  constructor(
+    private api: ApiService,
+    private router: Router,
+    private cartState: CartState,
+    private activityState: ActivityState
+  ) {}
 
   ngOnInit() {
     this.api.get<any>('/catalog/categories')
@@ -739,13 +746,15 @@ export class HomePage implements OnInit, OnDestroy {
     return words[0] || 'Fresh';
   }
 
-  buyNow(productId: number) {
-    this.adding.set(productId);
-    this.api.post('/customer/cart/items', { productId, quantity: 1 })
+  buyNow(product: any) {
+    this.adding.set(product.id);
+    this.api.post('/customer/cart/items', { productId: product.id, quantity: 1 })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.adding.set(null);
+          this.cartState.addOrIncrement(product);
+          this.activityState.log('buy_now', `Started quick checkout for ${product.name}`, { productId: product.id });
           this.router.navigateByUrl('/cart');
         },
         error: () => {

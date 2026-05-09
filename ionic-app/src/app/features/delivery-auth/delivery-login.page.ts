@@ -405,7 +405,7 @@ export class DeliveryLoginPage {
               return;
             }
 
-            this.auth.saveToken(token, this.mode);
+            this.auth.saveToken(token, this.mode, res?.data?.phone || this.phone);
             this.loading = false;
             
             // Save user location on login

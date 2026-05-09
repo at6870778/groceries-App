@@ -1,11 +1,70 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, effect, signal } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
 export class CartState {
   readonly items = signal<any[]>([]);
-  readonly subtotal = computed(() => this.items().reduce((sum, item) => sum + item.lineTotal, 0));
+  readonly subtotal = computed(() => this.items().reduce((sum, item) => sum + Number(item?.lineTotal || 0), 0));
+
+  constructor() {
+    this.hydrate();
+
+    window.addEventListener('app-user-scope-changed', () => this.hydrate());
+
+    // Persist cart snapshot so user state survives refresh/reopen.
+    effect(() => {
+      const key = this.storageKey();
+      const data = JSON.stringify(this.items());
+      localStorage.setItem(key, data);
+    });
+  }
+
+  private storageKey(): string {
+    const role = localStorage.getItem('active_role') || 'GUEST';
+    const phone = localStorage.getItem('active_phone') || 'ANON';
+    return `cart_state_${role}_${phone}`;
+  }
+
+  hydrate() {
+    try {
+      const raw = localStorage.getItem(this.storageKey());
+      const parsed = raw ? JSON.parse(raw) : [];
+      this.items.set(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      this.items.set([]);
+    }
+  }
 
   setItems(items: any[]) {
-    this.items.set(items);
+    this.items.set(Array.isArray(items) ? items : []);
+  }
+
+  addOrIncrement(product: { id: number; name: string; sellingPrice: number; unit?: string }) {
+    const next = [...this.items()];
+    const existing = next.find((item) => item.productId === product.id || item.id === product.id);
+
+    if (existing) {
+      const qty = Number(existing.quantity || 0) + 1;
+      existing.quantity = qty;
+      existing.lineTotal = qty * Number(product.sellingPrice || existing.unitPrice || 0);
+      existing.unitPrice = Number(product.sellingPrice || existing.unitPrice || 0);
+      this.items.set(next);
+      return;
+    }
+
+    const unitPrice = Number(product.sellingPrice || 0);
+    next.push({
+      id: product.id,
+      productId: product.id,
+      name: product.name,
+      unit: product.unit || '',
+      quantity: 1,
+      unitPrice,
+      lineTotal: unitPrice
+    });
+    this.items.set(next);
+  }
+
+  clear() {
+    this.items.set([]);
   }
 }

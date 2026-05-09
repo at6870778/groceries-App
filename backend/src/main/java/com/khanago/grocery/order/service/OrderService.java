@@ -5,8 +5,11 @@ import com.khanago.grocery.cart.service.CartService;
 import com.khanago.grocery.common.enums.OrderStatus;
 import com.khanago.grocery.common.enums.PaymentMode;
 import com.khanago.grocery.common.exception.ApiException;
+import com.khanago.grocery.delivery.DeliveryAssignment;
+import com.khanago.grocery.delivery.repository.DeliveryAssignmentRepository;
 import com.khanago.grocery.order.Order;
 import com.khanago.grocery.order.OrderItem;
+import com.khanago.grocery.order.dto.AdminOrderDetailDto;
 import com.khanago.grocery.order.dto.CheckoutRequestDto;
 import com.khanago.grocery.order.dto.OrderDto;
 import com.khanago.grocery.order.dto.OrderItemDto;
@@ -24,6 +27,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +37,7 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
+    private final DeliveryAssignmentRepository deliveryAssignmentRepository;
     private final CartService cartService;
 
     public OrderDto checkout(CheckoutRequestDto request) {
@@ -111,6 +116,17 @@ public class OrderService {
         return orderRepository.findByStatus(orderStatus, PageRequest.of(page, size)).map(this::toDto);
     }
 
+    public Page<AdminOrderDetailDto> adminOrdersDetail(String status, int page, int size) {
+        Page<Order> orders;
+        if (status == null || status.isBlank()) {
+            orders = orderRepository.findAll(PageRequest.of(page, size));
+        } else {
+            OrderStatus orderStatus = OrderStatus.valueOf(status.toUpperCase());
+            orders = orderRepository.findByStatus(orderStatus, PageRequest.of(page, size));
+        }
+        return orders.map(this::toAdminDetailDto);
+    }
+
     public OrderDto updateOrderStatus(Long orderId, OrderStatus status) {
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new ApiException("Order not found"));
         order.setStatus(status);
@@ -133,6 +149,37 @@ public class OrderService {
                 order.getTotalAmount(),
                 order.getNotes(),
                 order.getCreatedAt(),
+                items.stream().map(i -> new OrderItemDto(i.getProductName(), i.getUnit(), i.getQuantity(), i.getUnitPrice(), i.getLineTotal())).toList()
+        );
+    }
+
+    private AdminOrderDetailDto toAdminDetailDto(Order order) {
+        List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());
+        Optional<DeliveryAssignment> assignment = deliveryAssignmentRepository.findByOrderId(order.getId());
+        
+        String deliveryBoyName = assignment.map(da -> da.getDeliveryBoy().getFullName()).orElse("Not Assigned");
+        Long assignmentId = assignment.map(DeliveryAssignment::getId).orElse(null);
+        
+        String address = order.getAddress() != null ? 
+            order.getAddress().getLine1() + 
+            (order.getAddress().getLine2() != null ? ", " + order.getAddress().getLine2() : "") +
+            ", " + order.getAddress().getCity() + " - " + order.getAddress().getPostalCode() :
+            "N/A";
+        
+        return new AdminOrderDetailDto(
+                order.getId(),
+                order.getCustomer().getFullName(),
+                order.getCustomer().getPhone(),
+                address,
+                order.getStatus().name(),
+                order.getPaymentMode().name(),
+                order.getSubtotal(),
+                order.getDeliveryFee(),
+                order.getTotalAmount(),
+                order.getNotes(),
+                order.getCreatedAt(),
+                assignmentId,
+                deliveryBoyName,
                 items.stream().map(i -> new OrderItemDto(i.getProductName(), i.getUnit(), i.getQuantity(), i.getUnitPrice(), i.getLineTotal())).toList()
         );
     }

@@ -13,6 +13,7 @@ public class AppProperties {
 
     private Jwt jwt = new Jwt();
     private Cors cors = new Cors();
+    private Razorpay razorpay = new Razorpay();
 
     @Getter
     @Setter
@@ -26,5 +27,12 @@ public class AppProperties {
     @Setter
     public static class Cors {
         private String allowedOrigins;
+    }
+
+    @Getter
+    @Setter
+    public static class Razorpay {
+        private String keyId;
+        private String keySecret;
     }
 }

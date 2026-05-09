@@ -24,6 +24,13 @@ import { takeUntil } from 'rxjs/operators';
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
+      <ion-toolbar class="sticky-search-toolbar">
+        <ion-searchbar
+          placeholder="Search in products"
+          [value]="searchTerm()"
+          (ionInput)="onSearchInput($any($event).detail.value || '')">
+        </ion-searchbar>
+      </ion-toolbar>
     </ion-header>
     <ion-content [scrollEvents]="true" [fullscreen]="false" class="products-content ion-padding">
       <ion-toast
@@ -33,12 +40,6 @@ import { takeUntil } from 'rxjs/operators';
         duration="1800"
         (didDismiss)="toastOpen.set(false)">
       </ion-toast>
-      <ion-searchbar
-        placeholder="Search in products"
-        [value]="searchTerm()"
-        (ionInput)="onSearchInput($any($event).detail.value || '')">
-      </ion-searchbar>
-
       <div *ngIf="loading()" class="status">Loading products...</div>
       <div *ngIf="!loading() && products().length === 0" class="status">No products found for this category/search.</div>
 
@@ -75,6 +76,11 @@ import { takeUntil } from 'rxjs/operators';
     </ion-content>
   `,
   styles: [`
+    .sticky-search-toolbar {
+      --background: rgba(255, 255, 255, 0.96);
+      --min-height: 64px;
+      padding: 0 8px;
+    }
     .products-content {
       --background: linear-gradient(180deg, #fffdf9 0%, #f7fbff 100%);
       --scroll-padding-top: 0;
@@ -299,6 +305,7 @@ export class ProductsPage implements OnInit, OnDestroy {
         const categoryId = qp.get('categoryId');
         const name = qp.get('categoryName');
         const query = qp.get('query') || '';
+        this.lastQuery = query.trim();
         this.searchTerm.set(query);
         this.categoryName.set(name || (query ? 'Search Results' : 'Products'));
         this.loadProducts(categoryId, query);
@@ -329,6 +336,7 @@ export class ProductsPage implements OnInit, OnDestroy {
   }
 
   loadProducts(categoryId: string | null, query: string) {
+    this.lastQuery = (query || '').trim();
     const params: any = { page: 0, size: 50 };
     if (categoryId) params.categoryId = categoryId;
     if (query && query.trim()) params.query = query.trim();

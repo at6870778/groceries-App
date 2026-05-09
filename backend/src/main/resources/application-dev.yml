@@ -23,5 +23,8 @@ app:
     secret: dev-secret-key-dev-secret-key-1234567890
     expiry-minutes: 1440
     refresh-expiry-days: 7
+  razorpay:
+    key-id: ${RAZORPAY_KEY_ID:rzp_test_replace_me}
+    key-secret: ${RAZORPAY_KEY_SECRET:replace_with_test_secret}
   cors:
     allowed-origins: http://localhost:4200,http://localhost:8100,http://localhost:8101,http://localhost:8102,http://*:8102

@@ -20,6 +20,16 @@ import { takeUntil } from 'rxjs/operators';
           <ion-button routerLink="/profile">👤</ion-button>
         </ion-buttons>
       </ion-toolbar>
+      <ion-toolbar class="sticky-search-toolbar">
+        <ion-searchbar
+          class="header-search"
+          placeholder="Search: milk, banana, rice..."
+          [value]="searchTerm()"
+          (ionInput)="searchTerm.set($any($event).detail.value || '')"
+          (ionChange)="submitSearch($any($event).detail.value || '')"
+          (keyup.enter)="submitSearch(searchTerm())">
+        </ion-searchbar>
+      </ion-toolbar>
     </ion-header>
     <ion-content [scrollEvents]="true" [fullscreen]="false" class="home-content">
       <div class="hero-section">
@@ -27,15 +37,6 @@ import { takeUntil } from 'rxjs/operators';
           <h1>Fresh Groceries<br><span class="highlight">In 10 Minutes</span></h1>
           <p>Daily staples, fresh produce & beverages at your doorstep</p>
         </div>
-
-        <ion-searchbar
-          class="hero-search"
-          placeholder="Search: milk, banana, rice..."
-          [value]="searchTerm()"
-          (ionInput)="searchTerm.set($any($event).detail.value || '')"
-          (ionChange)="submitSearch($any($event).detail.value || '')"
-          (keyup.enter)="submitSearch(searchTerm())">
-        </ion-searchbar>
 
         <div class="quick-search">
           <button class="quick-btn" *ngFor="let q of quickSearches" (click)="quickSearch(q)">{{ q }}</button>
@@ -193,6 +194,17 @@ import { takeUntil } from 'rxjs/operators';
       --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       --color: white;
     }
+    .sticky-search-toolbar {
+      --background: rgba(255, 255, 255, 0.96);
+      --min-height: 64px;
+      padding: 0 8px;
+    }
+    .header-search {
+      --background: #ffffff;
+      --color: #333;
+      --icon-color: #667eea;
+      margin: 8px 0;
+    }
     .home-content {
       --background: linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f5f7ff 100%);
       --scroll-padding-top: 0;
@@ -239,14 +251,6 @@ import { takeUntil } from 'rxjs/operators';
       margin: 0;
       font-size: 0.95rem;
       opacity: 0.95;
-    }
-    .hero-search {
-      --background: rgba(255, 255, 255, 0.95);
-      --color: #333;
-      --icon-color: #667eea;
-      border-radius: 12px;
-      margin-bottom: 12px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     }
     .quick-search {
       display: flex;

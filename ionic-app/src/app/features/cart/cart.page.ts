@@ -9,6 +9,12 @@ import { LocationService } from '../../core/services/location.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 @Component({
   standalone: true,
   imports: [CommonModule, RouterLink, IonContent, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonButtons, IonBackButton, IonText],
@@ -22,6 +28,20 @@ import { takeUntil } from 'rxjs/operators';
       </ion-toolbar>
     </ion-header>
     <ion-content [scrollEvents]="true" [fullscreen]="false" class="ion-padding">
+      <ng-container *ngIf="checkoutSuccess(); else cartOrEmpty">
+        <div class="success-card">
+          <div class="success-emoji">✅</div>
+          <h2>Order Placed Successfully</h2>
+          <p>Your {{ paymentMode() === 'UPI' ? 'UPI' : 'COD' }} order has been placed.</p>
+          <p class="amount" *ngIf="lastPlacedAmount() > 0">Amount: Rs {{ lastPlacedAmount() }}</p>
+          <div class="success-actions">
+            <ion-button expand="block" routerLink="/orders">View My Orders</ion-button>
+            <ion-button expand="block" fill="outline" routerLink="/products">Continue Shopping</ion-button>
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-template #cartOrEmpty>
       <ng-container *ngIf="cartState.items().length > 0; else emptyCart">
         
         <!-- Location Display -->
@@ -50,14 +70,14 @@ import { takeUntil } from 'rxjs/operators';
           <div class="payment-title">Choose payment method</div>
           <div class="payment-subtitle">Select UPI to pay online or choose COD to pay on delivery.</div>
           <div class="payment-actions">
-            <button class="mode-btn" [class.active]="paymentMode() === 'UPI'" (click)="paymentMode.set('UPI')">
+            <button class="mode-btn" [class.active]="paymentMode() === 'UPI'" (click)="selectPaymentMode('UPI')">
               <span class="mode-icon">📱</span>
               <span>
                 <strong>UPI</strong>
                 <small>PhonePe / GPay / Paytm</small>
               </span>
             </button>
-            <button class="mode-btn" [class.active]="paymentMode() === 'COD'" (click)="paymentMode.set('COD')">
+            <button class="mode-btn" [class.active]="paymentMode() === 'COD'" (click)="selectPaymentMode('COD')">
               <span class="mode-icon">💵</span>
               <span>
                 <strong>COD</strong>
@@ -70,8 +90,11 @@ import { takeUntil } from 'rxjs/operators';
             <div>
               <div class="upi-label">Pay to UPI ID</div>
               <div class="upi-value">orderkro&#64;upi</div>
-              <div class="upi-note">Scan and confirm payment, then place the order.</div>
+              <div class="upi-note">Tap the button below to open Razorpay and complete UPI payment securely.</div>
             </div>
+          </div>
+          <div class="cod-note" *ngIf="paymentMode() === 'COD'">
+            You selected Cash on Delivery. Tap confirm to place the order.
           </div>
         </div>
 
@@ -87,11 +110,12 @@ import { takeUntil } from 'rxjs/operators';
         <div style="margin-top:16px;text-align:right;font-size:1.1rem;">
           <strong>Subtotal: Rs {{ cartState.subtotal() }}</strong>
         </div>
-        <ion-button expand="block" style="margin-top:16px;" (click)="checkout()" [disabled]="checking">
-          {{ checking ? 'Placing Order...' : paymentMode() === 'UPI' ? 'Pay with UPI & Place Order' : 'Place COD Order' }}
+        <ion-button expand="block" style="margin-top:16px;" (click)="checkout()" [disabled]="checking || !canCheckout()">
+          {{ checking ? 'Placing Order...' : paymentMode() === 'UPI' ? 'Confirm UPI Payment & Place Order' : 'Confirm COD Order' }}
         </ion-button>
         <p *ngIf="orderMsg" [style.color]="orderMsg.includes('✅') ? 'green' : 'red'" style="text-align:center;margin-top:12px;">{{ orderMsg }}</p>
       </ng-container>
+      </ng-template>
       <ng-template #emptyCart>
         <div style="text-align:center;margin-top:60px;">
           <p style="font-size:3rem;">🛒</p>
@@ -102,6 +126,42 @@ import { takeUntil } from 'rxjs/operators';
     </ion-content>
   `,
   styles: [`
+    .success-card {
+      text-align: center;
+      background: linear-gradient(135deg, #ecfff2 0%, #f8fffb 100%);
+      border: 1px solid #bce4cb;
+      border-radius: 16px;
+      padding: 20px 14px;
+      margin-top: 18px;
+    }
+
+    .success-emoji {
+      font-size: 2.4rem;
+      line-height: 1;
+    }
+
+    .success-card h2 {
+      margin: 10px 0 6px;
+      color: #1d6e3a;
+    }
+
+    .success-card p {
+      margin: 0;
+      color: #2a6642;
+    }
+
+    .success-card .amount {
+      margin-top: 8px;
+      font-weight: 700;
+      color: #145b2f;
+    }
+
+    .success-actions {
+      margin-top: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
     .location-card {
       background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
       border: 1px solid #a5d6a7;
@@ -275,12 +335,56 @@ import { takeUntil } from 'rxjs/operators';
       margin-top: 4px;
       line-height: 1.35;
     }
+
+    .upi-input {
+      width: 100%;
+      margin-top: 8px;
+      border: 1px solid #c8d9ef;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 0.9rem;
+      outline: none;
+      box-sizing: border-box;
+      background: #fff;
+    }
+
+    .upi-confirm-btn {
+      margin-top: 8px;
+      width: 100%;
+      border: 1px solid #c8d9ef;
+      border-radius: 10px;
+      padding: 10px;
+      background: #fff;
+      color: #24486e;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .upi-confirm-btn.active {
+      border-color: #22c55e;
+      background: #ebfff1;
+      color: #176b3c;
+    }
+
+    .cod-note {
+      margin-top: 12px;
+      border-radius: 12px;
+      border: 1px solid #ead7a4;
+      background: #fff8e2;
+      color: #7a5d16;
+      font-size: 0.9rem;
+      padding: 10px 12px;
+    }
   `]
 })
 export class CartPage implements OnInit, OnDestroy {
   checking = false;
   orderMsg = '';
   readonly paymentMode = signal<'UPI' | 'COD'>('UPI');
+  readonly upiReference = signal('');
+  readonly upiPaymentVerified = signal(false);
+  readonly checkoutSuccess = signal(false);
+  readonly lastPlacedAmount = signal(0);
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -294,6 +398,7 @@ export class CartPage implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void { 
+    this.checkoutSuccess.set(false);
     this.loadCart();
   }
 
@@ -319,13 +424,58 @@ export class CartPage implements OnInit, OnDestroy {
       .subscribe((cart) => this.cartState.setItems(cart.items || []));
   }
 
+  private ensureRazorpayScript(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (window.Razorpay) {
+        resolve();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load Razorpay SDK'));
+      document.body.appendChild(script);
+    });
+  }
+
+  selectPaymentMode(mode: 'UPI' | 'COD') {
+    this.paymentMode.set(mode);
+    this.upiPaymentVerified.set(false);
+    if (mode === 'COD') {
+      this.upiReference.set('');
+    }
+  }
+
+  canCheckout() {
+    return true;
+  }
+
   checkout() {
+    if (this.paymentMode() === 'UPI' && !this.upiPaymentVerified()) {
+      this.startRazorpayUpiCheckout();
+      return;
+    }
+
+    if (this.paymentMode() === 'COD') {
+      const ok = window.confirm('Confirm Cash on Delivery order?');
+      if (!ok) {
+        return;
+      }
+    }
+
+    this.placeOrderAfterPayment();
+  }
+
+  private placeOrderAfterPayment() {
     this.checking = true;
     this.orderMsg = '';
-    
-      this.api.get<any[]>('/customer/profile/addresses')
-        .pipe(takeUntil(this.destroy$))
-        .subscribe((addresses) => {
+    this.checkoutSuccess.set(false);
+
+    this.api.get<any[]>('/customer/profile/addresses')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((addresses) => {
       const firstAddress = addresses?.[0];
       if (!firstAddress) {
         this.checking = false;
@@ -339,6 +489,10 @@ export class CartPage implements OnInit, OnDestroy {
         paymentMode: this.paymentMode(),
         notes: 'Deliver fast'
       };
+
+      if (this.paymentMode() === 'UPI') {
+        checkoutData.upiReference = this.upiReference() || 'RAZORPAY_UPI';
+      }
 
       // Add location if available
       const location = this.locationService.currentLocation();
@@ -359,6 +513,9 @@ export class CartPage implements OnInit, OnDestroy {
           this.orderMsg = this.paymentMode() === 'UPI' 
             ? '✅ UPI payment recorded and order placed! 🎉' 
             : '✅ Cash on delivery order placed! 🎉';
+          this.lastPlacedAmount.set(placedAmount);
+          this.checkoutSuccess.set(true);
+          this.upiPaymentVerified.set(false);
           this.activityState.log('checkout', `Placed ${this.paymentMode()} order for Rs ${placedAmount}`);
           this.loadCart();
         },
@@ -368,5 +525,90 @@ export class CartPage implements OnInit, OnDestroy {
         }
       });
     });
+  }
+
+  private startRazorpayUpiCheckout() {
+    this.checking = true;
+    this.orderMsg = '';
+
+    this.ensureRazorpayScript()
+      .then(() => {
+        this.upiPaymentVerified.set(false);
+        this.api.post<any>('/customer/payments/create-order', {})
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (res) => {
+              const data = res?.data;
+              if (!data?.orderId || !data?.keyId) {
+                this.checking = false;
+                this.orderMsg = '❌ Could not initialize Razorpay order.';
+                return;
+              }
+
+              const options: any = {
+                key: data.keyId,
+                amount: data.amount,
+                currency: data.currency || 'INR',
+                name: data.name || 'Order Kro',
+                description: data.description || 'Grocery payment',
+                order_id: data.orderId,
+                prefill: {
+                  contact: data.prefillContact || ''
+                },
+                method: {
+                  upi: true,
+                  card: false,
+                  netbanking: false,
+                  wallet: false,
+                  emi: false,
+                  paylater: false
+                },
+                theme: { color: '#2d7ef7' },
+                handler: (payment: any) => {
+                  this.verifyPaymentAndPlaceOrder(payment);
+                },
+                modal: {
+                  ondismiss: () => {
+                    this.checking = false;
+                    this.orderMsg = '⚠️ Payment cancelled.';
+                  }
+                }
+              };
+
+              const rzp = new window.Razorpay(options);
+              rzp.open();
+            },
+            error: (err) => {
+              this.checking = false;
+              this.orderMsg = err?.error?.message || '❌ Unable to create payment order.';
+            }
+          });
+      })
+      .catch(() => {
+        this.checking = false;
+        this.orderMsg = '❌ Could not load payment SDK.';
+      });
+  }
+
+  private verifyPaymentAndPlaceOrder(payment: any) {
+    const payload = {
+      razorpayOrderId: payment?.razorpay_order_id,
+      razorpayPaymentId: payment?.razorpay_payment_id,
+      razorpaySignature: payment?.razorpay_signature
+    };
+
+    this.api.post<any>('/customer/payments/verify', payload)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.upiReference.set(String(payment?.razorpay_payment_id || ''));
+          this.upiPaymentVerified.set(true);
+          this.placeOrderAfterPayment();
+        },
+        error: (err) => {
+          this.checking = false;
+          this.orderMsg = err?.error?.message || '❌ Payment verification failed.';
+        }
+      });
   }
 }

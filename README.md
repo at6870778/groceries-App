@@ -33,6 +33,26 @@ This workspace contains a production-oriented startup MVP built as a modular mon
 docker compose up -d --build
 ```
 
+## Clone And Run On A New Machine (Windows)
+1. Clone the repo:
+```bash
+git clone https://github.com/at6870778/groceries-App.git
+cd groceries-App
+```
+2. Install dependencies once:
+```powershell
+./scripts/setup.ps1
+```
+3. Start backend + ionic + admin in separate terminals:
+```powershell
+./scripts/run-all.ps1
+```
+
+If PowerShell script execution is blocked, run this in the same terminal and retry:
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+```
+
 ## Backend API Docs
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - OpenAPI: `http://localhost:8080/v3/api-docs`

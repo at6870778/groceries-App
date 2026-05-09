@@ -34,7 +34,9 @@ declare global {
           <h2>Order Placed Successfully</h2>
           <p>Your {{ paymentMode() === 'UPI' ? 'UPI' : 'COD' }} order has been placed.</p>
           <p class="amount" *ngIf="lastPlacedAmount() > 0">Amount: Rs {{ lastPlacedAmount() }}</p>
+          <p class="order-id" *ngIf="lastPlacedOrderId()">Order #{{ lastPlacedOrderId() }}</p>
           <div class="success-actions">
+            <ion-button expand="block" (click)="downloadBill(lastPlacedOrderId() || 0)" *ngIf="lastPlacedOrderId()">📥 Download Receipt</ion-button>
             <ion-button expand="block" routerLink="/orders">View My Orders</ion-button>
             <ion-button expand="block" fill="outline" routerLink="/products">Continue Shopping</ion-button>
           </div>
@@ -154,6 +156,13 @@ declare global {
       margin-top: 8px;
       font-weight: 700;
       color: #145b2f;
+    }
+
+    .success-card .order-id {
+      margin-top: 4px;
+      font-size: 0.9rem;
+      color: #1d6e3a;
+      font-weight: 500;
     }
 
     .success-actions {
@@ -385,6 +394,7 @@ export class CartPage implements OnInit, OnDestroy {
   readonly upiPaymentVerified = signal(false);
   readonly checkoutSuccess = signal(false);
   readonly lastPlacedAmount = signal(0);
+  readonly lastPlacedOrderId = signal<number | null>(null);
   private destroy$ = new Subject<void>();
 
   private getErrorMessage(err: any, fallback: string): string {
@@ -535,9 +545,12 @@ export class CartPage implements OnInit, OnDestroy {
                   this.checking = false;
                   this.orderMsg = '✅ UPI payment recorded and order confirmed! 🎉';
                   this.lastPlacedAmount.set(placedAmount);
+                  this.lastPlacedOrderId.set(orderId);
                   this.checkoutSuccess.set(true);
                   this.upiPaymentVerified.set(false);
                   this.activityState.log('checkout', `Placed UPI order #${orderId} for Rs ${placedAmount}`);
+                  // Auto-download bill after 1 second
+                  setTimeout(() => this.downloadBill(orderId), 1000);
                   this.loadCart();
                 },
                 error: (err) => {
@@ -549,9 +562,14 @@ export class CartPage implements OnInit, OnDestroy {
             this.checking = false;
             this.orderMsg = '✅ Cash on delivery order placed! 🎉';
             this.lastPlacedAmount.set(placedAmount);
+            this.lastPlacedOrderId.set(orderId);
             this.checkoutSuccess.set(true);
             this.upiPaymentVerified.set(false);
             this.activityState.log('checkout', `Placed COD order for Rs ${placedAmount}`);
+            // Auto-download bill after 1 second
+            if (orderId) {
+              setTimeout(() => this.downloadBill(orderId), 1000);
+            }
             this.loadCart();
           }
         },
@@ -646,5 +664,14 @@ export class CartPage implements OnInit, OnDestroy {
           this.orderMsg = this.getErrorMessage(err, '❌ Payment verification failed.');
         }
       });
+  }
+
+  downloadBill(orderId: number) {
+    const link = document.createElement('a');
+    link.href = this.api.buildUrl(`/customer/orders/${orderId}/bill`);
+    link.download = `Order-${orderId}-receipt.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 }

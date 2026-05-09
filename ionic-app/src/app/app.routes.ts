@@ -9,6 +9,7 @@ export const appRoutes: Routes = [
   { path: 'products', canActivate: [authGuard], loadComponent: () => import('./features/products/products.page').then(m => m.ProductsPage) },
   { path: 'cart', canActivate: [authGuard], loadComponent: () => import('./features/cart/cart.page').then(m => m.CartPage) },
   { path: 'orders', canActivate: [authGuard], loadComponent: () => import('./features/orders/orders.page').then(m => m.OrdersPage) },
+  { path: 'delivery-tracking/:orderId', canActivate: [authGuard], loadComponent: () => import('./features/orders/delivery-tracking.page').then(m => m.DeliveryTrackingPage) },
   { path: 'profile', canActivate: [authGuard], loadComponent: () => import('./features/profile/profile.page').then(m => m.ProfilePage) },
   { path: 'delivery/orders', canActivate: [deliveryGuard], loadComponent: () => import('./features/delivery-orders/delivery-orders.page').then(m => m.DeliveryOrdersPage) },
   { path: '**', redirectTo: 'login' }

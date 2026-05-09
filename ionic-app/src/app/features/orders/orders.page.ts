@@ -23,7 +23,7 @@ import { takeUntil } from 'rxjs/operators';
       </div>
       
       <ion-list *ngIf="orders().length > 0; else noOrders">
-        <ion-item *ngFor="let o of orders()">
+        <ion-item *ngFor="let o of orders()" [routerLink]="['/delivery-tracking', o.id]" detail>
           <ion-label>
             <h2>#{{ o.id }} <span [class]="'status-badge status-' + (o.status?.toLowerCase() || 'pending')">{{ o.status || 'PENDING' }}</span></h2>
             <p>Rs {{ o.totalAmount }} • {{ o.paymentMode || 'N/A' }}</p>

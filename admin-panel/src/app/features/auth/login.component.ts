@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -15,22 +15,28 @@ import { AuthService } from '../../core/services/auth.service';
     mat-card { width: min(460px, 100%); border-radius: 20px; }
     .title { font-family: "Fraunces", serif; margin-bottom: 12px; }
     .grid { display: grid; gap: 12px; }
+    .error { background: #f8d7da; color: #721c24; padding: 12px; border-radius: 4px; margin-bottom: 12px; font-size: 0.9em; }
+    .info { background: #d1ecf1; color: #0c5460; padding: 12px; border-radius: 4px; margin-bottom: 12px; font-size: 0.9em; }
   `],
   template: `
     <section class="wrap">
       <mat-card>
         <mat-card-content>
           <h2 class="title">Admin Login</h2>
-          <form [formGroup]="form" (ngSubmit)="submit()" class="grid">
+          <div *ngIf="error()" class="error">{{ error() }}</div>
+          <div *ngIf="loading()" class="info">⏳ {{ loadingMsg() }}</div>
+          <form [formGroup]="form" (ngSubmit)="submit()" class="grid" [attr.disabled]="loading()">
             <mat-form-field appearance="outline">
               <mat-label>Phone</mat-label>
-              <input matInput formControlName="phone" placeholder="9876543210" />
+              <input matInput formControlName="phone" placeholder="9999999991" [disabled]="loading()" />
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Full Name</mat-label>
-              <input matInput formControlName="fullName" placeholder="Admin User" />
+              <input matInput formControlName="fullName" placeholder="Admin User" [disabled]="loading()" />
             </mat-form-field>
-            <button mat-flat-button color="primary" type="submit">Login with OTP Simulation</button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="loading() || form.invalid">
+              {{ loading() ? '⏳ Logging in...' : '🔐 Login with OTP' }}
+            </button>
           </form>
         </mat-card-content>
       </mat-card>
@@ -42,17 +48,43 @@ export class LoginComponent {
     phone: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
     fullName: ['', Validators.required]
   });
+  readonly error = signal('');
+  readonly loading = signal(false);
+  readonly loadingMsg = signal('');
 
   constructor(private fb: FormBuilder, private auth: AuthService, private router: Router) {}
 
   submit() {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      this.error.set('Phone must be 10 digits and full name is required');
+      return;
+    }
     const { phone, fullName } = this.form.getRawValue();
-    this.auth.requestOtp(phone!).subscribe(() => {
-      this.auth.login(phone!, fullName!).subscribe((res) => {
-        this.auth.saveSession(res.data);
-        this.router.navigateByUrl('/dashboard');
-      });
+    this.loading.set(true);
+    this.loadingMsg.set('Requesting OTP...');
+    this.error.set('');
+    
+    this.auth.requestOtp(phone!).subscribe({
+      next: () => {
+        this.loadingMsg.set('Verifying OTP...');
+        this.auth.login(phone!, fullName!).subscribe({
+          next: (res) => {
+            this.loading.set(false);
+            this.auth.saveSession(res.data);
+            this.router.navigateByUrl('/dashboard');
+          },
+          error: (err) => {
+            this.loading.set(false);
+            this.error.set('Login failed: ' + (err.error?.message || err.message || 'Unknown error'));
+            console.error('Login error:', err);
+          }
+        });
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.error.set('OTP request failed: ' + (err.error?.message || err.message || 'Backend unreachable at http://localhost:8080'));
+        console.error('OTP request error:', err);
+      }
     });
   }
 }

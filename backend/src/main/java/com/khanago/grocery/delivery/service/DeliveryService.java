@@ -91,6 +91,30 @@ public class DeliveryService {
         return new AssignmentDto(assignment.getId(), assignment.getOrder().getId(), assignment.getDeliveryBoy().getId(), assignment.getStatus().name());
     }
 
+    public AssignmentDto updateDeliveryStatus(Long assignmentId, String statusStr) {
+        DeliveryAssignmentStatus status = DeliveryAssignmentStatus.valueOf(statusStr.toUpperCase());
+        return updateDeliveryStatus(assignmentId, status);
+    }
+
+    public AssignmentDto adminUpdateDeliveryStatus(Long assignmentId, String statusStr) {
+        DeliveryAssignmentStatus status = DeliveryAssignmentStatus.valueOf(statusStr.toUpperCase());
+        DeliveryAssignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new ApiException("Assignment not found"));
+
+        assignment.setStatus(status);
+        assignment = assignmentRepository.save(assignment);
+
+        if (status == DeliveryAssignmentStatus.PICKED) {
+            orderService.updateOrderStatus(assignment.getOrder().getId(), OrderStatus.PREPARING);
+        } else if (status == DeliveryAssignmentStatus.OUT_FOR_DELIVERY) {
+            orderService.updateOrderStatus(assignment.getOrder().getId(), OrderStatus.OUT_FOR_DELIVERY);
+        } else if (status == DeliveryAssignmentStatus.DELIVERED) {
+            orderService.updateOrderStatus(assignment.getOrder().getId(), OrderStatus.DELIVERED);
+        }
+
+        return new AssignmentDto(assignment.getId(), assignment.getOrder().getId(), assignment.getDeliveryBoy().getId(), assignment.getStatus().name());
+    }
+
     public DeliveryTrackingDto getDeliveryTracking(Long orderId) {
         DeliveryAssignment assignment = assignmentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new ApiException("Delivery assignment not found for this order"));

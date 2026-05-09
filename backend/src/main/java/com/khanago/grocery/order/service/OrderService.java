@@ -158,6 +158,7 @@ public class OrderService {
         Optional<DeliveryAssignment> assignment = deliveryAssignmentRepository.findByOrderId(order.getId());
         
         String deliveryBoyName = assignment.map(da -> da.getDeliveryBoy().getFullName()).orElse("Not Assigned");
+        String deliveryStatus = assignment.map(da -> da.getStatus().name()).orElse("NOT_ASSIGNED");
         Long assignmentId = assignment.map(DeliveryAssignment::getId).orElse(null);
         
         String address = order.getAddress() != null ? 
@@ -180,6 +181,7 @@ public class OrderService {
                 order.getCreatedAt(),
                 assignmentId,
                 deliveryBoyName,
+                deliveryStatus,
                 items.stream().map(i -> new OrderItemDto(i.getProductName(), i.getUnit(), i.getQuantity(), i.getUnitPrice(), i.getLineTotal())).toList()
         );
     }

@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonBadge, IonToast, IonButtons, IonBackButton, IonSearchbar } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonBadge, IonToast, IonButtons, IonBackButton, IonSearchbar, IonRefresher, IonRefresherContent } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
 import { CartState } from '../../core/state/cart.state';
 import { ActivityState } from '../../core/state/activity.state';
@@ -10,7 +10,7 @@ import { takeUntil } from 'rxjs/operators';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonBadge, IonToast, IonButtons, IonBackButton, IonSearchbar],
+  imports: [CommonModule, RouterLink, IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonBadge, IonToast, IonButtons, IonBackButton, IonSearchbar, IonRefresher, IonRefresherContent],
   template: `
     <ion-header>
       <ion-toolbar>
@@ -33,6 +33,9 @@ import { takeUntil } from 'rxjs/operators';
       </ion-toolbar>
     </ion-header>
     <ion-content [scrollEvents]="true" [fullscreen]="false" class="products-content ion-padding">
+      <ion-refresher slot="fixed" (ionRefresh)="onRefresh($event)">
+        <ion-refresher-content></ion-refresher-content>
+      </ion-refresher>
       <ion-toast
         [isOpen]="toastOpen()"
         [message]="toastMsg()"

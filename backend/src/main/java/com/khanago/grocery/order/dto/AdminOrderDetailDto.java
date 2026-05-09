@@ -18,6 +18,7 @@ public record AdminOrderDetailDto(
         LocalDateTime createdAt,
         Long assignmentId,
         String deliveryBoyName,
+        String deliveryStatus,
         List<OrderItemDto> items
 ) {
 }

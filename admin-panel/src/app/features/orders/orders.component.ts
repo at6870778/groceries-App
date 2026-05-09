@@ -30,6 +30,7 @@ interface AdminOrder {
   createdAt: string;
   assignmentId?: number;
   deliveryBoyName: string;
+  deliveryStatus: string;
   items: OrderItem[];
 }
 
@@ -80,6 +81,7 @@ interface AdminOrder {
                 <p style="margin:4px 0;">Date: {{ order.createdAt | date:'short' }}</p>
                 <p style="margin:4px 0;">Payment: {{ order.paymentMode }}</p>
                 <p style="margin:4px 0;">Delivery Boy: <strong>{{ order.deliveryBoyName }}</strong></p>
+                <p style="margin:4px 0;">Delivery Status: <span [ngClass]="'delivery-badge delivery-' + order.deliveryStatus.toLowerCase()">{{ order.deliveryStatus }}</span></p>
               </div>
             </div>
 
@@ -128,8 +130,23 @@ interface AdminOrder {
                   <mat-option value="CANCELLED">CANCELLED</mat-option>
                 </mat-select>
               </mat-form-field>
-              <button mat-button color="primary" (click)="updateStatus(order.id, statusSel.value)">Update Status</button>
+              <button mat-button color="primary" (click)="updateStatus(order.id, statusSel.value)">Update Order Status</button>
+            </div>
 
+            <div *ngIf="order.assignmentId" style="display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid #eee;">
+              <mat-form-field appearance="outline" style="flex:1;">
+                <mat-label>Delivery Progress</mat-label>
+                <mat-select #deliverySel [value]="order.deliveryStatus">
+                  <mat-option value="ASSIGNED">ASSIGNED (Rider Assigned)</mat-option>
+                  <mat-option value="PICKED">PICKED (Items Packed)</mat-option>
+                  <mat-option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY (On the Way)</mat-option>
+                  <mat-option value="DELIVERED">DELIVERED (Completed)</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <button mat-button color="accent" (click)="updateDeliveryStatus(order.assignmentId, deliverySel.value)">Update Delivery</button>
+            </div>
+
+            <div *ngIf="!order.assignmentId" style="display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid #eee;">
               <mat-form-field appearance="outline" style="flex:1;">
                 <mat-select #riderSel>
                   <mat-option [value]="0">Select Delivery Boy</mat-option>
@@ -157,6 +174,19 @@ interface AdminOrder {
     .status-out_for_delivery { background-color: #007bff; }
     .status-delivered { background-color: #6c757d; }
     .status-cancelled { background-color: #dc3545; }
+    
+    .delivery-badge {
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      font-weight: bold;
+      color: white;
+    }
+    .delivery-not_assigned { background-color: #6c757d; }
+    .delivery-assigned { background-color: #ffc107; }
+    .delivery-picked { background-color: #17a2b8; }
+    .delivery-out_for_delivery { background-color: #007bff; }
+    .delivery-delivered { background-color: #28a745; }
   `]
 })
 export class OrdersComponent implements OnInit {
@@ -212,6 +242,13 @@ export class OrdersComponent implements OnInit {
     this.api.post(`/admin/orders/${orderId}/assign`, { deliveryBoyId }).subscribe(() => {
       this.loadOrders();
       this.snack.open('Delivery boy assigned', 'OK', { duration: 1600 });
+    });
+  }
+
+  updateDeliveryStatus(assignmentId: number, status: string) {
+    this.api.patch(`/admin/delivery/assignments/${assignmentId}/status`, { status }).subscribe(() => {
+      this.loadOrders();
+      this.snack.open('Delivery status updated', 'OK', { duration: 1600 });
     });
   }
 }

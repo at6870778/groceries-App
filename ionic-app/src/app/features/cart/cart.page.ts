@@ -519,20 +519,41 @@ export class CartPage implements OnInit, OnDestroy {
         };
       }
 
-      this.api.post('/customer/orders/checkout', checkoutData)
+      this.api.post<any>('/customer/orders/checkout', checkoutData)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
-        next: () => {
+        next: (response) => {
           const placedAmount = this.cartState.subtotal();
-          this.checking = false;
-          this.orderMsg = this.paymentMode() === 'UPI' 
-            ? '✅ UPI payment recorded and order placed! 🎉' 
-            : '✅ Cash on delivery order placed! 🎉';
-          this.lastPlacedAmount.set(placedAmount);
-          this.checkoutSuccess.set(true);
-          this.upiPaymentVerified.set(false);
-          this.activityState.log('checkout', `Placed ${this.paymentMode()} order for Rs ${placedAmount}`);
-          this.loadCart();
+          const orderId = response?.id;
+          
+          // For UPI orders, mark as paid since payment was already verified
+          if (this.paymentMode() === 'UPI' && orderId) {
+            this.api.post(`/customer/orders/${orderId}/mark-paid`, {})
+              .pipe(takeUntil(this.destroy$))
+              .subscribe({
+                next: () => {
+                  this.checking = false;
+                  this.orderMsg = '✅ UPI payment recorded and order confirmed! 🎉';
+                  this.lastPlacedAmount.set(placedAmount);
+                  this.checkoutSuccess.set(true);
+                  this.upiPaymentVerified.set(false);
+                  this.activityState.log('checkout', `Placed UPI order #${orderId} for Rs ${placedAmount}`);
+                  this.loadCart();
+                },
+                error: (err) => {
+                  this.checking = false;
+                  this.orderMsg = '✅ Order placed, but status update failed. Contact support if needed.';
+                }
+              });
+          } else {
+            this.checking = false;
+            this.orderMsg = '✅ Cash on delivery order placed! 🎉';
+            this.lastPlacedAmount.set(placedAmount);
+            this.checkoutSuccess.set(true);
+            this.upiPaymentVerified.set(false);
+            this.activityState.log('checkout', `Placed COD order for Rs ${placedAmount}`);
+            this.loadCart();
+          }
         },
         error: (err) => {
           this.checking = false;
@@ -572,11 +593,11 @@ export class CartPage implements OnInit, OnDestroy {
                 },
                 method: {
                   upi: true,
-                  card: false,
-                  netbanking: false,
-                  wallet: false,
+                  card: true,
+                  netbanking: true,
+                  wallet: true,
                   emi: false,
-                  paylater: false
+                  paylater: true
                 },
                 theme: { color: '#2d7ef7' },
                 handler: (payment: any) => {

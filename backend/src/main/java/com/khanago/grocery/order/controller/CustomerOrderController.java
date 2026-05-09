@@ -3,6 +3,8 @@ package com.khanago.grocery.order.controller;
 import com.khanago.grocery.order.dto.CheckoutRequestDto;
 import com.khanago.grocery.order.dto.OrderDto;
 import com.khanago.grocery.order.service.OrderService;
+import com.khanago.grocery.common.dto.ApiSuccessResponse;
+import com.khanago.grocery.common.enums.OrderStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,5 +31,11 @@ public class CustomerOrderController {
     @GetMapping("/{orderId}")
     public OrderDto getOrder(@PathVariable Long orderId) {
         return orderService.getOrder(orderId);
+    }
+
+    @PostMapping("/{orderId}/mark-paid")
+    public ApiSuccessResponse<OrderDto> markOrderAsPaid(@PathVariable Long orderId) {
+        OrderDto updated = orderService.updateOrderStatus(orderId, OrderStatus.CONFIRMED);
+        return new ApiSuccessResponse<>("Order marked as paid", updated);
     }
 }

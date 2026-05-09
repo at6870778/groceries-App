@@ -40,7 +40,7 @@ export class ApiService {
     }
   }
 
-  private buildUrl(path: string): string {
+  buildUrl(path: string): string {
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     const baseHasApi = this.baseUrl.endsWith('/api');
     const finalPath = !baseHasApi && !normalizedPath.startsWith('/api/')

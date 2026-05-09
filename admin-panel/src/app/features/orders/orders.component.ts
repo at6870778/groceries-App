@@ -6,6 +6,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatOptionModule } from '@angular/material/core';
 import { ApiService } from '../../core/services/api.service';
 
 interface OrderItem {
@@ -36,11 +37,12 @@ interface AdminOrder {
 
 @Component({
   standalone: true,
-  imports: [CommonModule, MatSnackBarModule, MatFormFieldModule, MatSelectModule, MatButtonModule, MatTableModule, MatExpansionModule],
+  imports: [CommonModule, MatSnackBarModule, MatFormFieldModule, MatSelectModule, MatButtonModule, MatTableModule, MatExpansionModule, MatOptionModule],
   template: `
     <h2 class="page-title">Order Management</h2>
     <div style="display:flex;gap:16px;align-items:center;margin-bottom:12px;">
       <mat-form-field appearance="outline" style="width:200px;">
+        <mat-label>Filter by Status</mat-label>
         <mat-select [value]="statusFilter()" (selectionChange)="onStatusFilter($event.value)">
           <mat-option value="">All Statuses</mat-option>
           <mat-option value="PENDING">PENDING</mat-option>

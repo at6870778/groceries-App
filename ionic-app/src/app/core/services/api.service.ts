@@ -1,0 +1,62 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Capacitor } from '@capacitor/core';
+import { environment } from '../../../environments/environment';
+
+@Injectable({ providedIn: 'root' })
+export class ApiService {
+  private readonly baseUrl = this.resolveBaseUrl();
+
+  constructor(private http: HttpClient) {}
+
+  private resolveBaseUrl(): string {
+    const configuredUrl = (environment.apiUrl || '').replace(/\/$/, '');
+    if (!Capacitor.isNativePlatform()) {
+      try {
+        const parsed = new URL(configuredUrl);
+        const isLocalHost = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+        if (!isLocalHost) {
+          return configuredUrl;
+        }
+
+        return `${window.location.origin}${parsed.pathname}`.replace(/\/$/, '');
+      } catch {
+        return configuredUrl;
+      }
+    }
+
+    try {
+      const parsed = new URL(configuredUrl);
+      const isLocalHost = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+      if (!isLocalHost) {
+        return configuredUrl;
+      }
+
+      const nativeHost = Capacitor.getPlatform() === 'android' ? '10.0.2.2' : parsed.hostname;
+      const nativeUrl = `${parsed.protocol}//${nativeHost}${parsed.port ? `:${parsed.port}` : ''}${parsed.pathname}`;
+      return nativeUrl.replace(/\/$/, '');
+    } catch {
+      return configuredUrl;
+    }
+  }
+
+  get<T>(path: string, params?: Record<string, any>) {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => { if (v !== null && v !== undefined) httpParams = httpParams.set(k, v); });
+    }
+    return this.http.get<T>(`${this.baseUrl}${path}`, { params: httpParams });
+  }
+
+  post<T>(path: string, body: unknown) {
+    return this.http.post<T>(`${this.baseUrl}${path}`, body);
+  }
+
+  patch<T>(path: string, body: unknown) {
+    return this.http.patch<T>(`${this.baseUrl}${path}`, body);
+  }
+
+  delete<T>(path: string) {
+    return this.http.delete<T>(`${this.baseUrl}${path}`);
+  }
+}

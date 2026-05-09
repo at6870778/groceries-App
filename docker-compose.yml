@@ -1,0 +1,36 @@
+version: '3.9'
+
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: grocery_mvp
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  backend:
+    build: ./backend
+    depends_on:
+      - mysql
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: grocery_mvp
+      DB_USER: root
+      DB_PASSWORD: root
+      JWT_SECRET: change-me-to-super-secret-32-byte-minimum-token-key
+      JWT_EXPIRY_MINUTES: 1440
+      CORS_ALLOWED_ORIGINS: http://localhost:4200,http://localhost:8100
+    ports:
+      - "8080:8080"
+
+  admin-panel:
+    build: ./admin-panel
+    ports:
+      - "4200:80"
+
+volumes:
+  mysql_data:

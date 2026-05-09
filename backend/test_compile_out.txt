@@ -1,0 +1,163 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< com.khanago:grocery-backend >---------------------
+[INFO] Building grocery-backend 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ grocery-backend ---
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ grocery-backend ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ grocery-backend ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ grocery-backend ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 5 source files with javac [debug parameters release 17] to target\test-classes
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[38,40] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[38,50] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[38,59] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[61,39] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[61,49] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[61,58] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[73,39] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[73,49] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[73,58] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[110,54] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[110,64] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[110,73] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[136,39] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[136,49] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[136,58] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[170,40] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[170,50] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[170,59] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[192,43] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[192,53] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[192,62] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[214,42] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[214,52] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[214,61] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[254,36] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[254,46] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[254,55] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[264,35] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[264,45] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[264,54] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[278,38] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[278,48] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[278,57] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[290,55] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[290,65] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[290,74] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[300,62] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[300,72] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[300,81] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[304,2] reached end of file while parsing
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[41,37] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[41,47] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[41,56] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[78,50] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[78,60] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[78,69] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[117,56] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[117,66] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[117,75] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[157,58] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[157,68] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[157,77] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[167,65] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[167,75] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[167,84] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[177,52] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[177,62] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[177,71] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[220,45] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[220,55] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[220,64] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[290,2] reached end of file while parsing
+[INFO] 62 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.206 s
+[INFO] Finished at: 2026-05-09T13:46:53+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.13.0:testCompile (default-testCompile) on project grocery-backend: Compilation failure: Compilation failure: 
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[38,40] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[38,50] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[38,59] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[61,39] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[61,49] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[61,58] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[73,39] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[73,49] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[73,58] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[110,54] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[110,64] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[110,73] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[136,39] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[136,49] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[136,58] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[170,40] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[170,50] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[170,59] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[192,43] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[192,53] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[192,62] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[214,42] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[214,52] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[214,61] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[254,36] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[254,46] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[254,55] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[264,35] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[264,45] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[264,54] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[278,38] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[278,48] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[278,57] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[290,55] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[290,65] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[290,74] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[300,62] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[300,72] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[300,81] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/AdminIntegrationTest.java:[304,2] reached end of file while parsing
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[41,37] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[41,47] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[41,56] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[78,50] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[78,60] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[78,69] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[117,56] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[117,66] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[117,75] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[157,58] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[157,68] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[157,77] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[167,65] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[167,75] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[167,84] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[177,52] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[177,62] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[177,71] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[220,45] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[220,55] not a statement
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[220,64] ';' expected
+[ERROR] /C:/Users/kabhis972/Learning/backend/src/test/java/com/khanago/grocery/integration/DeliveryIntegrationTest.java:[290,2] reached end of file while parsing
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

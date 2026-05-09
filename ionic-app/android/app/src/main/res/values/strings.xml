@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Order Kro</string>
+    <string name="title_activity_main">Order Kro</string>
+    <string name="package_name">com.khanago.customer</string>
+    <string name="custom_url_scheme">com.khanago.customer</string>
+</resources>

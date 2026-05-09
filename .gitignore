@@ -1,0 +1,47 @@
+# Node
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Angular/Ionic
+dist/
+www/
+.angular/
+.ionic/
+**/.angular/
+**/.ionic/
+
+# Java/Maven
+**/target/
+*.class
+*.jar
+*.war
+
+# IDE/OS
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+**/.env
+
+# Logs
+logs/
+*.log
+
+# Android/Gradle build outputs
+**/.gradle/
+**/build/
+**/captures/
+ionic-app/android_broken_backup_*/
+
+# Temporary
+*.tmp
+*.temp

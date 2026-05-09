@@ -1,0 +1,77 @@
+# Full Project Structure
+
+```text
+Learning/
+  backend/
+    src/main/java/com/khanago/grocery/
+      admin/
+      auth/
+      cart/
+      catalog/
+      common/
+      config/
+      delivery/
+      order/
+      security/
+      user/
+    src/main/resources/
+      db/migration/V1__init_schema.sql
+      application.yml
+      application-prod.yml
+    Dockerfile
+    pom.xml
+
+  admin-panel/
+    src/app/
+      core/
+        guards/
+        interceptors/
+        models/
+        services/
+      features/
+        auth/
+        dashboard/
+        catalog/
+        orders/
+        users/
+      layout/
+      app.component.ts
+      app.routes.ts
+    src/environments/environment.ts
+    angular.json
+    package.json
+    Dockerfile
+
+  ionic-app/
+    src/app/
+      core/
+        guards/
+        services/
+        state/
+      features/
+        auth/
+        home/
+        products/
+        cart/
+        orders/
+        profile/
+      app.component.ts
+      app.routes.ts
+    src/environments/environment.ts
+    capacitor.config.ts
+    package.json
+    android/README.md
+
+  docs/
+    architecture-decisions.md
+    api-documentation.md
+    database-schema.md
+    deployment-guide-ubuntu.md
+    er-diagram-mermaid.md
+    project-structure.md
+
+  infra/nginx/default.conf
+  docker-compose.yml
+  .env.example
+  README.md
+```

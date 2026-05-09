@@ -387,6 +387,21 @@ export class CartPage implements OnInit, OnDestroy {
   readonly lastPlacedAmount = signal(0);
   private destroy$ = new Subject<void>();
 
+  private getErrorMessage(err: any, fallback: string): string {
+    const message = err?.error?.message;
+    const detail = Array.isArray(err?.error?.details) ? err.error.details[0] : null;
+
+    if (message && message !== 'Something went wrong') {
+      return message;
+    }
+
+    if (detail) {
+      return detail;
+    }
+
+    return fallback;
+  }
+
   constructor(
     private api: ApiService, 
     public cartState: CartState,
@@ -521,7 +536,7 @@ export class CartPage implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.checking = false;
-          this.orderMsg = err?.error?.message || '❌ Order failed. Try again.';
+          this.orderMsg = this.getErrorMessage(err, '❌ Order failed. Try again.');
         }
       });
     });
@@ -580,7 +595,7 @@ export class CartPage implements OnInit, OnDestroy {
             },
             error: (err) => {
               this.checking = false;
-              this.orderMsg = err?.error?.message || '❌ Unable to create payment order.';
+              this.orderMsg = this.getErrorMessage(err, '❌ Unable to create payment order.');
             }
           });
       })
@@ -607,7 +622,7 @@ export class CartPage implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.checking = false;
-          this.orderMsg = err?.error?.message || '❌ Payment verification failed.';
+          this.orderMsg = this.getErrorMessage(err, '❌ Payment verification failed.');
         }
       });
   }

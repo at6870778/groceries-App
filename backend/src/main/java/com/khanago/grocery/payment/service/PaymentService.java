@@ -47,16 +47,24 @@ public class PaymentService {
             throw new ApiException("Cart is empty.");
         }
 
-        BigDecimal subtotal = cartItems.stream()
-                .map(i -> i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal deliveryFee = new BigDecimal("20.00");
-        BigDecimal total = subtotal.add(deliveryFee);
-
-        int amountInPaise = total.multiply(new BigDecimal("100")).intValueExact();
-
         try {
+            BigDecimal subtotal = cartItems.stream()
+                    .map(i -> {
+                        if (i.getUnitPrice() == null || i.getQuantity() == null) {
+                            throw new ApiException("Invalid cart item price/quantity.");
+                        }
+                        return i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity()));
+                    })
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal deliveryFee = new BigDecimal("20.00");
+            BigDecimal total = subtotal.add(deliveryFee);
+            int amountInPaise = total.multiply(new BigDecimal("100")).intValueExact();
+
+            if (amountInPaise <= 0) {
+                throw new ApiException("Invalid order amount for payment.");
+            }
+
             RazorpayClient client = new RazorpayClient(keyId, keySecret);
 
             JSONObject options = new JSONObject();
@@ -76,6 +84,10 @@ public class PaymentService {
                     "Grocery payment",
                     user.getPhone()
             );
+        } catch (ApiException ex) {
+            throw ex;
+        } catch (ArithmeticException ex) {
+            throw new ApiException("Unable to process amount for payment.");
         } catch (Exception ex) {
             throw new ApiException("Unable to create Razorpay order: " + ex.getMessage());
         }

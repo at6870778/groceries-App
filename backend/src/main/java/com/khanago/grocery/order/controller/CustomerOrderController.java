@@ -4,6 +4,8 @@ import com.khanago.grocery.order.dto.CheckoutRequestDto;
 import com.khanago.grocery.order.dto.OrderDto;
 import com.khanago.grocery.order.service.OrderService;
 import com.khanago.grocery.order.service.BillService;
+import com.khanago.grocery.delivery.dto.DeliveryTrackingDto;
+import com.khanago.grocery.delivery.service.DeliveryService;
 import com.khanago.grocery.common.dto.ApiSuccessResponse;
 import com.khanago.grocery.common.enums.OrderStatus;
 import jakarta.validation.Valid;
@@ -21,6 +23,7 @@ public class CustomerOrderController {
 
     private final OrderService orderService;
     private final BillService billService;
+    private final DeliveryService deliveryService;
 
     @PostMapping("/checkout")
     public OrderDto checkout(@Valid @RequestBody CheckoutRequestDto request) {
@@ -52,5 +55,11 @@ public class CustomerOrderController {
         headers.setContentDispositionFormData("attachment", "Order-" + orderId + "-receipt.pdf");
         headers.setContentLength(billContent.length);
         return ResponseEntity.ok().headers(headers).body(billContent);
+    }
+
+    @GetMapping("/{orderId}/tracking")
+    public ApiSuccessResponse<DeliveryTrackingDto> trackDelivery(@PathVariable Long orderId) {
+        DeliveryTrackingDto tracking = deliveryService.getDeliveryTracking(orderId);
+        return new ApiSuccessResponse<>("Delivery tracking info", tracking);
     }
 }

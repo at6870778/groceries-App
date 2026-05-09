@@ -5,6 +5,7 @@ import com.khanago.grocery.common.enums.OrderStatus;
 import com.khanago.grocery.common.exception.ApiException;
 import com.khanago.grocery.delivery.DeliveryAssignment;
 import com.khanago.grocery.delivery.dto.AssignmentDto;
+import com.khanago.grocery.delivery.dto.DeliveryTrackingDto;
 import com.khanago.grocery.delivery.repository.DeliveryAssignmentRepository;
 import com.khanago.grocery.order.Order;
 import com.khanago.grocery.order.dto.OrderDto;
@@ -88,5 +89,20 @@ public class DeliveryService {
         }
 
         return new AssignmentDto(assignment.getId(), assignment.getOrder().getId(), assignment.getDeliveryBoy().getId(), assignment.getStatus().name());
+    }
+
+    public DeliveryTrackingDto getDeliveryTracking(Long orderId) {
+        DeliveryAssignment assignment = assignmentRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new ApiException("Delivery assignment not found for this order"));
+
+        Order order = assignment.getOrder();
+        return new DeliveryTrackingDto(
+                assignment.getId(),
+                assignment.getStatus().name(),
+                assignment.getDeliveryBoy().getId(),
+                assignment.getDeliveryBoy().getFullName(),
+                assignment.getDeliveryBoy().getPhone(),
+                order.getStatus().name()
+        );
     }
 }

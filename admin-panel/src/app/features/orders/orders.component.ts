@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -8,6 +8,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatOptionModule } from '@angular/material/core';
 import { ApiService } from '../../core/services/api.service';
+import { interval, takeUntil, Subject } from 'rxjs';
 
 interface OrderItem {
   productName: string;
@@ -40,6 +41,9 @@ interface AdminOrder {
   imports: [CommonModule, MatSnackBarModule, MatFormFieldModule, MatSelectModule, MatButtonModule, MatTableModule, MatExpansionModule, MatOptionModule],
   template: `
     <h2 class="page-title">Order Management</h2>
+    <div *ngIf="errorMsg()" style="background:#f8d7da;color:#721c24;padding:12px;border-radius:4px;margin-bottom:12px;">
+      {{ errorMsg() }}
+    </div>
     <div style="display:flex;gap:16px;align-items:center;margin-bottom:12px;">
       <mat-form-field appearance="outline" style="width:200px;">
         <mat-label>Filter by Status</mat-label>
@@ -53,6 +57,7 @@ interface AdminOrder {
           <mat-option value="CANCELLED">CANCELLED</mat-option>
         </mat-select>
       </mat-form-field>
+      <button mat-button color="primary" (click)="loadOrders(0)">🔄 Refresh</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
         <button mat-button (click)="prevPage()" [disabled]="currentPage() === 0">Previous</button>
         <span>Page {{ currentPage() + 1 }} / {{ totalPages() }}</span>
@@ -160,6 +165,9 @@ interface AdminOrder {
           </div>
         </mat-expansion-panel>
       </mat-accordion>
+      <div *ngIf="orders().length === 0" style="padding:16px;text-align:center;color:#666;">
+        No orders found. New orders will appear here.
+      </div>
     </section>
   `,
   styles: [`
@@ -191,29 +199,51 @@ interface AdminOrder {
     .delivery-delivered { background-color: #28a745; }
   `]
 })
-export class OrdersComponent implements OnInit {
+export class OrdersComponent implements OnInit, OnDestroy {
   readonly orders = signal<AdminOrder[]>([]);
   readonly deliveryBoys = signal<any[]>([]);
   readonly currentPage = signal(0);
   readonly totalPages = signal(1);
   readonly statusFilter = signal('');
+  readonly errorMsg = signal('');
+  private destroy$ = new Subject<void>();
 
   constructor(private api: ApiService, private snack: MatSnackBar) {}
 
   ngOnInit(): void {
     this.loadOrders();
-    this.api.get<any>('/admin/delivery-boys', { page: 0, size: 100 }).subscribe((res) => this.deliveryBoys.set(res.content || []));
+    this.api.get<any>('/admin/delivery-boys', { page: 0, size: 100 }).subscribe(
+      (res) => this.deliveryBoys.set(res.content || []),
+      (err) => console.error('Failed to load delivery boys', err)
+    );
+    
+    // Auto-refresh orders every 5 seconds
+    interval(5000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.loadOrders(this.currentPage()));
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   loadOrders(page = this.currentPage()) {
     const params: any = { page, size: 20 };
     const s = this.statusFilter();
     if (s) params.status = s;
-    this.api.get<any>('/admin/orders', params).subscribe((res) => {
-      this.orders.set(res.content || []);
-      this.currentPage.set(res.number ?? page);
-      this.totalPages.set(res.totalPages || 1);
-    });
+    this.api.get<any>('/admin/orders', params).subscribe(
+      (res) => {
+        this.orders.set(res.content || []);
+        this.currentPage.set(res.number ?? page);
+        this.totalPages.set(res.totalPages || 1);
+        this.errorMsg.set('');
+      },
+      (err) => {
+        this.errorMsg.set('Failed to load orders: ' + (err.error?.message || err.message));
+        console.error('Failed to load orders', err);
+      }
+    );
   }
 
   onStatusFilter(status: string) {

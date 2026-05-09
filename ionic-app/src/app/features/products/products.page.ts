@@ -431,4 +431,13 @@ export class ProductsPage implements OnInit, OnDestroy {
     const words = productName.split(' ');
     return words[0] || 'Fresh';
   }
+
+  onRefresh(event: any) {
+    const categoryId = this.route.snapshot.queryParamMap.get('categoryId');
+    const query = this.searchTerm();
+    this.loadProducts(categoryId, query);
+    setTimeout(() => {
+      event.detail.complete();
+    }, 500);
+  }
 }

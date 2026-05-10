@@ -1,0 +1,6 @@
+# Copy this file to key.properties and replace values before release signing.
+# Do not commit key.properties to git.
+storeFile=app/khanago-customer-key.jks
+storePassword=CHANGE_ME
+keyAlias=khanago-customer-key
+keyPassword=CHANGE_ME

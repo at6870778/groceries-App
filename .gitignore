@@ -41,6 +41,9 @@ logs/
 **/build/
 **/captures/
 ionic-app/android_broken_backup_*/
+ionic-app/android/*.jks
+ionic-app/android/key.properties
+backend/data/
 
 # Temporary
 *.tmp

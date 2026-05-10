@@ -18,6 +18,8 @@ www/
 *.class
 *.jar
 *.war
+# Exception: Gradle wrapper JAR must be committed for CI builds
+!ionic-app/android/gradle/wrapper/gradle-wrapper.jar
 
 # IDE/OS
 .vscode/*

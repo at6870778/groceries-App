@@ -34,6 +34,10 @@ import { AuthService } from '../../core/services/auth.service';
               <mat-label>Full Name</mat-label>
               <input matInput formControlName="fullName" placeholder="Admin User" [disabled]="loading()" />
             </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>OTP / Static Password</mat-label>
+              <input matInput formControlName="otp" placeholder="Enter OTP or static password" [disabled]="loading()" />
+            </mat-form-field>
             <button mat-flat-button color="primary" type="submit" [disabled]="loading() || form.invalid">
               {{ loading() ? '⏳ Logging in...' : '🔐 Login with OTP' }}
             </button>
@@ -46,7 +50,8 @@ import { AuthService } from '../../core/services/auth.service';
 export class LoginComponent {
   readonly form = this.fb.group({
     phone: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
-    fullName: ['', Validators.required]
+    fullName: ['', Validators.required],
+    otp: ['', [Validators.required, Validators.minLength(4)]]
   });
   readonly error = signal('');
   readonly loading = signal(false);
@@ -56,17 +61,15 @@ export class LoginComponent {
 
   submit() {
     if (this.form.invalid) {
-      this.error.set('Phone must be 10 digits and full name is required');
+      this.error.set('Phone, full name and OTP are required');
       return;
     }
-    const { phone, fullName } = this.form.getRawValue();
+    const { phone, fullName, otp } = this.form.getRawValue();
     this.loading.set(true);
-    this.loadingMsg.set('Logging in (dev mode - OTP bypass)...');
+    this.loadingMsg.set('Verifying credentials...');
     this.error.set('');
-    
-    // In dev mode, skip OTP request and go directly to verify-otp with any code
-    // The backend dev bypass will accept it
-    this.auth.login(phone!, fullName!).subscribe({
+
+    this.auth.login(phone!, fullName!, otp!).subscribe({
       next: (res) => {
         this.loading.set(false);
         this.auth.saveSession(res.data);

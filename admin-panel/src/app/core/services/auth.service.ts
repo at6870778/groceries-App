@@ -15,10 +15,10 @@ export class AuthService {
 
   constructor(private http: HttpClient, private router: Router) {}
 
-  login(phone: string, fullName: string) {
+  login(phone: string, fullName: string, otp: string) {
     return this.http.post<{ message: string; data: AuthResponse }>(`${environment.apiUrl}/auth/verify-otp`, {
       phone,
-      otp: '123456',
+      otp,
       fullName,
       role: 'ADMIN'
     });

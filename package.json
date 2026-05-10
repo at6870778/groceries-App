@@ -3,5 +3,10 @@
   "private": true,
   "scripts": {
     "build": "npm --prefix ionic-app ci --quiet && npm --prefix ionic-app run ionic:build"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
   }
 }

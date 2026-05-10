@@ -59,7 +59,7 @@ public class SecurityConfig {
             "http://localhost:4200", "http://localhost:8100",
             "http://127.0.0.1:4200", "http://127.0.0.1:8100",
             "https://orderkro.in", "https://www.orderkro.in",
-            "https://admin.orderkro.in",
+            "https://admin.orderkro.in", "https://api.orderkro.in",
             "http://72.61.170.111:4200"
         ));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));

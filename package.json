@@ -1,8 +1,7 @@
 {
-  "name": "Learning",
+  "name": "groceries-app",
   "private": true,
   "scripts": {
-    "build": "npm --prefix ionic-app run build -- --configuration production",
-    "ionic:build": "npm --prefix ionic-app run build -- --configuration production"
+    "build": "npm --prefix ionic-app ci --quiet && npm --prefix ionic-app run build -- --configuration production"
   }
 }

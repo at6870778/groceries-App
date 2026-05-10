@@ -1,0 +1,8 @@
+{
+  "appId": "com.khanago.customer",
+  "appName": "Order Kro",
+  "webDir": "ionic-app/www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

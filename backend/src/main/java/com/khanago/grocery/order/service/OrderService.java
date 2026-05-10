@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -108,6 +109,7 @@ public class OrderService {
         return toDto(order);
     }
 
+    @Transactional(readOnly = true)
     public Page<OrderDto> adminOrders(String status, int page, int size) {
         if (status == null || status.isBlank()) {
             return orderRepository.findAll(PageRequest.of(page, size)).map(this::toDto);
@@ -116,6 +118,7 @@ public class OrderService {
         return orderRepository.findByStatus(orderStatus, PageRequest.of(page, size)).map(this::toDto);
     }
 
+    @Transactional(readOnly = true)
     public Page<AdminOrderDetailDto> adminOrdersDetail(String status, int page, int size) {
         Page<Order> orders;
         if (status == null || status.isBlank()) {
@@ -156,24 +159,44 @@ public class OrderService {
     private AdminOrderDetailDto toAdminDetailDto(Order order) {
         List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());
         Optional<DeliveryAssignment> assignment = deliveryAssignmentRepository.findByOrderId(order.getId());
-        
-        String deliveryBoyName = assignment.map(da -> da.getDeliveryBoy().getFullName()).orElse("Not Assigned");
-        String deliveryStatus = assignment.map(da -> da.getStatus().name()).orElse("NOT_ASSIGNED");
-        Long assignmentId = assignment.map(DeliveryAssignment::getId).orElse(null);
-        
+
+        String deliveryBoyName = "Not Assigned";
+        String deliveryStatus = "NOT_ASSIGNED";
+        Long assignmentId = null;
+
+        if (assignment.isPresent()) {
+            DeliveryAssignment da = assignment.get();
+            assignmentId = da.getId();
+            if (da.getStatus() != null) {
+                deliveryStatus = da.getStatus().name();
+            }
+            if (da.getDeliveryBoy() != null && da.getDeliveryBoy().getFullName() != null && !da.getDeliveryBoy().getFullName().isBlank()) {
+                deliveryBoyName = da.getDeliveryBoy().getFullName();
+            }
+        }
+
         String address = order.getAddress() != null ? 
             order.getAddress().getLine1() + 
             (order.getAddress().getLine2() != null ? ", " + order.getAddress().getLine2() : "") +
             ", " + order.getAddress().getCity() + " - " + order.getAddress().getPostalCode() :
             "N/A";
+
+        String customerName = (order.getCustomer() != null && order.getCustomer().getFullName() != null)
+                ? order.getCustomer().getFullName()
+                : "Unknown Customer";
+        String customerPhone = (order.getCustomer() != null && order.getCustomer().getPhone() != null)
+                ? order.getCustomer().getPhone()
+                : "N/A";
+        String status = order.getStatus() != null ? order.getStatus().name() : "PENDING";
+        String paymentMode = order.getPaymentMode() != null ? order.getPaymentMode().name() : "N/A";
         
         return new AdminOrderDetailDto(
                 order.getId(),
-                order.getCustomer().getFullName(),
-                order.getCustomer().getPhone(),
+                customerName,
+                customerPhone,
                 address,
-                order.getStatus().name(),
-                order.getPaymentMode().name(),
+                status,
+                paymentMode,
                 order.getSubtotal(),
                 order.getDeliveryFee(),
                 order.getTotalAmount(),

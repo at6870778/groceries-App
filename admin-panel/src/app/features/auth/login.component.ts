@@ -61,29 +61,21 @@ export class LoginComponent {
     }
     const { phone, fullName } = this.form.getRawValue();
     this.loading.set(true);
-    this.loadingMsg.set('Requesting OTP...');
+    this.loadingMsg.set('Logging in (dev mode - OTP bypass)...');
     this.error.set('');
     
-    this.auth.requestOtp(phone!).subscribe({
-      next: () => {
-        this.loadingMsg.set('Verifying OTP...');
-        this.auth.login(phone!, fullName!).subscribe({
-          next: (res) => {
-            this.loading.set(false);
-            this.auth.saveSession(res.data);
-            this.router.navigateByUrl('/dashboard');
-          },
-          error: (err) => {
-            this.loading.set(false);
-            this.error.set('Login failed: ' + (err.error?.message || err.message || 'Unknown error'));
-            console.error('Login error:', err);
-          }
-        });
+    // In dev mode, skip OTP request and go directly to verify-otp with any code
+    // The backend dev bypass will accept it
+    this.auth.login(phone!, fullName!).subscribe({
+      next: (res) => {
+        this.loading.set(false);
+        this.auth.saveSession(res.data);
+        this.router.navigateByUrl('/dashboard');
       },
       error: (err) => {
         this.loading.set(false);
-        this.error.set('OTP request failed: ' + (err.error?.message || err.message || 'Backend unreachable at http://localhost:8080'));
-        console.error('OTP request error:', err);
+        this.error.set('Login failed: ' + (err.error?.message || err.message || 'Unknown error'));
+        console.error('Login error:', err);
       }
     });
   }

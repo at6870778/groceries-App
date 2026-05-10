@@ -7,8 +7,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatOptionModule } from '@angular/material/core';
+import { MatInputModule } from '@angular/material/input';
 import { ApiService } from '../../core/services/api.service';
 import { interval, takeUntil, Subject } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 
 interface OrderItem {
   productName: string;
@@ -38,7 +40,7 @@ interface AdminOrder {
 
 @Component({
   standalone: true,
-  imports: [CommonModule, MatSnackBarModule, MatFormFieldModule, MatSelectModule, MatButtonModule, MatTableModule, MatExpansionModule, MatOptionModule],
+  imports: [CommonModule, MatSnackBarModule, MatFormFieldModule, MatSelectModule, MatButtonModule, MatTableModule, MatExpansionModule, MatOptionModule, MatInputModule],
   template: `
     <h2 class="page-title">Order Management</h2>
     <div *ngIf="errorMsg()" style="background:#f8d7da;color:#721c24;padding:12px;border-radius:4px;margin-bottom:12px;">
@@ -66,7 +68,7 @@ interface AdminOrder {
     </div>
     <section class="metric-card" style="overflow:auto;">
       <mat-accordion>
-        <mat-expansion-panel *ngFor="let order of orders()" [expanded]="false">
+        <mat-expansion-panel *ngFor="let order of orders()" [expanded]="expandedOrderId() === order.id" (opened)="expandedOrderId.set(order.id)" (closed)="expandedOrderId() === order.id && expandedOrderId.set(null)">
           <mat-expansion-panel-header>
             <div style="display:flex;align-items:center;gap:16px;width:100%;">
               <strong style="min-width:80px;">Order #{{ order.id }}</strong>
@@ -128,37 +130,37 @@ interface AdminOrder {
 
             <div style="display:flex;gap:8px;margin-top:16px;">
               <mat-form-field appearance="outline" style="flex:1;">
-                <mat-select #statusSel [value]="order.status">
-                  <mat-option value="PENDING">PENDING</mat-option>
-                  <mat-option value="CONFIRMED">CONFIRMED</mat-option>
-                  <mat-option value="PREPARING">PREPARING</mat-option>
-                  <mat-option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY</mat-option>
-                  <mat-option value="DELIVERED">DELIVERED</mat-option>
-                  <mat-option value="CANCELLED">CANCELLED</mat-option>
-                </mat-select>
+                <select matNativeControl [value]="selectedOrderStatus()[order.id] ?? order.status" (change)="onOrderStatusChange(order.id, $any($event.target).value)">
+                  <option value="PENDING">PENDING</option>
+                  <option value="CONFIRMED">CONFIRMED</option>
+                  <option value="PREPARING">PREPARING</option>
+                  <option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY</option>
+                  <option value="DELIVERED">DELIVERED</option>
+                  <option value="CANCELLED">CANCELLED</option>
+                </select>
               </mat-form-field>
-              <button mat-button color="primary" (click)="updateStatus(order.id, statusSel.value)">Update Order Status</button>
+              <button mat-button color="primary" (click)="updateStatus(order.id, selectedOrderStatus()[order.id] ?? order.status)">Update Order Status</button>
             </div>
 
             <div *ngIf="order.assignmentId" style="display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid #eee;">
               <mat-form-field appearance="outline" style="flex:1;">
                 <mat-label>Delivery Progress</mat-label>
-                <mat-select #deliverySel [value]="order.deliveryStatus">
-                  <mat-option value="ASSIGNED">ASSIGNED (Rider Assigned)</mat-option>
-                  <mat-option value="PICKED">PICKED (Items Packed)</mat-option>
-                  <mat-option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY (On the Way)</mat-option>
-                  <mat-option value="DELIVERED">DELIVERED (Completed)</mat-option>
-                </mat-select>
+                <select matNativeControl #deliverySel [value]="order.deliveryStatus">
+                  <option value="ASSIGNED">ASSIGNED (Rider Assigned)</option>
+                  <option value="PICKED">PICKED (Items Packed)</option>
+                  <option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY (On the Way)</option>
+                  <option value="DELIVERED">DELIVERED (Completed)</option>
+                </select>
               </mat-form-field>
               <button mat-button color="accent" (click)="updateDeliveryStatus(order.assignmentId, deliverySel.value)">Update Delivery</button>
             </div>
 
             <div *ngIf="!order.assignmentId" style="display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid #eee;">
               <mat-form-field appearance="outline" style="flex:1;">
-                <mat-select #riderSel>
-                  <mat-option [value]="0">Select Delivery Boy</mat-option>
-                  <mat-option *ngFor="let d of deliveryBoys()" [value]="d.id">{{ d.fullName }}</mat-option>
-                </mat-select>
+                <select matNativeControl #riderSel>
+                  <option [value]="0">Select Delivery Boy</option>
+                  <option *ngFor="let d of deliveryBoys()" [value]="d.id">{{ d.fullName }}</option>
+                </select>
               </mat-form-field>
               <button mat-button color="primary" (click)="assign(order.id, riderSel.value)">Assign Rider</button>
             </div>
@@ -206,12 +208,19 @@ export class OrdersComponent implements OnInit, OnDestroy {
   readonly totalPages = signal(1);
   readonly statusFilter = signal('');
   readonly errorMsg = signal('');
+  readonly expandedOrderId = signal<number | null>(null);
+  readonly selectedOrderStatus = signal<Record<number, string>>({});
   private destroy$ = new Subject<void>();
 
-  constructor(private api: ApiService, private snack: MatSnackBar) {}
+  constructor(private api: ApiService, private snack: MatSnackBar, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
-    this.loadOrders();
+    const initialStatus = (this.route.snapshot.queryParamMap.get('status') || '').trim().toUpperCase();
+    if (initialStatus) {
+      this.statusFilter.set(initialStatus);
+    }
+
+    this.loadOrders(0);
     this.api.get<any>('/admin/delivery-boys', { page: 0, size: 100 }).subscribe(
       (res) => this.deliveryBoys.set(res.content || []),
       (err) => console.error('Failed to load delivery boys', err)
@@ -234,9 +243,18 @@ export class OrdersComponent implements OnInit, OnDestroy {
     if (s) params.status = s;
     this.api.get<any>('/admin/orders', params).subscribe(
       (res) => {
-        this.orders.set(res.content || []);
-        this.currentPage.set(res.number ?? page);
-        this.totalPages.set(res.totalPages || 1);
+        const payload = res?.data ?? res;
+        const content = payload?.content || [];
+
+        this.orders.set(content);
+        this.currentPage.set(payload?.number ?? page);
+        this.totalPages.set(payload?.totalPages || 1);
+
+        if (content.length === 0 && page > 0) {
+          this.loadOrders(0);
+          return;
+        }
+
         this.errorMsg.set('');
       },
       (err) => {
@@ -261,26 +279,60 @@ export class OrdersComponent implements OnInit, OnDestroy {
     this.loadOrders(this.currentPage() + 1);
   }
 
+  onOrderStatusChange(orderId: number, status: string) {
+    const normalizedStatus = String(status || '').trim().toUpperCase();
+    this.selectedOrderStatus.update((state) => ({ ...state, [orderId]: normalizedStatus }));
+  }
+
   updateStatus(orderId: number, status: string) {
-    this.api.patch(`/admin/orders/${orderId}/status`, { status }).subscribe(() => {
-      this.loadOrders();
-      this.snack.open('Order status updated', 'OK', { duration: 1600 });
+    const normalizedStatus = String(status || '').trim().toUpperCase();
+    if (!normalizedStatus) {
+      this.snack.open('Please select a valid status', 'OK', { duration: 1800 });
+      return;
+    }
+
+    this.api.patch(`/admin/orders/${orderId}/status`, { status: normalizedStatus }).subscribe({
+      next: () => {
+        this.orders.update((rows) => rows.map((row) => row.id === orderId ? { ...row, status: normalizedStatus } : row));
+        this.selectedOrderStatus.update((state) => ({ ...state, [orderId]: normalizedStatus }));
+        this.loadOrders();
+        this.snack.open('Order status updated', 'OK', { duration: 1600 });
+      },
+      error: (err) => {
+        this.snack.open('Failed to update order status: ' + (err?.error?.message || err?.message || 'Unknown error'), 'OK', { duration: 2800 });
+      }
     });
   }
 
   assign(orderId: number, deliveryBoyIdRaw: string) {
     const deliveryBoyId = Number(deliveryBoyIdRaw);
     if (!deliveryBoyId) return;
-    this.api.post(`/admin/orders/${orderId}/assign`, { deliveryBoyId }).subscribe(() => {
-      this.loadOrders();
-      this.snack.open('Delivery boy assigned', 'OK', { duration: 1600 });
+    this.api.post(`/admin/orders/${orderId}/assign`, { deliveryBoyId }).subscribe({
+      next: () => {
+        this.loadOrders();
+        this.snack.open('Delivery boy assigned', 'OK', { duration: 1600 });
+      },
+      error: (err) => {
+        this.snack.open('Failed to assign rider: ' + (err?.error?.message || err?.message || 'Unknown error'), 'OK', { duration: 2800 });
+      }
     });
   }
 
   updateDeliveryStatus(assignmentId: number, status: string) {
-    this.api.patch(`/admin/delivery/assignments/${assignmentId}/status`, { status }).subscribe(() => {
-      this.loadOrders();
-      this.snack.open('Delivery status updated', 'OK', { duration: 1600 });
+    const normalizedStatus = String(status || '').trim().toUpperCase();
+    if (!normalizedStatus) {
+      this.snack.open('Please select a valid delivery status', 'OK', { duration: 1800 });
+      return;
+    }
+
+    this.api.patch(`/admin/delivery/assignments/${assignmentId}/status`, { status: normalizedStatus }).subscribe({
+      next: () => {
+        this.loadOrders();
+        this.snack.open('Delivery status updated', 'OK', { duration: 1600 });
+      },
+      error: (err) => {
+        this.snack.open('Failed to update delivery status: ' + (err?.error?.message || err?.message || 'Unknown error'), 'OK', { duration: 2800 });
+      }
     });
   }
 }

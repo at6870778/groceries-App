@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonButtons, IonBackButton, IonText } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
 import { CartState } from '../../core/state/cart.state';
@@ -414,6 +415,7 @@ export class CartPage implements OnInit, OnDestroy {
 
   constructor(
     private api: ApiService, 
+    private http: HttpClient,
     public cartState: CartState,
     private activityState: ActivityState,
     public locationService: LocationService
@@ -667,11 +669,26 @@ export class CartPage implements OnInit, OnDestroy {
   }
 
   downloadBill(orderId: number) {
-    const link = document.createElement('a');
-    link.href = this.api.buildUrl(`/customer/orders/${orderId}/bill`);
-    link.download = `Order-${orderId}-receipt.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (!orderId) {
+      return;
+    }
+
+    this.http.get(this.api.buildUrl(`/customer/orders/${orderId}/bill`), { responseType: 'blob' })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob) => {
+          const objectUrl = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = objectUrl;
+          link.download = `Order-${orderId}-receipt.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(objectUrl);
+        },
+        error: (err) => {
+          this.orderMsg = this.getErrorMessage(err, '❌ Could not download receipt.');
+        }
+      });
   }
 }

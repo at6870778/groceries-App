@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -54,6 +54,10 @@ import { LocationService } from '../../core/services/location.service';
             {{ locationService.locationError() }}
           </div>
 
+          <ion-text color="success" *ngIf="successMessage">
+            <p class="success-msg">{{ successMessage }}</p>
+          </ion-text>
+
           <div class="input-group">
             <ion-item class="input-field">
               <ion-input 
@@ -79,6 +83,20 @@ import { LocationService } from '../../core/services/location.service';
             </ion-item>
           </div>
 
+          <div class="input-group" *ngIf="otpSent">
+            <ion-item class="input-field">
+              <ion-input
+                label="OTP"
+                labelPlacement="floating"
+                [(ngModel)]="otp"
+                type="tel"
+                maxlength="6"
+                placeholder="Enter 6-digit OTP">
+              </ion-input>
+            </ion-item>
+            <small class="hint">Enter the OTP received on your phone</small>
+          </div>
+
           <ion-text color="danger" *ngIf="error">
             <p class="error-msg">{{ error }}</p>
           </ion-text>
@@ -89,7 +107,17 @@ import { LocationService } from '../../core/services/location.service';
             </ion-button>
             
             <ion-button expand="block" size="large" (click)="login()" [disabled]="loading" class="continue-btn">
-              {{ loading ? '⏳ Sending OTP...' : '→ Continue' }}
+              {{ loading ? (otpSent ? '⏳ Verifying OTP...' : '⏳ Sending OTP...') : (otpSent ? '✓ Verify OTP & Continue' : '→ Send OTP') }}
+            </ion-button>
+
+            <ion-button
+              *ngIf="otpSent"
+              expand="block"
+              size="small"
+              fill="clear"
+              (click)="resendOtp()"
+              [disabled]="loading || resendSecondsRemaining > 0">
+              {{ resendSecondsRemaining > 0 ? ('Resend OTP in ' + resendSecondsRemaining + 's') : 'Resend OTP' }}
             </ion-button>
           </div>
 
@@ -304,6 +332,16 @@ import { LocationService } from '../../core/services/location.service';
       border-left: 3px solid #c62828;
     }
 
+    .success-msg {
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin: 12px 0;
+      border-left: 3px solid #2e7d32;
+    }
+
     .button-group {
       display: flex;
       flex-direction: column;
@@ -336,12 +374,17 @@ import { LocationService } from '../../core/services/location.service';
     }
   `]
 })
-export class DeliveryLoginPage {
+export class DeliveryLoginPage implements OnDestroy {
   mode: 'CUSTOMER' | 'DELIVERY_BOY' = 'CUSTOMER';
   phone = '';
   fullName = '';
+  otp = '';
+  otpSent = false;
+  resendSecondsRemaining = 0;
+  successMessage = '';
   error = '';
   loading = false;
+  private resendTimerId: number | null = null;
 
   constructor(
     private auth: AuthService, 
@@ -370,6 +413,10 @@ export class DeliveryLoginPage {
     }
   }
 
+  ngOnDestroy(): void {
+    this.clearResendTimer();
+  }
+
   /**
    * Manually detect user location
    */
@@ -384,6 +431,7 @@ export class DeliveryLoginPage {
 
   login() {
     this.error = '';
+    this.successMessage = '';
     if (!/^[0-9]{10}$/.test(this.phone)) {
       this.error = '📱 Please enter a valid 10-digit phone number.';
       return;
@@ -392,11 +440,31 @@ export class DeliveryLoginPage {
       this.error = '✍️ Please enter your name.';
       return;
     }
+
+    if (this.otpSent && !/^[0-9]{6}$/.test(this.otp)) {
+      this.error = '🔐 Please enter a valid 6-digit OTP.';
+      return;
+    }
     
     this.loading = true;
-    this.auth.requestOtp(this.phone).subscribe({
-      next: () => {
-        this.auth.loginWithRole(this.phone, this.fullName, this.mode).subscribe({
+    if (!this.otpSent) {
+      this.auth.requestOtp(this.phone).subscribe({
+        next: () => {
+          this.otpSent = true;
+          this.otp = '';
+          this.startResendCooldown();
+          this.successMessage = '✅ OTP sent successfully. Check your phone and enter the code below.';
+          this.loading = false;
+        },
+        error: (err) => {
+          this.error = this.getErrorMessage(err, '🌐 Could not send OTP. Check your connection.');
+          this.loading = false;
+        }
+      });
+      return;
+    }
+
+    this.auth.loginWithRole(this.phone, this.fullName, this.mode, this.otp).subscribe({
           next: (res) => {
             const token = res?.data?.token || res?.data?.accessToken;
             if (!token) {
@@ -429,12 +497,48 @@ export class DeliveryLoginPage {
             this.error = this.getErrorMessage(err, '❌ Login failed. Please try again.');
             this.loading = false; 
           }
-        });
+    });
+  }
+
+  resendOtp() {
+    if (!this.otpSent || this.resendSecondsRemaining > 0 || this.loading) {
+      return;
+    }
+
+    this.error = '';
+    this.loading = true;
+    this.auth.requestOtp(this.phone).subscribe({
+      next: () => {
+        this.otp = '';
+        this.startResendCooldown();
+        this.successMessage = '✅ OTP resent successfully.';
+        this.loading = false;
       },
       error: (err) => {
-        this.error = this.getErrorMessage(err, '🌐 Could not send OTP. Check your connection.');
-        this.loading = false; 
+        this.error = this.getErrorMessage(err, '🌐 Could not resend OTP. Check your connection.');
+        this.loading = false;
       }
     });
+  }
+
+  private startResendCooldown(seconds: number = 30) {
+            this.successMessage = '✅ OTP verified successfully.';
+    this.clearResendTimer();
+    this.resendSecondsRemaining = seconds;
+
+    this.resendTimerId = window.setInterval(() => {
+      this.resendSecondsRemaining -= 1;
+      if (this.resendSecondsRemaining <= 0) {
+        this.resendSecondsRemaining = 0;
+        this.clearResendTimer();
+      }
+    }, 1000);
+  }
+
+  private clearResendTimer() {
+    if (this.resendTimerId !== null) {
+      window.clearInterval(this.resendTimerId);
+      this.resendTimerId = null;
+    }
   }
 }

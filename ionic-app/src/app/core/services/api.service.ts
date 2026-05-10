@@ -11,24 +11,14 @@ export class ApiService {
 
   private resolveBaseUrl(): string {
     const configuredUrl = (environment.apiUrl || '').replace(/\/$/, '');
-    if (!Capacitor.isNativePlatform()) {
-      try {
-        const parsed = new URL(configuredUrl);
-        const isLocalHost = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
-        if (!isLocalHost) {
-          return configuredUrl;
-        }
-
-        return `${window.location.origin}${parsed.pathname}`.replace(/\/$/, '');
-      } catch {
-        return configuredUrl;
-      }
-    }
-
     try {
       const parsed = new URL(configuredUrl);
       const isLocalHost = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
       if (!isLocalHost) {
+        return configuredUrl;
+      }
+
+      if (!Capacitor.isNativePlatform()) {
         return configuredUrl;
       }
 

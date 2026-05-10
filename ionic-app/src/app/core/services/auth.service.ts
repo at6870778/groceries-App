@@ -21,12 +21,8 @@ export class AuthService {
     try {
       const parsed = new URL(configuredUrl);
       const isLocalHost = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
-      if (!isLocalHost) {
+      if (!isLocalHost || !Capacitor.isNativePlatform()) {
         return configuredUrl;
-      }
-
-      if (!Capacitor.isNativePlatform()) {
-        return `${window.location.origin}${parsed.pathname}`.replace(/\/$/, '');
       }
 
       const nativeHost = Capacitor.getPlatform() === 'android' ? '10.0.2.2' : parsed.hostname;
@@ -36,14 +32,14 @@ export class AuthService {
     }
   }
 
-  login(phone: string, fullName: string) {
-    return this.loginWithRole(phone, fullName, 'CUSTOMER');
+  login(phone: string, fullName: string, otp: string) {
+    return this.loginWithRole(phone, fullName, 'CUSTOMER', otp);
   }
 
-  loginWithRole(phone: string, fullName: string, role: AppRole) {
+  loginWithRole(phone: string, fullName: string, role: AppRole, otp: string) {
     return this.http.post<{ message: string; data: any }>(`${this.baseUrl}/auth/verify-otp`, {
       phone,
-      otp: '123456',
+      otp,
       fullName,
       role
     });

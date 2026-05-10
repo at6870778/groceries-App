@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:grocerydb;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:file:./data/grocerydb;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -19,6 +19,8 @@ spring:
     locations: classpath:db/migration
 
 app:
+  auth:
+    accept-any-otp: true
   jwt:
     secret: dev-secret-key-dev-secret-key-1234567890
     expiry-minutes: 1440
@@ -26,5 +28,7 @@ app:
   razorpay:
     key-id: ${RAZORPAY_KEY_ID:rzp_test_replace_me}
     key-secret: ${RAZORPAY_KEY_SECRET:replace_with_test_secret}
+  msg91:
+    trust-all-ssl: true
   cors:
-    allowed-origins: http://localhost:4200,http://localhost:8100,http://localhost:8101,http://localhost:8102,http://*:8102
+    allowed-origins: http://localhost:*,http://127.0.0.1:*,http://localhost:4200,http://localhost:8100,http://localhost:8101,http://localhost:8102,http://localhost:65477,http://localhost:65478

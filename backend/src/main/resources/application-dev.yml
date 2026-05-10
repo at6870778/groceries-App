@@ -21,6 +21,7 @@ spring:
 app:
   auth:
     accept-any-otp: true
+    static-otp: ${STATIC_OTP:123456}
   jwt:
     secret: dev-secret-key-dev-secret-key-1234567890
     expiry-minutes: 1440

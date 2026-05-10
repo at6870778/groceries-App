@@ -29,6 +29,7 @@ public class AppProperties {
     @Setter
     public static class Auth {
         private boolean acceptAnyOtp;
+        private String staticOtp = "123456";
     }
 
     @Getter

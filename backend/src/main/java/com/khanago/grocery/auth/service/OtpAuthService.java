@@ -110,6 +110,7 @@ public class OtpAuthService {
     public AuthResponseDto verifyOtp(OtpVerifyDto request, String clientIp) {
         String phone = request.phone();
         boolean acceptAnyOtp = appProperties.getAuth().isAcceptAnyOtp();
+        String staticOtp = appProperties.getAuth().getStaticOtp();
 
         // ── Role guard ────────────────────────────────────────────────────────────
         // ADMIN and DELIVERY_BOY cannot self-register; they must already exist in DB
@@ -157,6 +158,10 @@ public class OtpAuthService {
         }
 
         if (acceptAnyOtp) {
+            if (!request.otp().equals(staticOtp)) {
+                writeAuditLog(phone, "VERIFY_STATIC_OTP_FAILED", clientIp, "Wrong static OTP entered");
+                throw new ApiException("Invalid OTP.");
+            }
             if (record == null) {
                 writeAuditLog(phone, "VERIFY_BYPASS_NO_OTP", clientIp,
                         "No active OTP record required because dev bypass is enabled for " + roleName);

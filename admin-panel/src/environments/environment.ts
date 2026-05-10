@@ -9,7 +9,7 @@ const resolveApiUrl = () => {
     return 'http://localhost:8080/api';
   }
 
-  if (hostname === 'admin.orderkro.in') {
+  if (hostname === 'admin.orderkro.in' || hostname === 'orderkro.in' || hostname === 'www.orderkro.in') {
     return 'https://api.orderkro.in/api';
   }
 

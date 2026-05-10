@@ -4,5 +4,8 @@
   "webDir": "ionic-app/www",
   "server": {
     "androidScheme": "https"
+  },
+  "android": {
+    "path": "ionic-app/android"
   }
 }

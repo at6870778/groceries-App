@@ -3,17 +3,6 @@
   "integrations": {
     "capacitor": {}
   },
-  "type": "angular",
-  "projects": {
-    "app": {
-      "name": "khanago-ionic-app"
-    }
-  },
-  "proxies": [
-    {
-      "path": "/api",
-      "proxyUrl": "http://localhost:8080/api"
-    }
-  ]
+  "type": "angular"
 }
 

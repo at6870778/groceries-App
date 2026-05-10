@@ -5,6 +5,7 @@
   "scripts": {
     "start": "ionic serve",
     "build": "ionic build",
+    "ionic:build": "ng build --configuration production",
     "android": "ionic capacitor run android"
   },
   "dependencies": {

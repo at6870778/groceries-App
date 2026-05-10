@@ -191,7 +191,7 @@ public class OtpAuthService {
         if (user.getFullName() == null || user.getFullName().isBlank()) {
             user.setFullName(request.fullName());
         }
-        user.setRoles(Set.of(role));
+        user.setRoles(new java.util.HashSet<>(Set.of(role)));
         user = userRepository.save(user);
 
         // ── Issue JWT + refresh token ─────────────────────────────────────────────

@@ -1,11 +1,9 @@
-version: '3.9'
-
 services:
   mysql:
     image: mysql:8.4
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: grocery_mvp
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:-grocery_mvp}
     ports:
       - "3306:3306"
     volumes:
@@ -17,17 +15,19 @@ services:
       - mysql
     environment:
       DB_HOST: mysql
-      DB_PORT: 3306
-      DB_NAME: grocery_mvp
-      DB_USER: root
-      DB_PASSWORD: root
-      JWT_SECRET: change-me-to-super-secret-32-byte-minimum-token-key
-      JWT_EXPIRY_MINUTES: 1440
-      JWT_REFRESH_EXPIRY_DAYS: 30
-      MSG91_AUTH_KEY: ${MSG91_AUTH_KEY:}
-      MSG91_TEMPLATE_ID: ${MSG91_TEMPLATE_ID:}
-      MSG91_SENDER_ID: ${MSG91_SENDER_ID:KHNAGO}
-      CORS_ALLOWED_ORIGINS: http://localhost:4200,http://localhost:8100
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-grocery_mvp}
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      JWT_SECRET: ${JWT_SECRET:-changeme-secret-32-chars-minimum}
+      JWT_EXPIRY_MINUTES: ${JWT_EXPIRY_MINUTES:-1440}
+      JWT_REFRESH_EXPIRY_DAYS: ${JWT_REFRESH_EXPIRY_DAYS:-30}
+      MSG91_AUTH_KEY: ${MSG91_AUTH_KEY:-}
+      MSG91_TEMPLATE_ID: ${MSG91_TEMPLATE_ID:-}
+      MSG91_SENDER_ID: ${MSG91_SENDER_ID:-ORDKRO}
+      MSG91_COUNTRY_CODE: ${MSG91_COUNTRY_CODE:-91}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200,http://localhost:8100}
+      APP_PORT: ${APP_PORT:-8080}
     ports:
       - "8080:8080"
 

@@ -55,7 +55,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList("http://localhost:4200", "http://localhost:8100", "http://127.0.0.1:4200", "http://127.0.0.1:8100"));
+        config.setAllowedOrigins(Arrays.asList(
+            "http://localhost:4200", "http://localhost:8100",
+            "http://127.0.0.1:4200", "http://127.0.0.1:8100",
+            "https://orderkro.in", "https://www.orderkro.in",
+            "https://admin.orderkro.in",
+            "http://72.61.170.111:4200"
+        ));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
         config.setAllowCredentials(true);

@@ -1,0 +1,13 @@
+{
+  "defaultProject": "customerApp",
+  "projects": {
+    "customerApp": {
+      "name": "OrderKro",
+      "integrations": {
+        "capacitor": {}
+      },
+      "type": "angular",
+      "root": "ionic-app"
+    }
+  }
+}

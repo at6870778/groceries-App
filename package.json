@@ -1,0 +1,7 @@
+{
+  "name": "Learning",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix ionic-app run build -- --configuration production"
+  }
+}

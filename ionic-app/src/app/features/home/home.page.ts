@@ -590,6 +590,9 @@ import { takeUntil } from 'rxjs/operators';
       font-weight: 700;
       min-height: 34px;
       font-size: 0.8rem;
+      overflow: hidden;
+      --padding-start: 6px;
+      --padding-end: 6px;
     }
     /* Blinkit-style stepper */
     .stepper {
@@ -1015,7 +1018,7 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   cartQty(productId: number): number {
-    const item = this.cartState.items().find(i => i.productId === productId || i.id === productId);
+    const item = this.cartState.items().find(i => Number(i.productId) === Number(productId));
     return item ? Number(item.quantity || 0) : 0;
   }
 

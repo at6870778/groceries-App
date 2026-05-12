@@ -1,14 +1,14 @@
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonBackButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonSpinner } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonBackButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonSpinner, IonButton } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
 import { Subject, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, IonContent, IonHeader, IonTitle, IonToolbar, IonBackButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonSpinner],
+  imports: [CommonModule, IonContent, IonHeader, IonTitle, IonToolbar, IonBackButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonSpinner, IonButton],
   template: `
     <ion-header>
       <ion-toolbar>
@@ -355,7 +355,7 @@ export class DeliveryTrackingPage implements OnInit, OnDestroy {
   readonly trackingError = signal<boolean>(false);
   readonly orderError = signal<boolean>(false);
   private destroy$ = new Subject<void>();
-  private orderId: number = 0;
+  orderId: number = 0;
 
   constructor(
     private api: ApiService,

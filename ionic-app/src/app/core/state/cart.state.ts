@@ -40,7 +40,8 @@ export class CartState {
 
   addOrIncrement(product: { id: number; name: string; sellingPrice: number; unit?: string }) {
     const next = [...this.items()];
-    const existing = next.find((item) => item.productId === product.id || item.id === product.id);
+    // Always match by productId — never by cart row id to avoid collisions
+    const existing = next.find((item) => Number(item.productId) === Number(product.id));
 
     if (existing) {
       const qty = Number(existing.quantity || 0) + 1;
@@ -53,7 +54,6 @@ export class CartState {
 
     const unitPrice = Number(product.sellingPrice || 0);
     next.push({
-      id: product.id,
       productId: product.id,
       name: product.name,
       unit: product.unit || '',
@@ -70,7 +70,7 @@ export class CartState {
 
   removeOrDecrement(product: { id: number }) {
     const next = [...this.items()];
-    const idx = next.findIndex(i => i.productId === product.id || i.id === product.id);
+    const idx = next.findIndex(i => Number(i.productId) === Number(product.id));
     if (idx === -1) return;
     const qty = Number(next[idx].quantity || 0) - 1;
     if (qty <= 0) {

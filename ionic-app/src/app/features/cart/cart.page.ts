@@ -696,9 +696,12 @@ export class CartPage implements OnInit, OnDestroy {
     this.ensureLocationDetected();
   }
 
-  ngOnInit(): void { 
+  ngOnInit(): void {
     this.checkoutSuccess.set(false);
     this.checkoutStep.set('cart');
+  }
+
+  ionViewWillEnter(): void {
     this.loadCart();
   }
 
@@ -725,18 +728,29 @@ export class CartPage implements OnInit, OnDestroy {
   }
 
   incrementItem(item: any) {
-    this.cartState.addOrIncrement({ id: item.productId || item.id, name: item.name, sellingPrice: item.unitPrice, unit: item.unit });
-    this.api.post('/customer/cart/items', { productId: item.productId || item.id, quantity: 1 })
-      .pipe(takeUntil(this.destroy$)).subscribe({ error: () => {} });
+    const pid = Number(item.productId);
+    this.cartState.addOrIncrement({ id: pid, name: item.name, sellingPrice: item.unitPrice, unit: item.unit });
+    this.api.post('/customer/cart/items', { productId: pid, quantity: 1 })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (cart: any) => {
+          if (cart?.items) this.cartState.setItems(cart.items);
+        },
+        error: () => {}
+      });
   }
 
   decrementItem(item: any) {
-    this.cartState.removeOrDecrement({ id: item.productId || item.id });
-    this.api.post('/customer/cart/items', { productId: item.productId || item.id, quantity: -1 })
-      .pipe(takeUntil(this.destroy$)).subscribe({ error: () => {} });
-  }
-
-  private readonly productPhotoByKeyword: Record<string, string> = {
+    const pid = Number(item.productId);
+    this.cartState.removeOrDecrement({ id: pid });
+    this.api.post('/customer/cart/items', { productId: pid, quantity: -1 })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (cart: any) => {
+          if (cart?.items) this.cartState.setItems(cart.items);
+        },
+        error: () => {} // local state already updated
+      });
     banana: 'assets/items/banana.svg', milk: 'assets/items/milk.svg',
     tomato: 'assets/items/tomato.svg', bread: 'assets/items/bread.svg',
     juice: 'assets/items/juice.svg', chips: 'assets/items/chips.svg',

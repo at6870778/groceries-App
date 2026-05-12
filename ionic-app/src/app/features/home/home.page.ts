@@ -70,7 +70,7 @@ import { takeUntil } from 'rxjs/operators';
           <div class="search-query-chip">Showing results for "{{ searchTerm().trim() }}"</div>
 
           <div class="product-grid" *ngIf="filteredProducts().length > 0; else noSearchResults">
-            <ion-card class="product-card premium" *ngFor="let p of filteredProducts().slice(0, 8); let i = index" [style.animationDelay.ms]="i * 45" button="true" [routerLink]="['/products']" [queryParams]="{ query: p.name }">
+            <ion-card class="product-card premium" *ngFor="let p of filteredProducts().slice(0, 8); let i = index" [style.animationDelay.ms]="i * 45" [routerLink]="['/products']" [queryParams]="{ query: p.name }">
               <div class="card-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
               <div class="product-art" [style.background]="p.imageUrl ? '#fff' : productBg(p)">
                 <img class="art-image" [class.photo-img]="p.imageUrl" [src]="productImage(p)" [alt]="p.name">
@@ -83,9 +83,9 @@ import { takeUntil } from 'rxjs/operators';
                   <span class="original-price" *ngIf="getDiscount(p) > 0">₹{{ getOriginalPrice(p) }}</span>
                   <span class="sale-price">₹{{ p.sellingPrice }}</span>
                 </div>
-                <div class="card-actions">
+                <div class="card-actions" (click)="$event.stopPropagation()">
                   <ng-container *ngIf="cartQty(p.id) === 0; else stepper1">
-                    <ion-button size="small" class="add-btn" (click)="$event.stopPropagation(); addToCart(p)">
+                    <ion-button size="small" class="add-btn" (click)="addToCart(p)">
                       + Add
                     </ion-button>
                   </ng-container>
@@ -96,7 +96,7 @@ import { takeUntil } from 'rxjs/operators';
                       <button class="step-btn" (click)="addToCart(p)">+</button>
                     </div>
                   </ng-template>
-                  <ion-button size="small" class="buy-now-btn" (click)="$event.stopPropagation(); buyNow(p)" [disabled]="adding() === p.id">
+                  <ion-button size="small" class="buy-now-btn" (click)="buyNow(p)" [disabled]="adding() === p.id">
                     {{ adding() === p.id ? '...' : 'Buy' }}
                   </ion-button>
                 </div>
@@ -159,7 +159,7 @@ import { takeUntil } from 'rxjs/operators';
             <ion-button fill="clear" size="small" (click)="openSearch(searchTerm())">View More</ion-button>
           </div>
           <div class="product-grid" *ngIf="featuredProducts().length > 0; else noItems">
-            <ion-card class="product-card premium" *ngFor="let p of featuredProducts(); let i = index" [style.animationDelay.ms]="i * 55" button="true" [routerLink]="['/products']" [queryParams]="{ query: p.name }">
+            <ion-card class="product-card premium" *ngFor="let p of featuredProducts(); let i = index" [style.animationDelay.ms]="i * 55" [routerLink]="['/products']" [queryParams]="{ query: p.name }">
               <div class="card-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
               <div class="product-art" [style.background]="p.imageUrl ? '#fff' : productBg(p)">
                 <img class="art-image" [class.photo-img]="p.imageUrl" [src]="productImage(p)" [alt]="p.name">
@@ -172,9 +172,9 @@ import { takeUntil } from 'rxjs/operators';
                   <span class="original-price" *ngIf="getDiscount(p) > 0">₹{{ getOriginalPrice(p) }}</span>
                   <span class="sale-price">₹{{ p.sellingPrice }}</span>
                 </div>
-                <div class="card-actions">
+                <div class="card-actions" (click)="$event.stopPropagation()">
                   <ng-container *ngIf="cartQty(p.id) === 0; else stepper2">
-                    <ion-button size="small" class="add-btn" (click)="$event.stopPropagation(); addToCart(p)">
+                    <ion-button size="small" class="add-btn" (click)="addToCart(p)">
                       + Add
                     </ion-button>
                   </ng-container>
@@ -185,7 +185,7 @@ import { takeUntil } from 'rxjs/operators';
                       <button class="step-btn" (click)="addToCart(p)">+</button>
                     </div>
                   </ng-template>
-                  <ion-button size="small" class="buy-now-btn" (click)="$event.stopPropagation(); buyNow(p)" [disabled]="adding() === p.id">
+                  <ion-button size="small" class="buy-now-btn" (click)="buyNow(p)" [disabled]="adding() === p.id">
                     {{ adding() === p.id ? '...' : 'Buy' }}
                   </ion-button>
                 </div>
@@ -548,6 +548,7 @@ import { takeUntil } from 'rxjs/operators';
       animation: rise 0.5s ease both;
       transition: all 0.3s ease;
       position: relative;
+      cursor: pointer;
     }
     .product-card:hover {
       transform: translateY(-4px);

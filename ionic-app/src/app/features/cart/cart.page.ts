@@ -745,8 +745,7 @@ export class CartPage implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {},
-        error: () => { this.loadCart(); }, // reload only on error
-        error: () => {} // local state already updated
+        error: () => { this.loadCart(); }
       });
   }
 

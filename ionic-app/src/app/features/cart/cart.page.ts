@@ -800,11 +800,12 @@ export class CartPage implements OnInit, OnDestroy {
   };
 
   productImage(item: any): string {
-    if (item?.imageUrl) return item.imageUrl;
+    // Only trust imageUrl if it's a real HTTP URL (not a broken local asset path)
+    if (item?.imageUrl && String(item.imageUrl).startsWith('http')) return item.imageUrl;
     const name = String(item?.name || '').toLowerCase();
     const match = Object.keys(this.productPhotoByKeyword).find(k => name.includes(k));
     return match ? this.productPhotoByKeyword[match]
-      : 'assets/items/placeholder.svg';
+      : 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Oranges_-_whole-halved-segment.jpg/960px-Oranges_-_whole-halved-segment.jpg';
   }
 
   scaledUnit(unit: string, qty: number): string {

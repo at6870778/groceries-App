@@ -46,16 +46,18 @@ jobs:
 
       - name: Prepare signing files (optional)
         shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+          if [ -n "$KEYSTORE_BASE64" ]; then
             KEYSTORE_PATH="$PWD/android/app/release-keystore.jks"
-            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$KEYSTORE_PATH"
-            cat > android/key.properties <<EOF
-storeFile=$KEYSTORE_PATH
-storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}
-keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-EOF
+            echo "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_PATH"
+            printf "storeFile=%s\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n" \
+              "$KEYSTORE_PATH" "$STORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" \
+              > android/key.properties
             echo "SIGNING_READY=true" >> $GITHUB_ENV
           else
             echo "SIGNING_READY=false" >> $GITHUB_ENV

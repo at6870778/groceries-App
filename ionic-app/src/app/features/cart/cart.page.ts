@@ -751,20 +751,24 @@ export class CartPage implements OnInit, OnDestroy {
 
   incrementItem(item: any) {
     const pid = Number(item.productId);
+    const newQty = Number(item.quantity || 0) + 1;
     this.cartState.addOrIncrement({ id: pid, name: item.name, sellingPrice: item.unitPrice, unit: item.unit });
-    this.api.post('/customer/cart/items', { productId: pid, quantity: 1 })
+    this.api.post('/customer/cart/items', { productId: pid, quantity: newQty })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {},
-        error: () => { this.loadCart(); } // reload only on error
+        error: () => { this.loadCart(); }
       });
   }
 
   decrementItem(item: any) {
     const pid = Number(item.productId);
+    const currentQty = Number(item.quantity || 1);
     this.cartState.removeOrDecrement({ id: pid });
-    this.api.post('/customer/cart/items', { productId: pid, quantity: -1 })
-      .pipe(takeUntil(this.destroy$))
+    const request$ = currentQty <= 1
+      ? this.api.delete(`/customer/cart/items/${pid}`)
+      : this.api.post('/customer/cart/items', { productId: pid, quantity: currentQty - 1 });
+    request$.pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {},
         error: () => { this.loadCart(); }

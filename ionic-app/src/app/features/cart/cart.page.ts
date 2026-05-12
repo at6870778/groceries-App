@@ -5,7 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonButtons, IonBackButton, IonText } from '@ionic/angular/standalone';
+import { IonContent, IonFooter, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonButtons, IonBackButton, IonText } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
 import { CartState } from '../../core/state/cart.state';
 import { ActivityState } from '../../core/state/activity.state';
@@ -21,7 +21,7 @@ declare global {
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, IonContent, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonButtons, IonBackButton, IonText],
+  imports: [CommonModule, RouterLink, IonContent, IonFooter, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonButtons, IonBackButton, IonText],
   template: `
     <ion-header>
       <ion-toolbar>
@@ -31,7 +31,7 @@ declare global {
         <ion-title>My Cart</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content [scrollEvents]="true" [fullscreen]="false" class="ion-padding" style="--padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px))">
+    <ion-content [scrollEvents]="true" [fullscreen]="false" class="ion-padding" style="--padding-bottom: 16px">
       <ng-container *ngIf="checkoutSuccess(); else cartOrEmpty">
         <div class="success-card">
           <div class="success-emoji">✅</div>
@@ -100,9 +100,6 @@ declare global {
           </div>
 
           <p *ngIf="orderMsg" style="color:red;text-align:center;margin:8px 0;">{{ orderMsg }}</p>
-          <ion-button expand="block" class="proceed-btn" (click)="proceedToPayment()" [disabled]="fetchingFee()">
-            {{ fetchingFee() ? 'Calculating delivery fee...' : 'Proceed to Payment →' }}
-          </ion-button>
         </ng-container>
 
         <!-- ===== STEP 2: PAYMENT ===== -->
@@ -175,9 +172,6 @@ declare global {
             </div>
           </div>
 
-          <ion-button expand="block" style="margin-top:16px;" (click)="checkout()" [disabled]="checking || !canCheckout() || confirmingCod()">
-            {{ checking ? 'Placing Order...' : paymentMode() === 'UPI' ? 'Confirm UPI Payment & Place Order' : 'Confirm COD Order' }}
-          </ion-button>
           <p *ngIf="orderMsg" [style.color]="orderMsg.includes('✅') ? 'green' : 'red'" style="text-align:center;margin-top:12px;">{{ orderMsg }}</p>
         </ng-container>
 
@@ -191,6 +185,18 @@ declare global {
         </div>
       </ng-template>
     </ion-content>
+
+    <!-- Sticky footer: always above system nav bar -->
+    <ion-footer *ngIf="!checkoutSuccess() && cartState.items().length > 0">
+      <ion-toolbar class="footer-toolbar">
+        <ion-button *ngIf="checkoutStep() === 'cart'" expand="block" class="proceed-btn" (click)="proceedToPayment()" [disabled]="fetchingFee()">
+          {{ fetchingFee() ? 'Calculating delivery fee...' : 'Proceed to Payment →' }}
+        </ion-button>
+        <ion-button *ngIf="checkoutStep() === 'payment'" expand="block" class="checkout-btn" (click)="checkout()" [disabled]="checking || !canCheckout() || confirmingCod()">
+          {{ checking ? 'Placing Order...' : paymentMode() === 'UPI' ? 'Confirm UPI Payment & Place Order' : 'Confirm COD Order' }}
+        </ion-button>
+      </ion-toolbar>
+    </ion-footer>
   `,
   styles: [`
     .success-card {
@@ -617,11 +623,27 @@ declare global {
       font-size: 1rem;
       color: #1a1a1a;
     }
+    .footer-toolbar {
+      --background: #fff;
+      --padding-start: 12px;
+      --padding-end: 12px;
+      --padding-top: 8px;
+      --padding-bottom: 8px;
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+    }
     .proceed-btn {
       --background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
       --border-radius: 14px;
       font-weight: 700;
       font-size: 1rem;
+      margin: 0;
+    }
+    .checkout-btn {
+      --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --border-radius: 14px;
+      font-weight: 700;
+      font-size: 1rem;
+      margin: 0;
     }
     /* Step 2 back button + order chip */
     .back-step-btn {

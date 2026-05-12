@@ -48,13 +48,14 @@ jobs:
         shell: bash
         run: |
           if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
-            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release-keystore.jks
+            KEYSTORE_PATH="$PWD/android/app/release-keystore.jks"
+            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$KEYSTORE_PATH"
             cat > android/key.properties <<EOF
-            storeFile=app/release-keystore.jks
-            storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}
-            keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-            keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-            EOF
+storeFile=$KEYSTORE_PATH
+storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}
+keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+EOF
             echo "SIGNING_READY=true" >> $GITHUB_ENV
           else
             echo "SIGNING_READY=false" >> $GITHUB_ENV

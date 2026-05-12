@@ -4,13 +4,14 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonBadge, IonToast, IonButtons, IonBackButton, IonSearchbar, IonRefresher, IonRefresherContent } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
 import { CartState } from '../../core/state/cart.state';
+import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component';
 import { ActivityState } from '../../core/state/activity.state';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonBadge, IonToast, IonButtons, IonBackButton, IonSearchbar, IonRefresher, IonRefresherContent],
+  imports: [CommonModule, RouterLink, IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonBadge, IonToast, IonButtons, IonBackButton, IonSearchbar, IonRefresher, IonRefresherContent, BottomNavComponent],
   template: `
     <ion-header>
       <ion-toolbar>
@@ -32,7 +33,7 @@ import { takeUntil } from 'rxjs/operators';
         </ion-searchbar>
       </ion-toolbar>
     </ion-header>
-    <ion-content [scrollEvents]="true" [fullscreen]="false" class="products-content ion-padding">
+    <ion-content [scrollEvents]="true" [fullscreen]="false" class="products-content ion-padding" style="--padding-bottom: 72px;">
       <ion-refresher slot="fixed" (ionRefresh)="onRefresh($event)">
         <ion-refresher-content></ion-refresher-content>
       </ion-refresher>
@@ -48,18 +49,16 @@ import { takeUntil } from 'rxjs/operators';
 
       <div class="grid" *ngIf="!loading() && products().length > 0">
         <article class="item" *ngFor="let p of products(); let i = index" [style.animationDelay.ms]="i * 45">
-          <div class="discount-badge" *ngIf="getDiscount(p.sellingPrice) > 0">
-            <span>{{ getDiscount(p.sellingPrice) }}%</span>
-          </div>
-          <div class="item-art" [style.background]="productBg(p)">
-            <img class="art-image" [src]="productImage(p)" [alt]="p.name">
+          <div class="item-art" [class.has-photo]="p.imageUrl" [style.background]="p.imageUrl ? '#fff' : productBg(p)">
+            <div class="discount-badge" *ngIf="+p.mrp > +p.sellingPrice">{{ getDiscount(p) }}%</div>
+            <img class="art-image" [class.photo-img]="p.imageUrl" [src]="productImage(p)" [alt]="p.name">
           </div>
           <div class="meta">
             <div class="brand">{{ getBrandName(p.name) }}</div>
             <div class="name">{{ p.name }}</div>
             <div class="unit">{{ p.unit }}</div>
             <div class="pricing">
-              <span class="original-price" *ngIf="getDiscount(p.sellingPrice) > 0">₹{{ getOriginalPrice(p.sellingPrice) }}</span>
+              <span class="original-price" *ngIf="+p.mrp > +p.sellingPrice">₹{{ p.mrp }}</span>
               <span class="sale-price">₹{{ p.sellingPrice }}</span>
             </div>
             <div class="delivery-time">📦 10 mins</div>
@@ -77,6 +76,7 @@ import { takeUntil } from 'rxjs/operators';
         </article>
       </div>
     </ion-content>
+    <app-bottom-nav></app-bottom-nav>
   `,
   styles: [`
     .sticky-search-toolbar {
@@ -103,9 +103,10 @@ import { takeUntil } from 'rxjs/operators';
       padding-bottom: 30px;
     }
     .item {
+      position: relative;
       border: 1px solid #e7edf6;
       border-radius: 14px;
-      overflow: hidden;
+      overflow: visible;
       background: #fff;
       box-shadow: 0 8px 24px rgba(26, 62, 109, 0.08);
       animation: rise .45s ease both;
@@ -136,6 +137,9 @@ import { takeUntil } from 'rxjs/operators';
       background: rgba(255, 255, 255, 0.28);
       filter: blur(2px);
     }
+    .item-art.has-photo::before {
+      display: none;
+    }
     .art-image {
       position: relative;
       z-index: 1;
@@ -144,6 +148,17 @@ import { takeUntil } from 'rxjs/operators';
       object-fit: contain;
       filter: drop-shadow(0 6px 8px rgba(0,0,0,.12));
       transform: translateY(-1px);
+    }
+    .art-image.photo-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: none;
+      transform: none;
+      border-radius: 0;
+      z-index: 2;
     }
     .art-label {
       position: relative;
@@ -225,20 +240,20 @@ import { takeUntil } from 'rxjs/operators';
     }
     .discount-badge {
       position: absolute;
-      top: 8px;
-      right: 8px;
+      top: 6px;
+      right: 6px;
       background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
       color: white;
-      width: 42px;
-      height: 42px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 0.9rem;
-      z-index: 2;
-      box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+      font-size: 0.78rem;
+      z-index: 10;
+      box-shadow: 0 4px 12px rgba(255, 107, 107, 0.45);
     }
     .price { color: #154172; font-weight: 700; }
     @keyframes rise {
@@ -290,7 +305,7 @@ export class ProductsPage implements OnInit, OnDestroy {
     const name = String(product?.name || '').toLowerCase();
     const match = Object.keys(this.productPhotoByKeyword).find((k) => name.includes(k));
     if (match) return this.productPhotoByKeyword[match];
-    return 'https://upload.wikimedia.org/wikipedia/commons/d/de/Bananavarieties.jpg';
+    return 'assets/items/placeholder.svg';
   }
 
   constructor(
@@ -418,13 +433,13 @@ export class ProductsPage implements OnInit, OnDestroy {
       });
   }
 
-  getDiscount(sellingPrice: number): number {
-    const basePrice = sellingPrice * 1.3;
-    return Math.round(((basePrice - sellingPrice) / basePrice) * 100);
+  getDiscount(product: any): number {
+    if (!product?.mrp || +product.mrp <= +product.sellingPrice) return 0;
+    return Math.round(((+product.mrp - +product.sellingPrice) / +product.mrp) * 100);
   }
 
-  getOriginalPrice(sellingPrice: number): number {
-    return Math.round(sellingPrice * 1.3);
+  getOriginalPrice(product: any): number {
+    return product?.mrp || 0;
   }
 
   getBrandName(productName: string): string {

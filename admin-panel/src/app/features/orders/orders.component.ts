@@ -67,8 +67,8 @@ interface AdminOrder {
       </div>
     </div>
     <section class="metric-card" style="overflow:auto;">
-      <mat-accordion>
-        <mat-expansion-panel *ngFor="let order of orders()" [expanded]="expandedOrderId() === order.id" (opened)="expandedOrderId.set(order.id)" (closed)="expandedOrderId() === order.id && expandedOrderId.set(null)">
+      <mat-accordion [multi]="true">
+        <mat-expansion-panel *ngFor="let order of orders(); trackBy: trackOrder" [expanded]="expandedOrderId() === order.id" (opened)="expandedOrderId.set(order.id)" (closed)="expandedOrderId() === order.id && expandedOrderId.set(null)">
           <mat-expansion-panel-header>
             <div style="display:flex;align-items:center;gap:16px;width:100%;">
               <strong style="min-width:80px;">Order #{{ order.id }}</strong>
@@ -128,41 +128,38 @@ interface AdminOrder {
               </div>
             </div>
 
-            <div style="display:flex;gap:8px;margin-top:16px;">
-              <mat-form-field appearance="outline" style="flex:1;">
-                <select matNativeControl [value]="selectedOrderStatus()[order.id] ?? order.status" (change)="onOrderStatusChange(order.id, $any($event.target).value)">
-                  <option value="PENDING">PENDING</option>
-                  <option value="CONFIRMED">CONFIRMED</option>
-                  <option value="PREPARING">PREPARING</option>
-                  <option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY</option>
-                  <option value="DELIVERED">DELIVERED</option>
-                  <option value="CANCELLED">CANCELLED</option>
-                </select>
-              </mat-form-field>
-              <button mat-button color="primary" (click)="updateStatus(order.id, selectedOrderStatus()[order.id] ?? order.status)">Update Order Status</button>
+            <div style="display:flex;gap:8px;margin-top:16px;align-items:center;flex-wrap:wrap;">
+              <select style="flex:1;min-width:160px;padding:6px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;" [value]="selectedOrderStatus()[order.id] ?? order.status" (change)="onOrderStatusChange(order.id, $any($event.target).value)">
+                <option value="PENDING">PENDING</option>
+                <option value="CONFIRMED">CONFIRMED</option>
+                <option value="PREPARING">PREPARING</option>
+                <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>
+                <option value="DELIVERED">DELIVERED</option>
+                <option value="CANCELLED">CANCELLED</option>
+              </select>
+              <button mat-stroked-button color="primary" style="white-space:nowrap;" (click)="updateStatus(order.id, selectedOrderStatus()[order.id] ?? order.status)">Update Status</button>
             </div>
 
-            <div *ngIf="order.assignmentId" style="display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid #eee;">
-              <mat-form-field appearance="outline" style="flex:1;">
-                <mat-label>Delivery Progress</mat-label>
-                <select matNativeControl #deliverySel [value]="order.deliveryStatus">
-                  <option value="ASSIGNED">ASSIGNED (Rider Assigned)</option>
-                  <option value="PICKED">PICKED (Items Packed)</option>
-                  <option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY (On the Way)</option>
-                  <option value="DELIVERED">DELIVERED (Completed)</option>
-                </select>
-              </mat-form-field>
-              <button mat-button color="accent" (click)="updateDeliveryStatus(order.assignmentId, deliverySel.value)">Update Delivery</button>
+            <div *ngIf="order.assignmentId" style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;padding-top:10px;border-top:1px solid #eee;">
+              <select style="flex:1;min-width:200px;padding:6px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;"
+                [value]="selectedDeliveryStatus()[order.id] ?? order.deliveryStatus"
+                (change)="onDeliveryStatusChange(order.id, $any($event.target).value)">
+                <option value="ASSIGNED">ASSIGNED (Rider assigned)</option>
+                <option value="PICKED">PICKED (Items packed)</option>
+                <option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY (On the way)</option>
+                <option value="DELIVERED">DELIVERED (Completed)</option>
+              </select>
+              <button mat-stroked-button color="accent" style="white-space:nowrap;" (click)="updateDeliveryStatus(order.assignmentId, selectedDeliveryStatus()[order.id] ?? order.deliveryStatus)">Update Delivery</button>
             </div>
 
-            <div *ngIf="!order.assignmentId" style="display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid #eee;">
-              <mat-form-field appearance="outline" style="flex:1;">
-                <select matNativeControl #riderSel>
-                  <option [value]="0">Select Delivery Boy</option>
-                  <option *ngFor="let d of deliveryBoys()" [value]="d.id">{{ d.fullName }}</option>
-                </select>
-              </mat-form-field>
-              <button mat-button color="primary" (click)="assign(order.id, riderSel.value)">Assign Rider</button>
+            <div *ngIf="!order.assignmentId" style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;padding-top:10px;border-top:1px solid #eee;">
+              <select style="flex:1;min-width:200px;padding:6px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;"
+                [value]="selectedRider()[order.id] ?? 0"
+                (change)="onRiderChange(order.id, +$any($event.target).value)">
+                <option [value]="0">— Select Delivery Boy —</option>
+                <option *ngFor="let d of deliveryBoys()" [value]="d.id">{{ d.fullName }}</option>
+              </select>
+              <button mat-stroked-button color="primary" style="white-space:nowrap;" (click)="assign(order.id, selectedRider()[order.id])">Assign Rider</button>
             </div>
           </div>
         </mat-expansion-panel>
@@ -210,6 +207,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
   readonly errorMsg = signal('');
   readonly expandedOrderId = signal<number | null>(null);
   readonly selectedOrderStatus = signal<Record<number, string>>({});
+  readonly selectedRider = signal<Record<number, number>>({});
+  readonly selectedDeliveryStatus = signal<Record<number, string>>({});
   private destroy$ = new Subject<void>();
 
   constructor(private api: ApiService, private snack: MatSnackBar, private route: ActivatedRoute) {}
@@ -226,10 +225,10 @@ export class OrdersComponent implements OnInit, OnDestroy {
       (err) => console.error('Failed to load delivery boys', err)
     );
     
-    // Auto-refresh orders every 5 seconds
+    // Auto-refresh orders every 5 seconds (silent — no error banner on background failures)
     interval(5000)
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.loadOrders(this.currentPage()));
+      .subscribe(() => this.loadOrders(this.currentPage(), true));
   }
 
   ngOnDestroy(): void {
@@ -237,7 +236,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  loadOrders(page = this.currentPage()) {
+  loadOrders(page = this.currentPage(), silent = false) {
     const params: any = { page, size: 20 };
     const s = this.statusFilter();
     if (s) params.status = s;
@@ -258,11 +257,16 @@ export class OrdersComponent implements OnInit, OnDestroy {
         this.errorMsg.set('');
       },
       (err) => {
-        this.errorMsg.set('Failed to load orders: ' + (err.error?.message || err.message));
+        // Only show error banner on manual loads, not background auto-refreshes
+        if (!silent) {
+          this.errorMsg.set('Failed to load orders: ' + (err.error?.message || err.message));
+        }
         console.error('Failed to load orders', err);
       }
     );
   }
+
+  trackOrder(_: number, o: AdminOrder) { return o.id; }
 
   onStatusFilter(status: string) {
     this.statusFilter.set(status);
@@ -284,6 +288,14 @@ export class OrdersComponent implements OnInit, OnDestroy {
     this.selectedOrderStatus.update((state) => ({ ...state, [orderId]: normalizedStatus }));
   }
 
+  onRiderChange(orderId: number, riderId: number) {
+    this.selectedRider.update((state) => ({ ...state, [orderId]: riderId }));
+  }
+
+  onDeliveryStatusChange(orderId: number, status: string) {
+    this.selectedDeliveryStatus.update((state) => ({ ...state, [orderId]: status }));
+  }
+
   updateStatus(orderId: number, status: string) {
     const normalizedStatus = String(status || '').trim().toUpperCase();
     if (!normalizedStatus) {
@@ -293,9 +305,9 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
     this.api.patch(`/admin/orders/${orderId}/status`, { status: normalizedStatus }).subscribe({
       next: () => {
+        // Optimistic in-place update — do NOT reload so filtered view doesn't drop the order
         this.orders.update((rows) => rows.map((row) => row.id === orderId ? { ...row, status: normalizedStatus } : row));
         this.selectedOrderStatus.update((state) => ({ ...state, [orderId]: normalizedStatus }));
-        this.loadOrders();
         this.snack.open('Order status updated', 'OK', { duration: 1600 });
       },
       error: (err) => {
@@ -304,12 +316,18 @@ export class OrdersComponent implements OnInit, OnDestroy {
     });
   }
 
-  assign(orderId: number, deliveryBoyIdRaw: string) {
-    const deliveryBoyId = Number(deliveryBoyIdRaw);
-    if (!deliveryBoyId) return;
+  assign(orderId: number, riderId: number | undefined) {
+    const deliveryBoyId = Number(riderId || 0);
+    if (!deliveryBoyId) {
+      this.snack.open('Please select a delivery boy first', 'OK', { duration: 1800 });
+      return;
+    }
     this.api.post(`/admin/orders/${orderId}/assign`, { deliveryBoyId }).subscribe({
       next: () => {
-        this.loadOrders();
+        // Clear rider selection and status filter so CONFIRMED order stays visible after assign
+        this.selectedRider.update(s => { const n = {...s}; delete n[orderId]; return n; });
+        this.statusFilter.set('');
+        this.loadOrders(0);
         this.snack.open('Delivery boy assigned', 'OK', { duration: 1600 });
       },
       error: (err) => {
@@ -327,7 +345,13 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
     this.api.patch(`/admin/delivery/assignments/${assignmentId}/status`, { status: normalizedStatus }).subscribe({
       next: () => {
-        this.loadOrders();
+        // Optimistic in-place update — do NOT reload so filtered view doesn't drop the order
+        this.orders.update((rows) => rows.map((row) =>
+          row.assignmentId === assignmentId ? { ...row, deliveryStatus: normalizedStatus } : row
+        ));
+        this.selectedDeliveryStatus.update((state) => ({ ...state, ...Object.fromEntries(
+          this.orders().filter(r => r.assignmentId === assignmentId).map(r => [r.id, normalizedStatus])
+        )}));
         this.snack.open('Delivery status updated', 'OK', { duration: 1600 });
       },
       error: (err) => {

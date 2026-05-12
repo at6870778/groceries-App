@@ -30,6 +30,7 @@ services:
       ACCEPT_ANY_OTP: ${ACCEPT_ANY_OTP:-false}
       STATIC_OTP: ${STATIC_OTP:-123456}
       APP_PORT: ${APP_PORT:-8080}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
     ports:
       - "8080:8080"
 

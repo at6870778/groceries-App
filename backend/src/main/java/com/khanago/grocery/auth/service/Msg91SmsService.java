@@ -1,5 +1,7 @@
 package com.khanago.grocery.auth.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.khanago.grocery.config.AppProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -14,6 +16,7 @@ import javax.net.ssl.X509TrustManager;
 import java.net.http.HttpClient;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 
@@ -30,6 +33,8 @@ import java.security.cert.X509Certificate;
 @Slf4j
 @Service
 public class Msg91SmsService {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final AppProperties appProperties;
     private final RestClient restClient;
@@ -65,6 +70,7 @@ public class Msg91SmsService {
 
             HttpClient httpClient = HttpClient.newBuilder()
                     .sslContext(sslContext)
+                    .followRedirects(HttpClient.Redirect.NORMAL)
                     .build();
 
             log.warn("MSG91 dev client is using trust-all SSL. Do not enable this in production.");
@@ -117,6 +123,189 @@ public class Msg91SmsService {
         } catch (Exception ex) {
             log.error("MSG91 OTP send failed for +{}: {}", fullPhone, ex.getMessage());
             throw new RuntimeException("Unable to send OTP. Please try again.");
+        }
+    }
+
+    public String sendWidgetOtp(String phone) {
+        AppProperties.Msg91 cfg = appProperties.getMsg91();
+        String fullPhone = cfg.getCountryCode() + phone;
+
+        if (!cfg.isWidgetEnabled()) {
+            String fakeReqId = UUID.randomUUID().toString();
+            log.warn("[DEV-ONLY] MSG91 widget not configured – simulating sendOtp for {} with reqId {}", phone, fakeReqId);
+            return fakeReqId;
+        }
+
+        try {
+            Map<String, String> body = Map.of(
+                    "widgetId", cfg.getWidgetId(),
+                    "tokenAuth", cfg.getTokenAuth() != null ? cfg.getTokenAuth() : cfg.getAuthKey(),
+                    "identifier", fullPhone
+            );
+
+            org.springframework.http.ResponseEntity<String> resp = restClient.post()
+                    .uri("/api/v5/widget/sendOtpMobile")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .toEntity(String.class);
+
+            String responseBody = resp.getBody();
+            log.info("MSG91 widget sendOtpMobile status={} body=[{}]", resp.getStatusCode(), responseBody);
+
+            if (responseBody == null || responseBody.isBlank()) {
+                log.error("MSG91 widget sendOtp for +{} returned empty body", fullPhone);
+                throw new RuntimeException("Unable to send OTP. MSG91 returned empty response.");
+            }
+
+            JsonNode root = OBJECT_MAPPER.readTree(responseBody);
+            // MSG91 widget sendOtpMobile returns reqId in "message" field on success
+            boolean success = "success".equalsIgnoreCase(root.path("type").asText());
+            String requestId = root.path("message").asText(null);
+
+            if (!success || requestId == null || requestId.isBlank()) {
+                log.error("MSG91 widget sendOtp for +{} returned non-success body: {}", fullPhone, responseBody);
+                throw new RuntimeException("Unable to send OTP. MSG91 widget did not confirm delivery.");
+            }
+
+            log.info("Widget OTP dispatched via MSG91 to +{} with reqId {} and response: {}", fullPhone, requestId, responseBody);
+            return requestId;
+        } catch (RestClientResponseException ex) {
+            log.error("MSG91 widget sendOtp failed for +{} with HTTP {} body: [{}]", fullPhone, ex.getRawStatusCode(), ex.getResponseBodyAsString());
+            throw new RuntimeException("Unable to send OTP. MSG91 rejected the request. HTTP " + ex.getRawStatusCode() + ": " + ex.getResponseBodyAsString());
+        } catch (Exception ex) {
+            log.error("MSG91 widget sendOtp failed for +{}: {} ({})", fullPhone, ex.getMessage(), ex.getClass().getSimpleName());
+            throw new RuntimeException("Unable to send OTP. Please try again.");
+        }
+    }
+
+    public String retryWidgetOtp(String reqId) {
+        AppProperties.Msg91 cfg = appProperties.getMsg91();
+        if (!cfg.isWidgetEnabled()) {
+            log.warn("[DEV-ONLY] MSG91 widget retryOtp not configured – returning original reqId");
+            return reqId;
+        }
+
+        try {
+            Map<String, String> body = Map.of(
+                    "widgetId", cfg.getWidgetId(),
+                    "tokenAuth", cfg.getTokenAuth() != null ? cfg.getTokenAuth() : cfg.getAuthKey(),
+                    "reqId", reqId
+            );
+            String responseBody = restClient.post()
+                    .uri("/api/v5/widget/retryOtp")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .body(String.class);
+
+            log.info("MSG91 widget retryOtp raw response for reqId {}: [{}]", reqId, responseBody);
+            if (responseBody == null || responseBody.isBlank()) {
+                return reqId; // fallback: keep original reqId
+            }
+            JsonNode root = OBJECT_MAPPER.readTree(responseBody);
+            boolean success = "success".equalsIgnoreCase(root.path("type").asText());
+            // MSG91 returns new reqId in "message" field on success
+            String returnedReqId = root.path("message").asText(null);
+            if (!success || returnedReqId == null || returnedReqId.isBlank()) {
+                log.warn("MSG91 widget retryOtp for reqId {} returned non-success: {}", reqId, responseBody);
+                return reqId; // fallback to original
+            }
+
+            log.info("Widget OTP retried via MSG91 for reqId {} with response: {}", reqId, responseBody);
+            return returnedReqId;
+        } catch (RestClientResponseException ex) {
+            log.error("MSG91 widget retryOtp failed for reqId {} with HTTP {}: {}", reqId, ex.getRawStatusCode(), ex.getResponseBodyAsString());
+            throw new RuntimeException("Unable to resend OTP. MSG91 rejected the request.");
+        } catch (Exception ex) {
+            log.error("MSG91 widget retryOtp failed for reqId {}: {}", reqId, ex.getMessage());
+            throw new RuntimeException("Unable to resend OTP. Please try again.");
+        }
+    }
+
+    public boolean verifyWidgetOtp(String reqId, String otp) {
+        AppProperties.Msg91 cfg = appProperties.getMsg91();
+        if (!cfg.isWidgetEnabled()) {
+            log.warn("[DEV-ONLY] MSG91 widget verifyOtp not configured – allowing verification to continue.");
+            return true;
+        }
+
+        try {
+            Map<String, String> body = Map.of(
+                    "widgetId", cfg.getWidgetId(),
+                    "tokenAuth", cfg.getTokenAuth() != null ? cfg.getTokenAuth() : cfg.getAuthKey(),
+                    "reqId", reqId,
+                    "otp", otp
+            );
+
+            String responseBody = restClient.post()
+                    .uri("/api/v5/widget/verifyOtp")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .body(String.class);
+
+            log.info("MSG91 widget verifyOtp raw response for reqId {}: [{}]", reqId, responseBody);
+            if (responseBody == null) {
+                log.error("MSG91 widget verifyOtp for reqId {} returned null body", reqId);
+                return false;
+            }
+
+            JsonNode root = OBJECT_MAPPER.readTree(responseBody);
+            boolean success = "success".equalsIgnoreCase(root.path("type").asText());
+            log.info("MSG91 widget verifyOtp result for reqId {}: success={}", reqId, success);
+            return success;
+        } catch (RestClientResponseException ex) {
+            log.warn("MSG91 widget verifyOtp failed for reqId {} with HTTP {}: {}", reqId, ex.getRawStatusCode(), ex.getResponseBodyAsString());
+            return false;
+        } catch (Exception ex) {
+            log.error("MSG91 widget verifyOtp failed for reqId {}: {}", reqId, ex.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Verifies the access token issued by MSG91 widget after client-side OTP verification.
+     * Called server-side with the token received from the client (POST /auth/verify-otp).
+     * Returns true if MSG91 confirms the token is valid.
+     */
+    public boolean verifyAccessToken(String accessToken) {
+        AppProperties.Msg91 cfg = appProperties.getMsg91();
+        if (!cfg.isWidgetEnabled()) {
+            log.warn("[DEV-ONLY] MSG91 widget not configured – skipping access token verification.");
+            return true;
+        }
+
+        try {
+            Map<String, String> body = Map.of(
+                    "authkey", cfg.getAuthKey(),
+                    "access-token", accessToken
+            );
+
+            String responseBody = restClient.post()
+                    .uri("https://control.msg91.com/api/v5/widget/verifyAccessToken")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .body(String.class);
+
+            if (responseBody == null) {
+                log.error("MSG91 verifyAccessToken returned empty body");
+                return false;
+            }
+
+            JsonNode root = OBJECT_MAPPER.readTree(responseBody);
+            boolean isError = root.has("type") && "error".equalsIgnoreCase(root.get("type").asText());
+            boolean success = !isError && looksSuccessful(responseBody);
+
+            log.info("MSG91 verifyAccessToken response: {}", responseBody);
+            return success;
+        } catch (RestClientResponseException ex) {
+            log.warn("MSG91 verifyAccessToken failed with HTTP {}: {}", ex.getRawStatusCode(), ex.getResponseBodyAsString());
+            return false;
+        } catch (Exception ex) {
+            log.error("MSG91 verifyAccessToken failed: {}", ex.getMessage());
+            return false;
         }
     }
 

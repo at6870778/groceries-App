@@ -67,4 +67,17 @@ export class CartState {
   clear() {
     this.items.set([]);
   }
+
+  removeOrDecrement(product: { id: number }) {
+    const next = [...this.items()];
+    const idx = next.findIndex(i => i.productId === product.id || i.id === product.id);
+    if (idx === -1) return;
+    const qty = Number(next[idx].quantity || 0) - 1;
+    if (qty <= 0) {
+      next.splice(idx, 1);
+    } else {
+      next[idx] = { ...next[idx], quantity: qty, lineTotal: qty * Number(next[idx].unitPrice || 0) };
+    }
+    this.items.set(next);
+  }
 }

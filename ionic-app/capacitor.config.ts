@@ -6,6 +6,13 @@ const config: CapacitorConfig = {
   webDir: 'www',
   server: {
     androidScheme: 'https'
+  },
+  plugins: {
+    StatusBar: {
+      style: 'DARK',
+      backgroundColor: '#000000',
+      overlaysWebView: false  // status bar does NOT overlap content — content starts below it
+    }
   }
 };
 

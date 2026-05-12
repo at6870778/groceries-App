@@ -2,6 +2,7 @@ package com.khanago.grocery.auth.controller;
 
 import com.khanago.grocery.auth.dto.AuthResponseDto;
 import com.khanago.grocery.auth.dto.OtpRequestDto;
+import com.khanago.grocery.auth.dto.OtpRetryDto;
 import com.khanago.grocery.auth.dto.RefreshTokenRequestDto;
 import com.khanago.grocery.auth.dto.OtpVerifyDto;
 import com.khanago.grocery.auth.service.OtpAuthService;
@@ -27,6 +28,14 @@ public class AuthController {
             HttpServletRequest httpRequest) {
         return new ApiSuccessResponse<>("OTP sent",
                 otpAuthService.requestOtp(request, extractClientIp(httpRequest)));
+    }
+
+    @PostMapping("/retry-otp")
+    public ApiSuccessResponse<String> retryOtp(
+            @Valid @RequestBody OtpRetryDto request,
+            HttpServletRequest httpRequest) {
+        return new ApiSuccessResponse<>("OTP resent",
+                otpAuthService.retryOtp(request.phone(), request.reqId(), extractClientIp(httpRequest)));
     }
 
     @PostMapping("/verify-otp")

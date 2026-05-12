@@ -7,6 +7,7 @@ import java.util.List;
 public record OrderDto(
         Long id,
         Long assignmentId,
+        String assignmentStatus,
         String status,
         String paymentMode,
         BigDecimal subtotal,
@@ -14,6 +15,9 @@ public record OrderDto(
         BigDecimal totalAmount,
         String notes,
         LocalDateTime createdAt,
-        List<OrderItemDto> items
+        List<OrderItemDto> items,
+        String customerName,
+        String customerPhone,
+        String deliveryAddress
 ) {
 }

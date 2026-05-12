@@ -13,6 +13,8 @@ import java.util.List;
 public interface OrderRepository extends JpaRepository<Order, Long> {
     Page<Order> findByCustomerId(Long customerId, Pageable pageable);
 
+    List<Order> findByCustomerIdOrderByCreatedAtDesc(Long customerId);
+
     Page<Order> findByStatus(OrderStatus status, Pageable pageable);
 
     long countByStatus(OrderStatus status);

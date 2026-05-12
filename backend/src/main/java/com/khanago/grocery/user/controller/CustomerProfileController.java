@@ -3,6 +3,7 @@ package com.khanago.grocery.user.controller;
 import com.khanago.grocery.user.dto.AddressDto;
 import com.khanago.grocery.user.dto.AddressUpsertDto;
 import com.khanago.grocery.user.dto.ProfileDto;
+import com.khanago.grocery.user.dto.UpdateProfileDto;
 import com.khanago.grocery.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,11 @@ public class CustomerProfileController {
     @GetMapping
     public ProfileDto profile() {
         return userService.getProfile();
+    }
+
+    @PutMapping
+    public ProfileDto updateProfile(@Valid @RequestBody UpdateProfileDto request) {
+        return userService.updateProfile(request);
     }
 
     @GetMapping("/addresses")

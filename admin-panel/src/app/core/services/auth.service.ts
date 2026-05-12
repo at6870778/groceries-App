@@ -6,7 +6,7 @@ import { AuthResponse } from '../models/auth.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly tokenSignal = signal<string | null>(localStorage.getItem('admin_token'));
+  private readonly tokenSignal = signal<string | null>(this.loadValidToken());
   private readonly rolesSignal = signal<string[]>(JSON.parse(localStorage.getItem('admin_roles') || '[]'));
 
   readonly token = computed(() => this.tokenSignal());
@@ -15,9 +15,28 @@ export class AuthService {
 
   constructor(private http: HttpClient, private router: Router) {}
 
-  login(phone: string, fullName: string, otp: string) {
+  private loadValidToken(): string | null {
+    const token = localStorage.getItem('admin_token');
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_roles');
+        return null;
+      }
+      return token;
+    } catch {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_roles');
+      return null;
+    }
+  }
+
+  login(phone: string, fullName: string, otp: string, reqId?: string) {
     return this.http.post<{ message: string; data: AuthResponse }>(`${environment.apiUrl}/auth/verify-otp`, {
       phone,
+      reqId,
       otp,
       fullName,
       role: 'ADMIN'
@@ -25,7 +44,14 @@ export class AuthService {
   }
 
   requestOtp(phone: string) {
-    return this.http.post(`${environment.apiUrl}/auth/request-otp`, { phone });
+    return this.http.post<{ message: string; data: string }>(`${environment.apiUrl}/auth/request-otp`, { phone });
+  }
+
+  retryOtp(phone: string, reqId: string) {
+    return this.http.post<{ message: string; data: string }>(`${environment.apiUrl}/auth/retry-otp`, {
+      phone,
+      reqId
+    });
   }
 
   saveSession(response: AuthResponse) {

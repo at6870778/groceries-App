@@ -27,7 +27,7 @@ public class Order extends BaseAuditEntity {
     private User customer;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "address_id", nullable = false)
+    @JoinColumn(name = "address_id", nullable = true)
     private Address address;
 
     @Enumerated(EnumType.STRING)

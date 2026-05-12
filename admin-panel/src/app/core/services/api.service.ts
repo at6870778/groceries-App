@@ -31,4 +31,10 @@ export class ApiService {
   delete<T>(path: string) {
     return this.http.delete<T>(`${environment.apiUrl}${path}`);
   }
+
+  uploadFile<T>(path: string, file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<T>(`${environment.apiUrl}${path}`, formData);
+  }
 }

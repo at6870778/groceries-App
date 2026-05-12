@@ -7,6 +7,7 @@ import com.khanago.grocery.user.User;
 import com.khanago.grocery.user.dto.AddressDto;
 import com.khanago.grocery.user.dto.AddressUpsertDto;
 import com.khanago.grocery.user.dto.ProfileDto;
+import com.khanago.grocery.user.dto.UpdateProfileDto;
 import com.khanago.grocery.user.repository.AddressRepository;
 import com.khanago.grocery.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,13 @@ public class UserService {
 
     public ProfileDto getProfile() {
         User user = currentUser();
+        return new ProfileDto(user.getId(), user.getFullName(), user.getPhone(), user.getRoles().stream().map(r -> r.getName().name()).toList());
+    }
+
+    public ProfileDto updateProfile(UpdateProfileDto request) {
+        User user = currentUser();
+        user.setFullName(request.fullName().trim());
+        userRepository.save(user);
         return new ProfileDto(user.getId(), user.getFullName(), user.getPhone(), user.getRoles().stream().map(r -> r.getName().name()).toList());
     }
 

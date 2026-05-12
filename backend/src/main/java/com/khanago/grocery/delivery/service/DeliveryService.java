@@ -16,6 +16,7 @@ import com.khanago.grocery.user.User;
 import com.khanago.grocery.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -28,6 +29,7 @@ public class DeliveryService {
     private final UserRepository userRepository;
     private final OrderService orderService;
 
+    @Transactional
     public AssignmentDto assignOrder(Long orderId, Long deliveryBoyId) {
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new ApiException("Order not found"));
         User deliveryBoy = userRepository.findById(deliveryBoyId).orElseThrow(() -> new ApiException("Delivery boy not found"));
@@ -42,6 +44,7 @@ public class DeliveryService {
         return new AssignmentDto(assignment.getId(), orderId, deliveryBoyId, assignment.getStatus().name());
     }
 
+    @Transactional(readOnly = true)
     public List<OrderDto> myAssignedOrders() {
         Long deliveryBoyId = SecurityUtils.getCurrentUserId();
         List<DeliveryAssignmentStatus> activeStatuses = List.of(
@@ -56,6 +59,7 @@ public class DeliveryService {
                     return new OrderDto(
                             base.id(),
                             a.getId(),
+                            a.getStatus().name(),
                             base.status(),
                             base.paymentMode(),
                             base.subtotal(),
@@ -63,12 +67,16 @@ public class DeliveryService {
                             base.totalAmount(),
                             base.notes(),
                             base.createdAt(),
-                            base.items()
+                            base.items(),
+                            base.customerName(),
+                            base.customerPhone(),
+                            base.deliveryAddress()
                     );
                 })
                 .toList();
     }
 
+    @Transactional
     public AssignmentDto updateDeliveryStatus(Long assignmentId, DeliveryAssignmentStatus status) {
         DeliveryAssignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new ApiException("Assignment not found"));
@@ -96,6 +104,7 @@ public class DeliveryService {
         return updateDeliveryStatus(assignmentId, status);
     }
 
+    @Transactional
     public AssignmentDto adminUpdateDeliveryStatus(Long assignmentId, String statusStr) {
         DeliveryAssignmentStatus status = DeliveryAssignmentStatus.valueOf(statusStr.toUpperCase());
         DeliveryAssignment assignment = assignmentRepository.findById(assignmentId)
@@ -115,6 +124,7 @@ public class DeliveryService {
         return new AssignmentDto(assignment.getId(), assignment.getOrder().getId(), assignment.getDeliveryBoy().getId(), assignment.getStatus().name());
     }
 
+    @Transactional(readOnly = true)
     public DeliveryTrackingDto getDeliveryTracking(Long orderId) {
         DeliveryAssignment assignment = assignmentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new ApiException("Delivery assignment not found for this order"));

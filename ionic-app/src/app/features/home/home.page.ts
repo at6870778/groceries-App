@@ -1,22 +1,36 @@
-import { Component, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardHeader, IonCardTitle, IonButtons, IonButton, IonSearchbar, IonBadge } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
 import { Router, RouterLink } from '@angular/router';
 import { CartState } from '../../core/state/cart.state';
+import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component';
 import { ActivityState } from '../../core/state/activity.state';
+import { LocationService } from '../../core/services/location.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardHeader, IonCardTitle, IonButtons, IonButton, IonSearchbar, IonBadge],
+  imports: [CommonModule, RouterLink, IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardHeader, IonCardTitle, IonButtons, IonButton, IonSearchbar, IonBadge, BottomNavComponent],
   template: `
     <ion-header translucent>
       <ion-toolbar color="primary">
-        <ion-title style="font-weight: 700; font-size: 1.4rem;">🛒 Order Kro</ion-title>
+        <!-- Delivering To section -->
+        <div slot="start" class="deliver-to-wrap" (click)="goToProfile()">
+          <div class="deliver-label">📍 Delivering to</div>
+          <div class="deliver-addr">
+            <span class="deliver-addr-text">{{ deliveryLabel() }}</span>
+            <span class="deliver-chevron">▾</span>
+          </div>
+        </div>
         <ion-buttons slot="end">
-          <ion-button routerLink="/cart">🛒</ion-button>
+          <ion-button routerLink="/cart">
+            <span class="cart-icon-wrap">
+              🛒
+              <span class="cart-badge" *ngIf="totalCartItems() > 0">{{ totalCartItems() }}</span>
+            </span>
+          </ion-button>
           <ion-button routerLink="/profile">👤</ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -31,7 +45,7 @@ import { takeUntil } from 'rxjs/operators';
         </ion-searchbar>
       </ion-toolbar>
     </ion-header>
-    <ion-content [scrollEvents]="true" [fullscreen]="false" class="home-content">
+    <ion-content [scrollEvents]="true" [fullscreen]="false" class="home-content" style="--padding-bottom: 72px;">
       <div class="hero-section">
         <div class="hero-banner">
           <h1>Fresh Groceries<br><span class="highlight">In 10 Minutes</span></h1>
@@ -57,21 +71,33 @@ import { takeUntil } from 'rxjs/operators';
 
           <div class="product-grid" *ngIf="filteredProducts().length > 0; else noSearchResults">
             <ion-card class="product-card premium" *ngFor="let p of filteredProducts().slice(0, 8); let i = index" [style.animationDelay.ms]="i * 45" button="true" [routerLink]="['/products']" [queryParams]="{ query: p.name }">
-              <div class="card-badge" *ngIf="getDiscount(p.sellingPrice) > 0">{{ getDiscount(p.sellingPrice) }}%</div>
-              <div class="product-art" [style.background]="productBg(p)">
-                <img class="art-image" [src]="productImage(p)" [alt]="p.name">
+              <div class="card-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
+              <div class="product-art" [style.background]="p.imageUrl ? '#fff' : productBg(p)">
+                <img class="art-image" [class.photo-img]="p.imageUrl" [src]="productImage(p)" [alt]="p.name">
               </div>
               <ion-card-header class="product-info">
                 <div class="product-brand">{{ getBrandName(p.name) }}</div>
                 <ion-card-title class="product-name">{{ p.name }}</ion-card-title>
-                <p class="unit">{{ p.unit }}</p>
+                <p class="unit">{{ scaledUnit(p.unit, cartQty(p.id)) }}</p>
                 <div class="price-row">
-                  <span class="original-price" *ngIf="getDiscount(p.sellingPrice) > 0">₹{{ getOriginalPrice(p.sellingPrice) }}</span>
+                  <span class="original-price" *ngIf="getDiscount(p) > 0">₹{{ getOriginalPrice(p) }}</span>
                   <span class="sale-price">₹{{ p.sellingPrice }}</span>
                 </div>
                 <div class="card-actions">
+                  <ng-container *ngIf="cartQty(p.id) === 0; else stepper1">
+                    <ion-button size="small" class="add-btn" (click)="$event.stopPropagation(); addToCart(p)">
+                      + Add
+                    </ion-button>
+                  </ng-container>
+                  <ng-template #stepper1>
+                    <div class="stepper" (click)="$event.stopPropagation()">
+                      <button class="step-btn" (click)="removeFromCart(p)">−</button>
+                      <span class="step-qty">{{ cartQty(p.id) }}</span>
+                      <button class="step-btn" (click)="addToCart(p)">+</button>
+                    </div>
+                  </ng-template>
                   <ion-button size="small" class="buy-now-btn" (click)="$event.stopPropagation(); buyNow(p)" [disabled]="adding() === p.id">
-                    {{ adding() === p.id ? 'Adding...' : 'Buy Now' }}
+                    {{ adding() === p.id ? '...' : 'Buy' }}
                   </ion-button>
                 </div>
               </ion-card-header>
@@ -90,16 +116,16 @@ import { takeUntil } from 'rxjs/operators';
           </div>
           <div class="deals-scroll">
             <ion-card class="deal-card" *ngFor="let p of getHotDeals(); let i = index" button="true" [routerLink]="['/products']" [queryParams]="{ query: p.name }" [style.animationDelay.ms]="i * 40">
-              <div class="deal-badge">{{ getDiscount(p.sellingPrice) }}% OFF</div>
-              <div class="product-art" [style.background]="productBg(p)">
-                <img class="art-image" [src]="productImage(p)" [alt]="p.name">
+              <div class="deal-badge">{{ getDiscount(p) }}% OFF</div>
+              <div class="product-art" [style.background]="p.imageUrl ? '#fff' : productBg(p)">
+                <img class="art-image" [class.photo-img]="p.imageUrl" [src]="productImage(p)" [alt]="p.name">
               </div>
               <ion-card-header class="deal-info">
                 <div class="brand">{{ getBrandName(p.name) }}</div>
                 <ion-card-title class="product-name">{{ p.name }}</ion-card-title>
                 <div class="product-unit">{{ p.unit }}</div>
                 <div class="price-section">
-                  <span class="original-price">₹{{ getOriginalPrice(p.sellingPrice) }}</span>
+                  <span class="original-price">₹{{ getOriginalPrice(p) }}</span>
                   <span class="sale-price">₹{{ p.sellingPrice }}</span>
                 </div>
                 <div class="delivery-badge">📦 10 mins</div>
@@ -134,21 +160,33 @@ import { takeUntil } from 'rxjs/operators';
           </div>
           <div class="product-grid" *ngIf="featuredProducts().length > 0; else noItems">
             <ion-card class="product-card premium" *ngFor="let p of featuredProducts(); let i = index" [style.animationDelay.ms]="i * 55" button="true" [routerLink]="['/products']" [queryParams]="{ query: p.name }">
-              <div class="card-badge" *ngIf="getDiscount(p.sellingPrice) > 0">{{ getDiscount(p.sellingPrice) }}%</div>
-              <div class="product-art" [style.background]="productBg(p)">
-                <img class="art-image" [src]="productImage(p)" [alt]="p.name">
+              <div class="card-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
+              <div class="product-art" [style.background]="p.imageUrl ? '#fff' : productBg(p)">
+                <img class="art-image" [class.photo-img]="p.imageUrl" [src]="productImage(p)" [alt]="p.name">
               </div>
               <ion-card-header class="product-info">
                 <div class="product-brand">{{ getBrandName(p.name) }}</div>
                 <ion-card-title class="product-name">{{ p.name }}</ion-card-title>
-                <p class="unit">{{ p.unit }}</p>
+                <p class="unit">{{ scaledUnit(p.unit, cartQty(p.id)) }}</p>
                 <div class="price-row">
-                  <span class="original-price" *ngIf="getDiscount(p.sellingPrice) > 0">₹{{ getOriginalPrice(p.sellingPrice) }}</span>
+                  <span class="original-price" *ngIf="getDiscount(p) > 0">₹{{ getOriginalPrice(p) }}</span>
                   <span class="sale-price">₹{{ p.sellingPrice }}</span>
                 </div>
                 <div class="card-actions">
+                  <ng-container *ngIf="cartQty(p.id) === 0; else stepper2">
+                    <ion-button size="small" class="add-btn" (click)="$event.stopPropagation(); addToCart(p)">
+                      + Add
+                    </ion-button>
+                  </ng-container>
+                  <ng-template #stepper2>
+                    <div class="stepper" (click)="$event.stopPropagation()">
+                      <button class="step-btn" (click)="removeFromCart(p)">−</button>
+                      <span class="step-qty">{{ cartQty(p.id) }}</span>
+                      <button class="step-btn" (click)="addToCart(p)">+</button>
+                    </div>
+                  </ng-template>
                   <ion-button size="small" class="buy-now-btn" (click)="$event.stopPropagation(); buyNow(p)" [disabled]="adding() === p.id">
-                    {{ adding() === p.id ? 'Adding...' : 'Buy Now' }}
+                    {{ adding() === p.id ? '...' : 'Buy' }}
                   </ion-button>
                 </div>
               </ion-card-header>
@@ -174,9 +212,24 @@ import { takeUntil } from 'rxjs/operators';
                 <img class="thumb" [src]="productImage(p)" [alt]="p.name">
                 <div class="item-details">
                   <div class="item-name">{{ p.name }}</div>
-                  <div class="item-unit">{{ p.unit }}</div>
+                  <div class="item-unit">{{ scaledUnit(p.unit, cartQty(p.id)) }}</div>
                 </div>
                 <div class="item-price">₹{{ p.sellingPrice }}</div>
+                <div class="preview-actions">
+                  <ng-container *ngIf="cartQty(p.id) === 0; else previewStepper">
+                    <button class="preview-add-btn" (click)="$event.stopPropagation(); addToCart(p)">+ Add</button>
+                  </ng-container>
+                  <ng-template #previewStepper>
+                    <div class="stepper stepper-sm" (click)="$event.stopPropagation()">
+                      <button class="step-btn" (click)="removeFromCart(p)">−</button>
+                      <span class="step-qty">{{ cartQty(p.id) }}</span>
+                      <button class="step-btn" (click)="addToCart(p)">+</button>
+                    </div>
+                  </ng-template>
+                  <button class="preview-buy-btn" (click)="$event.stopPropagation(); buyNow(p)" [disabled]="adding() === p.id">
+                    Buy
+                  </button>
+                </div>
               </div>
             </div>
             <ng-template #emptyCategory>
@@ -188,11 +241,38 @@ import { takeUntil } from 'rxjs/operators';
         <ion-button expand="block" class="my-orders-btn" routerLink="/orders" color="secondary">📋 View My Orders</ion-button>
       </div>
     </ion-content>
+    <app-bottom-nav></app-bottom-nav>
   `,
   styles: [`
     ion-header {
       --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       --color: white;
+    }
+    .cart-icon-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+    }
+    .cart-badge {
+      position: absolute;
+      top: -6px;
+      right: -8px;
+      background: #ff3b30;
+      color: #fff;
+      font-size: 0.6rem;
+      font-weight: 800;
+      min-width: 16px;
+      height: 16px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 3px;
+      pointer-events: none;
+      line-height: 1;
+      z-index: 10;
     }
     .sticky-search-toolbar {
       --background: rgba(255, 255, 255, 0.96);
@@ -366,6 +446,10 @@ import { takeUntil } from 'rxjs/operators';
       object-fit: contain;
       padding: 8px;
     }
+    .art-image.photo-img {
+      object-fit: contain;
+      padding: 8px;
+    }
     .deal-info {
       padding: 10px;
     }
@@ -493,9 +577,55 @@ import { takeUntil } from 'rxjs/operators';
     }
     .card-actions {
       margin-top: 10px;
+      display: flex;
+      gap: 6px;
+    }
+    .add-btn {
+      flex: 1;
+      margin: 0;
+      --background: #fff;
+      --color: #16a34a;
+      --border-radius: 10px;
+      border: 1.5px solid #16a34a;
+      font-weight: 700;
+      min-height: 34px;
+      font-size: 0.8rem;
+    }
+    /* Blinkit-style stepper */
+    .stepper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #16a34a;
+      border-radius: 10px;
+      overflow: hidden;
+      min-height: 34px;
+    }
+    .stepper-sm {
+      min-height: 30px;
+      border-radius: 8px;
+    }
+    .step-btn {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 0 10px;
+      cursor: pointer;
+      height: 100%;
+      line-height: 1;
+    }
+    .step-qty {
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      min-width: 20px;
+      text-align: center;
     }
     .buy-now-btn {
-      width: 100%;
+      flex: 1;
       margin: 0;
       --background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
       --box-shadow: 0 8px 18px rgba(34, 197, 94, 0.24);
@@ -577,6 +707,33 @@ import { takeUntil } from 'rxjs/operators';
       color: #667eea;
       white-space: nowrap;
     }
+    .preview-actions {
+      display: flex;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+    .preview-add-btn, .preview-buy-btn {
+      border: none;
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .preview-add-btn {
+      background: #fff;
+      color: #16a34a;
+      border: 1.5px solid #16a34a;
+    }
+    .preview-buy-btn {
+      background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+      color: #fff;
+    }
+    .preview-add-btn:disabled, .preview-buy-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
     .empty-small {
       text-align: center;
       color: #999;
@@ -616,6 +773,44 @@ import { takeUntil } from 'rxjs/operators';
       border-radius: 8px;
       margin-bottom: 12px;
     }
+    /* ── Delivering to ── */
+    .deliver-to-wrap {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 6px 12px 6px 8px;
+      cursor: pointer;
+      min-width: 0;
+      max-width: calc(100vw - 100px);
+    }
+    .deliver-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      opacity: 0.85;
+      letter-spacing: 0.3px;
+      color: #fff;
+      line-height: 1.2;
+    }
+    .deliver-addr {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: #fff;
+    }
+    .deliver-addr-text {
+      font-size: 0.95rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: calc(100vw - 120px);
+      line-height: 1.3;
+    }
+    .deliver-chevron {
+      font-size: 1rem;
+      opacity: 0.85;
+      flex-shrink: 0;
+    }
   `]
 })
 export class HomePage implements OnInit, OnDestroy {
@@ -623,9 +818,27 @@ export class HomePage implements OnInit, OnDestroy {
   readonly categories = signal<any[]>([]);
   readonly products = signal<any[]>([]);
   readonly adding = signal<number | null>(null);
+  // 'added' signal removed — stepper driven by cartState.items() directly
   readonly errorMsg = signal('');
   readonly quickSearches = ['Milk', 'Banana', 'Rice', 'Bread', 'Chips', 'Juice'];
   private destroy$ = new Subject<void>();
+
+  /** Saved addresses loaded from API */
+  readonly savedAddresses = signal<any[]>([]);
+
+  /** Computed label for the "Delivering to" bar */
+  readonly deliveryLabel = computed(() => {
+    const addresses = this.savedAddresses();
+    const defaultAddr = addresses.find(a => a.isDefault) || addresses[0];
+    if (defaultAddr) {
+      const label = defaultAddr.label ? `${defaultAddr.label}: ` : '';
+      return `${label}${defaultAddr.line1 || defaultAddr.addressLine1 || ''}`;
+    }
+    const gpsAddr = this.locationService.currentLocation()?.address;
+    if (gpsAddr) return gpsAddr.split(',').slice(0, 2).join(', ');
+    if (this.locationService.isLocating()) return 'Detecting location…';
+    return 'Add your location →';
+  });
 
   private readonly productPhotoByKeyword: Record<string, string> = {
     banana: 'https://upload.wikimedia.org/wikipedia/commons/d/de/Bananavarieties.jpg',
@@ -665,10 +878,20 @@ export class HomePage implements OnInit, OnDestroy {
     private api: ApiService,
     private router: Router,
     private cartState: CartState,
-    private activityState: ActivityState
+    private activityState: ActivityState,
+    public locationService: LocationService
   ) {}
 
   ngOnInit() {
+    this.api.get<any[]>('/customer/profile/addresses')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: (res) => this.savedAddresses.set(res || []) });
+
+    // Kick off GPS detection if no saved location yet
+    if (!this.locationService.currentLocation()) {
+      this.locationService.detectCurrentLocation().catch(() => {});
+    }
+
     this.api.get<any>('/catalog/categories')
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -686,6 +909,10 @@ export class HomePage implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  goToProfile(): void {
+    this.router.navigate(['/profile']);
   }
 
   private normalizedSearchTerm() {
@@ -731,18 +958,18 @@ export class HomePage implements OnInit, OnDestroy {
 
   getHotDeals() {
     return this.products()
-      .filter(p => this.getDiscount(p.sellingPrice) > 20)
-      .sort((a, b) => this.getDiscount(b.sellingPrice) - this.getDiscount(a.sellingPrice))
+      .filter(p => this.getDiscount(p) > 5)
+      .sort((a, b) => this.getDiscount(b) - this.getDiscount(a))
       .slice(0, 6);
   }
 
-  getDiscount(sellingPrice: number) {
-    const basePrice = sellingPrice * 1.3;
-    return Math.round(((basePrice - sellingPrice) / basePrice) * 100);
+  getDiscount(product: any) {
+    if (!product?.mrp || +product.mrp <= +product.sellingPrice) return 0;
+    return Math.round(((+product.mrp - +product.sellingPrice) / +product.mrp) * 100);
   }
 
-  getOriginalPrice(sellingPrice: number) {
-    return Math.round(sellingPrice * 1.3);
+  getOriginalPrice(product: any) {
+    return product?.mrp || 0;
   }
 
   getBrandName(productName: string) {
@@ -766,6 +993,50 @@ export class HomePage implements OnInit, OnDestroy {
           this.errorMsg.set('Could not start checkout right now');
         }
       });
+  }
+
+  addToCart(product: any) {
+    this.cartState.addOrIncrement(product);
+    this.activityState.log('cart_add', `Added ${product.name} to cart`, { productId: product.id });
+    // also sync to backend (fire-and-forget)
+    this.api.post('/customer/cart/items', { productId: product.id, quantity: 1 })
+      .pipe(takeUntil(this.destroy$)).subscribe({ error: () => {} });
+  }
+
+  removeFromCart(product: any) {
+    this.cartState.removeOrDecrement(product);
+    // sync to backend (fire-and-forget)
+    this.api.post('/customer/cart/items', { productId: product.id, quantity: -1 })
+      .pipe(takeUntil(this.destroy$)).subscribe({ error: () => {} });
+  }
+
+  totalCartItems(): number {
+    return this.cartState.items().reduce((sum, i) => sum + Number(i.quantity || 0), 0);
+  }
+
+  cartQty(productId: number): number {
+    const item = this.cartState.items().find(i => i.productId === productId || i.id === productId);
+    return item ? Number(item.quantity || 0) : 0;
+  }
+
+  scaledUnit(unit: string, qty: number): string {
+    if (!unit || qty <= 1) return unit || '';
+    const match = unit.match(/^(\d+(?:\.\d+)?)\s*(.+)$/);
+    if (!match) return unit;
+    const base = parseFloat(match[1]);
+    const suffix = match[2].trim();
+    const total = base * qty;
+    const lo = suffix.toLowerCase();
+    if (lo === 'g' || lo === 'gm' || lo === 'gms' || lo === 'gram' || lo === 'grams') {
+      if (total >= 1000) { const v = total / 1000; return `${v % 1 === 0 ? v : v.toFixed(1)} kg`; }
+      return `${total} ${suffix}`;
+    }
+    if (lo === 'ml') {
+      if (total >= 1000) { const v = total / 1000; return `${v % 1 === 0 ? v : v.toFixed(1)} L`; }
+      return `${total} ml`;
+    }
+    const v = total % 1 === 0 ? total : parseFloat(total.toFixed(1));
+    return `${v} ${suffix}`;
   }
 
   productImage(product: any) {

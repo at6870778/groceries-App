@@ -36,9 +36,10 @@ export class AuthService {
     return this.loginWithRole(phone, fullName, 'CUSTOMER', otp);
   }
 
-  loginWithRole(phone: string, fullName: string, role: AppRole, otp: string) {
+  loginWithRole(phone: string, fullName: string, role: AppRole, otp: string, reqId?: string) {
     return this.http.post<{ message: string; data: any }>(`${this.baseUrl}/auth/verify-otp`, {
       phone,
+      reqId,
       otp,
       fullName,
       role
@@ -46,7 +47,14 @@ export class AuthService {
   }
 
   requestOtp(phone: string) {
-    return this.http.post(`${this.baseUrl}/auth/request-otp`, { phone });
+    return this.http.post<{ message: string; data: string }>(`${this.baseUrl}/auth/request-otp`, { phone });
+  }
+
+  retryOtp(phone: string, reqId: string) {
+    return this.http.post<{ message: string; data: string }>(`${this.baseUrl}/auth/retry-otp`, {
+      phone,
+      reqId
+    });
   }
 
   private notifyScopeChanged() {

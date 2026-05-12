@@ -1,544 +1,850 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonInput, IonItem, IonButton, IonText, IonIcon } from '@ionic/angular/standalone';
+import { IonContent, IonButton, IonText } from '@ionic/angular/standalone';
 import { AuthService } from '../../core/services/auth.service';
 import { LocationService } from '../../core/services/location.service';
+import { SyncService } from '../../core/services/sync.service';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonHeader, IonTitle, IonToolbar, IonInput, IonItem, IonButton, IonText, IonIcon],
+  imports: [CommonModule, FormsModule, IonContent, IonButton, IonText],
   template: `
-    <ion-content [scrollEvents]="true" [fullscreen]="false" class="ion-padding">
-      <div class="hero-section">
-        <div class="logo-box">
-          <div class="logo">🛒</div>
-          <h1>Order Kro</h1>
-          <p>Fresh Groceries at Your Doorstep</p>
-        </div>
+    <!-- LOCATION PERMISSION OVERLAY (Blinkit-style) -->
+    <div class="loc-overlay" *ngIf="showLocationPrompt">
+      <div class="loc-card">
+        <div class="loc-pin">📍</div>
+        <h3>Allow OrderKro to access your location?</h3>
+        <p>We use your location to show nearby stores and deliver right to your door</p>
+        <button class="loc-allow-btn" (click)="allowLocation()">Allow Location Access</button>
+        <button class="loc-skip-btn" (click)="skipLocation()">Not Now</button>
       </div>
-      
-      <div class="form-container">
-        <div class="mode-toggle">
-          <button [ngClass]="{'active': mode === 'CUSTOMER'}" (click)="mode = 'CUSTOMER'">
-            👤 Shop
-          </button>
-          <button [ngClass]="{'active': mode === 'DELIVERY_BOY'}" (click)="mode = 'DELIVERY_BOY'">
-            🚴 Deliver
-          </button>
+    </div>
+
+    <ion-content [fullscreen]="false" class="main-content">
+
+      <!-- ========== STEP 1: PHONE ========== -->
+      <div *ngIf="!otpSent" class="page-wrapper">
+
+        <!-- BRAND LOGO (top, full width) -->
+        <div class="brand-hero">
+          <img class="app-logo-img" src="assets/orderkro-logo.png" alt="OrderKro">
         </div>
 
-        <div class="form-section">
-          <h2 *ngIf="mode === 'CUSTOMER'">Welcome Back, Shopper!</h2>
-          <h2 *ngIf="mode === 'DELIVERY_BOY'">Ready to Deliver?</h2>
-          <p class="subtext" *ngIf="mode === 'CUSTOMER'">Order fresh groceries & get delivery in 10 mins</p>
-          <p class="subtext" *ngIf="mode === 'DELIVERY_BOY'">Manage your deliveries & earn money</p>
-
-          <!-- Location Display -->
-          <div class="location-section" *ngIf="locationService.currentLocation() as loc">
-            <div class="location-box">
-              <div class="location-icon">📍</div>
-              <div class="location-info">
-                <div class="location-label">📡 Your Location</div>
-                <div class="location-coords">{{ loc.latitude.toFixed(4) }}, {{ loc.longitude.toFixed(4) }}</div>
-                <div class="location-address" *ngIf="loc.address">{{ loc.address }}</div>
-                <div class="location-accuracy">Accuracy: {{ (loc.accuracy || 0).toFixed(0) }}m</div>
+        <!-- PRODUCT BANNER SLIDER -->
+        <div class="banner-wrap">
+          <div class="banner-track" [style.transform]="'translateX(-' + (currentSlide * 100) + '%)'">
+            <div class="banner-slide" *ngFor="let item of bannerItems"
+                 [style.background]="item.bg">
+              <img class="banner-img" [src]="item.image" [alt]="item.title">
+              <div class="banner-text">
+                <div class="banner-title">{{ item.title }}</div>
+                <div class="banner-sub">{{ item.sub }}</div>
               </div>
             </div>
           </div>
+          <div class="slider-dots">
+            <span *ngFor="let item of bannerItems; let i = index"
+                  class="dot" [class.active-dot]="i === currentSlide"></span>
+          </div>
+        </div>
 
-          <!-- Location Error -->
-          <div class="location-error" *ngIf="locationService.locationError()">
-            {{ locationService.locationError() }}
+        <!-- TAGLINE -->
+        <!-- PHONE INPUT -->
+        <div class="input-section">
+
+          <!-- tagline + loc chip moved inside so they sit right above the phone field -->
+          <div class="tagline-row">
+            <p class="tagline">Karo Order, Kahi Bhi Kuch Bhi! 🛍️</p>
+          </div>
+          <div class="loc-chip" *ngIf="locationService.currentLocation() as loc">
+            <span>📍</span>
+            <span class="loc-chip-text">{{ loc.address || (loc.latitude.toFixed(3) + ', ' + loc.longitude.toFixed(3)) }}</span>
+          </div>
+          <div class="phone-row">
+            <span class="country-code">+91</span>
+            <input
+              class="phone-input"
+              type="tel"
+              inputmode="numeric"
+              maxlength="10"
+              placeholder="Enter Mobile Number"
+              [value]="phone"
+              (input)="onPhoneInput($event)">
           </div>
 
-          <ion-text color="success" *ngIf="successMessage">
-            <p class="success-msg">{{ successMessage }}</p>
-          </ion-text>
+          <ion-button
+            expand="block"
+            class="continue-btn"
+            [disabled]="!isPhoneValid || loading"
+            (click)="sendOtp()">
+            {{ loading ? 'Sending...' : 'Continue' }}
+          </ion-button>
 
-          <div class="input-group">
-            <ion-item class="input-field">
-              <ion-input 
-                label="Phone Number" 
-                labelPlacement="floating"
-                [(ngModel)]="phone" 
-                type="tel" 
-                maxlength="10"
-                placeholder="Enter 10-digit number">
-              </ion-input>
-            </ion-item>
-            <small class="hint">We'll send you an OTP to verify</small>
+          <!-- MODE TOGGLE (subtle) -->
+          <div class="mode-row">
+            <button class="mode-btn" [class.mode-active]="mode==='CUSTOMER'" (click)="mode='CUSTOMER'">
+              🛍️ Shop
+            </button>
+            <button class="mode-btn" [class.mode-active]="mode==='DELIVERY_BOY'" (click)="mode='DELIVERY_BOY'">
+              🚴 Deliver
+            </button>
           </div>
 
-          <div class="input-group">
-            <ion-item class="input-field">
-              <ion-input 
-                label="Full Name" 
-                labelPlacement="floating"
-                [(ngModel)]="fullName"
-                placeholder="Your name">
-              </ion-input>
-            </ion-item>
-          </div>
-
-          <div class="input-group" *ngIf="otpSent">
-            <ion-item class="input-field">
-              <ion-input
-                label="OTP"
-                labelPlacement="floating"
-                [(ngModel)]="otp"
-                type="tel"
-                maxlength="6"
-                placeholder="Enter 6-digit OTP">
-              </ion-input>
-            </ion-item>
-            <small class="hint">Enter the OTP received on your phone</small>
-          </div>
-
-          <ion-text color="danger" *ngIf="error">
-            <p class="error-msg">{{ error }}</p>
-          </ion-text>
-
-          <div class="button-group">
-            <ion-button expand="block" size="large" (click)="detectLocation()" [disabled]="loading" class="location-btn" fill="outline">
-              {{ locationService.isLocating() ? '🔍 Detecting...' : '📍 Detect My Location' }}
-            </ion-button>
-            
-            <ion-button expand="block" size="large" (click)="login()" [disabled]="loading" class="continue-btn">
-              {{ loading ? (otpSent ? '⏳ Verifying OTP...' : '⏳ Sending OTP...') : (otpSent ? '✓ Verify OTP & Continue' : '→ Send OTP') }}
-            </ion-button>
-
-            <ion-button
-              *ngIf="otpSent"
-              expand="block"
-              size="small"
-              fill="clear"
-              (click)="resendOtp()"
-              [disabled]="loading || resendSecondsRemaining > 0">
-              {{ resendSecondsRemaining > 0 ? ('Resend OTP in ' + resendSecondsRemaining + 's') : 'Resend OTP' }}
-            </ion-button>
-          </div>
-
-          <p class="terms">By continuing, you agree to our Terms & Conditions</p>
+          <p class="terms-text">By continuing, you agree to our <span class="terms-link">Terms &amp; Conditions</span></p>
         </div>
       </div>
+
+      <!-- ========== STEP 2: OTP ========== -->
+      <div *ngIf="otpSent" class="page-wrapper otp-page">
+
+        <div class="otp-header">
+          <button class="back-btn" (click)="goBack()">←</button>
+          <div class="otp-header-text">
+            <h2>Verify OTP</h2>
+            <p>Sent to +91 {{ phone }}</p>
+          </div>
+        </div>
+
+        <!-- 6 digit boxes -->
+        <div class="otp-boxes">
+          <input id="otpbox-0" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[0]" (input)="onOtpInput(0,$event)" (keydown)="onOtpKeydown(0,$event)">
+          <input id="otpbox-1" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[1]" (input)="onOtpInput(1,$event)" (keydown)="onOtpKeydown(1,$event)">
+          <input id="otpbox-2" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[2]" (input)="onOtpInput(2,$event)" (keydown)="onOtpKeydown(2,$event)">
+          <input id="otpbox-3" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[3]" (input)="onOtpInput(3,$event)" (keydown)="onOtpKeydown(3,$event)">
+          <input id="otpbox-4" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[4]" (input)="onOtpInput(4,$event)" (keydown)="onOtpKeydown(4,$event)">
+          <input id="otpbox-5" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[5]" (input)="onOtpInput(5,$event)" (keydown)="onOtpKeydown(5,$event)">
+        </div>
+
+        <!-- Name field -->
+        <div class="name-row">
+          <input class="name-input" type="text" [(ngModel)]="fullName" placeholder="Your Name (for first-time users)">
+        </div>
+
+        <div class="otp-btn-wrap">
+          <ion-button
+            expand="block"
+            class="continue-btn"
+            [disabled]="!isOtpComplete || loading"
+            (click)="verifyOtp()">
+            {{ loading ? 'Verifying...' : 'Verify &amp; Continue' }}
+          </ion-button>
+        </div>
+
+        <div class="resend-row">
+          <button class="resend-btn" [disabled]="resendSecondsRemaining > 0" (click)="resendOtp()">
+            {{ resendSecondsRemaining > 0 ? ('Resend OTP in ' + resendSecondsRemaining + 's') : 'Resend OTP' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- ERROR -->
+      <div class="error-banner" *ngIf="error">{{ error }}</div>
+
     </ion-content>
   `,
   styles: [`
-    :host {
-      --ion-background-color: #ffffff;
+    /* === LOCATION OVERLAY === */
+    .loc-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 9999;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      animation: fadeIn 0.3s ease;
     }
 
-    ion-content {
-      --background: linear-gradient(180deg, #fafafa 0%, #ffffff 50%);
-    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    .hero-section {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 40px 20px;
+    .loc-card {
+      background: #fff;
+      width: 100%;
+      border-radius: 24px 24px 0 0;
+      padding: 32px 24px 48px;
       text-align: center;
-      color: white;
-      margin-bottom: 0;
+      animation: slideUp 0.35s ease;
     }
 
-    .logo-box {
-      margin-top: 30px;
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
     }
 
-    .logo {
-      font-size: 48px;
+    .loc-pin {
+      font-size: 52px;
       margin-bottom: 12px;
-      display: inline-block;
-      animation: bounce 2s infinite;
+      display: block;
+      animation: bounce 1.5s infinite;
     }
 
     @keyframes bounce {
       0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
+      50% { transform: translateY(-8px); }
     }
 
-    .hero-section h1 {
-      font-size: 28px;
+    .loc-card h3 {
+      font-size: 18px;
       font-weight: 700;
-      margin: 0 0 6px;
-      letter-spacing: 0.5px;
-    }
-
-    .hero-section p {
-      font-size: 14px;
-      opacity: 0.9;
-      margin: 0;
-      letter-spacing: 0.3px;
-    }
-
-    .form-container {
-      background: white;
-      border-radius: 24px 24px 0 0;
-      margin-top: -20px;
-      padding: 24px 20px 30px;
-      position: relative;
-      z-index: 10;
-      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
-    }
-
-    .mode-toggle {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 24px;
-      background: #f0f3f8;
-      padding: 4px;
-      border-radius: 12px;
-    }
-
-    .mode-toggle button {
-      flex: 1;
-      padding: 12px 16px;
-      border: none;
-      border-radius: 10px;
-      background: transparent;
-      font-size: 14px;
-      font-weight: 600;
-      color: #6f7f95;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .mode-toggle button.active {
-      background: white;
-      color: #667eea;
-      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
-    }
-
-    .form-section h2 {
-      font-size: 22px;
-      font-weight: 700;
-      margin: 0 0 8px;
       color: #1a1a1a;
-    }
-
-    .subtext {
-      font-size: 14px;
-      color: #6f7f95;
-      margin: 0 0 16px;
-      line-height: 1.4;
-    }
-
-    .location-section {
-      margin: 16px 0;
-      padding: 12px;
-      background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-      border-radius: 12px;
-      border: 1px solid #a5d6a7;
-    }
-
-    .location-box {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-    }
-
-    .location-icon {
-      font-size: 28px;
-      flex-shrink: 0;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
-    }
-
-    .location-info {
-      flex: 1;
-    }
-
-    .location-label {
-      font-size: 12px;
-      font-weight: 700;
-      color: #2e7d32;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .location-coords {
-      font-size: 13px;
-      color: #1b5e20;
-      font-weight: 600;
-      margin-top: 4px;
-      font-family: monospace;
-    }
-
-    .location-address {
-      font-size: 12px;
-      color: #2e7d32;
-      margin-top: 4px;
+      margin: 0 0 10px;
       line-height: 1.3;
     }
 
-    .location-accuracy {
-      font-size: 11px;
-      color: #558b2f;
-      margin-top: 4px;
-      font-style: italic;
+    .loc-card p {
+      font-size: 14px;
+      color: #6f7f95;
+      margin: 0 0 24px;
+      line-height: 1.5;
     }
 
-    .location-error {
-      background: #ffebee;
-      color: #c62828;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      margin: 12px 0;
-      border-left: 3px solid #c62828;
-    }
-
-    .input-group {
-      margin-bottom: 20px;
-    }
-
-    .input-field {
-      --border-radius: 12px;
-      --background: #f7f9fc;
-      --padding-start: 16px;
-      --padding-end: 16px;
-      --padding-top: 12px;
-      --padding-bottom: 12px;
-      --border-color: #e1e8f4;
-      border: 1px solid #e1e8f4;
-      margin: 0;
-    }
-
-    .input-field::part(native) {
-      font-size: 16px;
-    }
-
-    .hint {
+    .loc-allow-btn {
       display: block;
-      font-size: 12px;
-      color: #8a99ad;
-      margin-top: 6px;
-      padding: 0 4px;
+      width: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      border: none;
+      background: #1ba672;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 12px;
     }
 
-    .error-msg {
-      background: #ffebee;
-      color: #c62828;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      margin: 12px 0;
-      border-left: 3px solid #c62828;
+    .loc-skip-btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1.5px solid #e0e0e0;
+      background: transparent;
+      color: #6f7f95;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
     }
 
-    .success-msg {
-      background: #e8f5e9;
-      color: #2e7d32;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      margin: 12px 0;
-      border-left: 3px solid #2e7d32;
+    /* === MAIN CONTENT === */
+    .main-content {
+      --background: #fff;
     }
 
-    .button-group {
+    .page-wrapper {
+      height: 100%;             /* fill full ion-content height */
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      margin-top: 12px;
+      background: #fff;
+      padding-top: env(safe-area-inset-top, 0px);
+      overflow: hidden;
     }
 
-    .location-btn {
-      --background: linear-gradient(135deg, #26c281 0%, #2e8b57 100%);
-      height: 48px;
+    /* === BANNER SLIDER === */
+    .banner-wrap {
+      position: relative;
+      overflow: hidden;
+      height: 120px;
+      flex-shrink: 0;
+    }
+
+    .banner-track {
+      display: flex;
+      height: 100%;
+      transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .banner-slide {
+      flex: 0 0 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      padding: 0 24px;
+      gap: 16px;
+    }
+
+    .banner-img {
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.25));
+      animation: floatAnim 3s ease-in-out infinite;
+    }
+
+    @keyframes floatAnim {
+      0%, 100% { transform: translateY(0) rotate(-5deg); }
+      50% { transform: translateY(-12px) rotate(5deg); }
+    }
+
+    .banner-text {
+      text-align: center;
+      color: #fff;
+    }
+
+    .banner-title {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .banner-sub {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-top: 2px;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    }
+
+    .slider-dots {
+      position: absolute;
+      bottom: 10px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      transition: all 0.3s ease;
+    }
+
+    .active-dot {
+      background: #fff;
+      width: 18px;
+      border-radius: 3px;
+    }
+
+    /* === BRAND HERO === */
+    .brand-hero {
+      width: 100%;
+      padding: 0;
+      margin: 0;
+      line-height: 0;
+      flex: 1;               /* grow to fill all available space between status bar and banner */
+      min-height: 0;         /* allow flex shrink below natural size */
+      background: #000;
+      border-bottom: 3px solid #1ba672;
+      overflow: hidden;
+    }
+
+    .app-logo-img {
+      width: 100%;
+      height: 100%;          /* fill the full flex space of brand-hero */
+      object-fit: cover;
+      object-position: center 20%;
+      display: block;
+    }
+
+    /* === TAGLINE ROW (now inside input-section) === */
+    .tagline-row {
+      padding: 0 0 6px;
+    }
+
+    .tagline {
+      font-size: 16px;
+      color: #1a1a1a;
+      font-weight: 700;
+      line-height: 1.4;
+      margin: 0;
+      text-align: center;
+    }
+
+    /* === LOCATION CHIP === */
+    .loc-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 0 10px;
+      padding: 7px 14px;
+      background: #f0faf5;
+      border-radius: 20px;
+      border: 1px solid #c8e6c9;
+      width: fit-content;
+    }
+
+    .loc-chip-text {
+      font-size: 13px;
+      color: #2e7d32;
       font-weight: 600;
-      letter-spacing: 0.5px;
-      box-shadow: 0 8px 20px rgba(38, 194, 129, 0.2);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 240px;
+    }
+
+    /* === INPUT SECTION === */
+    .input-section {
+      padding: 14px 20px 16px;
+      flex: 0 0 auto;        /* natural height — logo above fills all dead space */
+      display: flex;
+      flex-direction: column;
+    }
+
+    .phone-row {
+      display: flex;
+      align-items: center;
+      border: 2px solid #e8ecf4;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #f7f9fc;
+      margin-bottom: 14px;
+      transition: border-color 0.2s;
+    }
+
+    .phone-row:focus-within {
+      border-color: #1ba672;
+    }
+
+    .country-code {
+      padding: 0 14px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a1a1a;
+      border-right: 2px solid #e8ecf4;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      background: #fff;
+      flex-shrink: 0;
+    }
+
+    .phone-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      padding: 0 16px;
+      font-size: 17px;
+      color: #1a1a1a;
+      background: transparent;
+      height: 54px;
+      letter-spacing: 1px;
+    }
+
+    .phone-input::placeholder {
+      color: #b0bec5;
+      font-size: 15px;
+      letter-spacing: 0;
     }
 
     .continue-btn {
-      --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      --background-hover: linear-gradient(135deg, #5568d3 0%, #6a3f94 100%);
-      height: 48px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+      --background: #1ba672;
+      --background-activated: #158a5e;
+      --background-hover: #158a5e;
+      --border-radius: 14px;
+      --box-shadow: 0 6px 20px rgba(27, 166, 114, 0.35);
+      height: 54px;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin: 0 0 14px;
     }
 
-    .terms {
+    .continue-btn.button-disabled {
+      --background: #d0d0d0;
+      --box-shadow: none;
+      opacity: 1;
+    }
+
+    /* === MODE TOGGLE === */
+    .mode-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 10px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 10px;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 600;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-active {
+      border-color: #1ba672;
+      color: #1ba672;
+      background: #f0faf5;
+    }
+
+    .terms-text {
       font-size: 12px;
-      color: #8a99ad;
+      color: #9e9e9e;
       text-align: center;
-      margin-top: 16px;
+      margin: 0;
+    }
+
+    .terms-link {
+      color: #1ba672;
+      font-weight: 600;
+    }
+
+    /* === OTP PAGE === */
+    .otp-page {
+      padding: 0;
+    }
+
+    .otp-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 50px 20px 24px;
+      background: #f7f9fc;
+    }
+
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1.5px solid #e0e0e0;
+      background: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .otp-header-text h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 2px;
+      color: #1a1a1a;
+    }
+
+    .otp-header-text p {
+      font-size: 14px;
+      color: #6f7f95;
+      margin: 0;
+    }
+
+    /* === OTP BOXES === */
+    .otp-boxes {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 36px 20px 24px;
+    }
+
+    .otp-box {
+      width: 48px;
+      height: 56px;
+      border-radius: 12px;
+      border: 2px solid #e8ecf4;
+      background: #f7f9fc;
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a1a1a;
+      outline: none;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+
+    .otp-box:focus {
+      border-color: #1ba672;
+      background: #fff;
+      transform: scale(1.05);
+    }
+
+    /* === NAME INPUT === */
+    .name-row {
+      padding: 0 20px 16px;
+    }
+
+    .name-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e8ecf4;
+      border-radius: 14px;
+      background: #f7f9fc;
+      font-size: 15px;
+      color: #1a1a1a;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+
+    .name-input:focus {
+      border-color: #1ba672;
+    }
+
+    .name-input::placeholder {
+      color: #b0bec5;
+    }
+
+    .otp-btn-wrap {
+      padding: 0 20px;
+    }
+
+    /* === RESEND === */
+    .resend-row {
+      text-align: center;
+      padding: 8px 0 16px;
+    }
+
+    .resend-btn {
+      background: none;
+      border: none;
+      color: #1ba672;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 8px 16px;
+    }
+
+    .resend-btn:disabled {
+      color: #9e9e9e;
+      cursor: default;
+    }
+
+    /* === ERROR === */
+    .error-banner {
+      margin: 0 20px 16px;
+      padding: 12px 16px;
+      background: #ffebee;
+      color: #c62828;
+      border-radius: 12px;
+      font-size: 14px;
+      border-left: 3px solid #c62828;
     }
   `]
 })
-export class DeliveryLoginPage implements OnDestroy {
+export class DeliveryLoginPage implements OnInit, OnDestroy {
+  // Mode
   mode: 'CUSTOMER' | 'DELIVERY_BOY' = 'CUSTOMER';
+
+  // Location dialog
+  showLocationPrompt = false;
+
+  // Banner
+  bannerItems = [
+    { image: 'assets/items/banana.svg',    title: 'Fresh Banana',      sub: 'Farm fresh, delivered in minutes',    bg: 'linear-gradient(135deg, #f7971e, #ffd200)' },
+    { image: 'assets/items/milk.svg',       title: 'Pure Fresh Milk',   sub: 'Cold & pure, straight to your door',  bg: 'linear-gradient(135deg, #4facfe, #00f2fe)' },
+    { image: 'assets/items/tomato.svg',     title: 'Juicy Tomatoes',    sub: 'Red, ripe & ready to cook',           bg: 'linear-gradient(135deg, #f5515f, #9f041b)' },
+    { image: 'assets/items/bread.svg',      title: 'Soft Fresh Bread',  sub: 'Baked fresh, delivered warm',         bg: 'linear-gradient(135deg, #f093fb, #f5576c)' },
+    { image: 'assets/items/juice.svg',      title: 'Cool Juices',       sub: 'Refreshing drinks for every mood',    bg: 'linear-gradient(135deg, #56ab2f, #a8e063)' },
+    { image: 'assets/items/chips.svg',      title: 'Crispy Snacks',     sub: 'Anytime hunger? Sorted!',             bg: 'linear-gradient(135deg, #a18cd1, #fbc2eb)' },
+    { image: 'assets/items/rice.svg',       title: 'Basmati Rice',      sub: 'Premium quality, bulk orders welcome', bg: 'linear-gradient(135deg, #ffecd2, #e07b39)' },
+    { image: 'assets/items/atta.svg',       title: 'Fresh Atta',        sub: 'Stone-ground, healthy & pure',        bg: 'linear-gradient(135deg, #d4a843, #a07820)' },
+  ];
+  currentSlide = 0;
+  private slideTimer: number | null = null;
+
+  // Phone step
   phone = '';
+  get isPhoneValid(): boolean { return /^[0-9]{10}$/.test(this.phone); }
+
+  // OTP step
+  otpDigits: string[] = ['', '', '', '', '', ''];
+  get otp(): string { return this.otpDigits.join(''); }
+  get isOtpComplete(): boolean { return this.otpDigits.every(d => d.length === 1); }
   fullName = '';
-  otp = '';
-  otpSent = false;
+  otpRequestId = '';
+  get otpSent(): boolean { return this._otpSent; }
+  private _otpSent = false;
+
+  // Cooldown
   resendSecondsRemaining = 0;
-  successMessage = '';
-  error = '';
-  loading = false;
   private resendTimerId: number | null = null;
 
+  // State
+  loading = false;
+  error = '';
+
   constructor(
-    private auth: AuthService, 
+    private auth: AuthService,
     private router: Router,
+    private sync: SyncService,
     public locationService: LocationService
-  ) {
-    // Auto-detect location on page load
-    this.autoDetectLocation();
+  ) {}
+
+  ngOnInit(): void {
+    this.startSlider();
+    // Show prompt if: never asked before, OR location not yet detected
+    const locationAsked = localStorage.getItem('orderkro_location_asked');
+    const alreadyHasLocation = !!this.locationService.currentLocation();
+    if (!locationAsked || !alreadyHasLocation) {
+      this.showLocationPrompt = true;
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.slideTimer !== null) window.clearInterval(this.slideTimer);
+    this.clearResendTimer();
+  }
+
+  private startSlider(): void {
+    this.slideTimer = window.setInterval(() => {
+      this.currentSlide = (this.currentSlide + 1) % this.bannerItems.length;
+    }, 2500);
+  }
+
+  allowLocation(): void {
+    localStorage.setItem('orderkro_location_asked', '1');
+    this.showLocationPrompt = false;
+    this.locationService.detectCurrentLocation().catch(() => {});
+  }
+
+  skipLocation(): void {
+    localStorage.setItem('orderkro_location_asked', '1');
+    this.showLocationPrompt = false;
+  }
+
+  onPhoneInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const clean = input.value.replace(/[^0-9]/g, '').slice(0, 10);
+    input.value = clean;
+    this.phone = clean;
+    this.error = '';
+  }
+
+  sendOtp(): void {
+    if (!this.isPhoneValid || this.loading) return;
+    this.loading = true;
+    this.error = '';
+    this.auth.requestOtp(this.phone).subscribe({
+      next: (res) => {
+        this.otpRequestId = res?.data || '';
+        this._otpSent = true;
+        this.startResendCooldown();
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = this.getErrorMessage(err, 'Could not send OTP. Check your connection.');
+        this.loading = false;
+      }
+    });
+  }
+
+  onOtpInput(index: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    // Take only the last digit typed (handles paste of full OTP too)
+    const val = input.value.replace(/[^0-9]/g, '').slice(-1);
+    input.value = val;
+    // Create new array reference so Angular detects change and re-evaluates isOtpComplete
+    const newDigits = [...this.otpDigits];
+    newDigits[index] = val;
+    this.otpDigits = newDigits;
+    if (val && index < 5) {
+      const next = document.getElementById('otpbox-' + (index + 1)) as HTMLInputElement;
+      if (next) { next.value = ''; next.focus(); }
+    }
+  }
+
+  onOtpKeydown(index: number, event: KeyboardEvent): void {
+    if (event.key === 'Backspace') {
+      if (!this.otpDigits[index] && index > 0) {
+        const newDigits = [...this.otpDigits];
+        newDigits[index - 1] = '';
+        this.otpDigits = newDigits;
+        const prev = document.getElementById('otpbox-' + (index - 1)) as HTMLInputElement;
+        if (prev) { prev.value = ''; prev.focus(); }
+      } else {
+        const newDigits = [...this.otpDigits];
+        newDigits[index] = '';
+        this.otpDigits = newDigits;
+      }
+    }
+  }
+
+  verifyOtp(): void {
+    if (!this.isOtpComplete || this.loading) return;
+    this.loading = true;
+    this.error = '';
+    const name = this.fullName.trim(); // empty string is fine — backend will use phone as fallback
+    this.auth.loginWithRole(this.phone, name, this.mode, this.otp, this.otpRequestId).subscribe({
+      next: (res) => {
+        const token = res?.data?.token || res?.data?.accessToken;
+        if (!token) {
+          this.error = 'Login failed. Token not received.';
+          this.loading = false;
+          return;
+        }
+        this.auth.saveToken(token, this.mode, res?.data?.phone || this.phone);
+        this.saveLocationOnLogin();
+        if (this.mode === 'CUSTOMER') this.sync.syncCart(); // pull saved cart immediately
+        this.loading = false;
+        this.router.navigateByUrl(this.mode === 'DELIVERY_BOY' ? '/delivery/orders' : '/home');
+      },
+      error: (err) => {
+        this.error = this.getErrorMessage(err, 'Login failed. Please try again.');
+        this.loading = false;
+      }
+    });
+  }
+
+  goBack(): void {
+    this._otpSent = false;
+    this.otpDigits = ['', '', '', '', '', ''];
+    this.error = '';
+  }
+
+  resendOtp(): void {
+    if (this.resendSecondsRemaining > 0 || this.loading) return;
+    this.loading = true;
+    this.error = '';
+    const request = this.otpRequestId
+      ? this.auth.retryOtp(this.phone, this.otpRequestId)
+      : this.auth.requestOtp(this.phone);
+    request.subscribe({
+      next: (res) => {
+        if (res?.data) this.otpRequestId = res.data;
+        this.otpDigits = ['', '', '', '', '', ''];
+        this.startResendCooldown();
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = this.getErrorMessage(err, 'Could not resend OTP.');
+        this.loading = false;
+      }
+    });
+  }
+
+  private startResendCooldown(seconds = 30): void {
+    this.clearResendTimer();
+    this.resendSecondsRemaining = seconds;
+    this.resendTimerId = window.setInterval(() => {
+      this.resendSecondsRemaining = Math.max(0, this.resendSecondsRemaining - 1);
+      if (this.resendSecondsRemaining === 0) this.clearResendTimer();
+    }, 1000);
+  }
+
+  private clearResendTimer(): void {
+    if (this.resendTimerId !== null) {
+      window.clearInterval(this.resendTimerId);
+      this.resendTimerId = null;
+    }
   }
 
   private getErrorMessage(err: unknown, fallback: string): string {
     const httpErr = err as HttpErrorResponse;
     const backendMsg = httpErr?.error?.message;
-    if (typeof backendMsg === 'string' && backendMsg.trim()) {
-      return backendMsg;
-    }
+    if (typeof backendMsg === 'string' && backendMsg.trim()) return backendMsg;
     return fallback;
   }
 
-  /**
-   * Auto-detect location on page load if not already detected
-   */
-  autoDetectLocation() {
-    if (!this.locationService.currentLocation()) {
-      this.detectLocation();
-    }
-  }
-
-  ngOnDestroy(): void {
-    this.clearResendTimer();
-  }
-
-  /**
-   * Manually detect user location
-   */
-  async detectLocation() {
-    try {
-      await this.locationService.detectCurrentLocation();
-      this.error = '';
-    } catch (err) {
-      this.error = this.locationService.locationError() || 'Could not detect location';
-    }
-  }
-
-  login() {
-    this.error = '';
-    this.successMessage = '';
-    if (!/^[0-9]{10}$/.test(this.phone)) {
-      this.error = '📱 Please enter a valid 10-digit phone number.';
-      return;
-    }
-    if (!this.fullName.trim()) {
-      this.error = '✍️ Please enter your name.';
-      return;
-    }
-
-    if (this.otpSent && !/^[0-9]{6}$/.test(this.otp)) {
-      this.error = '🔐 Please enter a valid 6-digit OTP.';
-      return;
-    }
-    
-    this.loading = true;
-    if (!this.otpSent) {
-      this.auth.requestOtp(this.phone).subscribe({
-        next: () => {
-          this.otpSent = true;
-          this.otp = '';
-          this.startResendCooldown();
-          this.successMessage = '✅ OTP sent successfully. Check your phone and enter the code below.';
-          this.loading = false;
-        },
-        error: (err) => {
-          this.error = this.getErrorMessage(err, '🌐 Could not send OTP. Check your connection.');
-          this.loading = false;
-        }
-      });
-      return;
-    }
-
-    this.auth.loginWithRole(this.phone, this.fullName, this.mode, this.otp).subscribe({
-          next: (res) => {
-            const token = res?.data?.token || res?.data?.accessToken;
-            if (!token) {
-              this.error = '❌ Login failed. Token not received.';
-              this.loading = false;
-              return;
-            }
-
-            this.auth.saveToken(token, this.mode, res?.data?.phone || this.phone);
-            this.loading = false;
-            
-            // Save user location on login
-            const loc = this.locationService.currentLocation();
-            if (loc) {
-              sessionStorage.setItem('user_location_at_login', JSON.stringify({
-                latitude: loc.latitude,
-                longitude: loc.longitude,
-                address: loc.address,
-                timestamp: new Date().toISOString()
-              }));
-            }
-
-            if (this.mode === 'DELIVERY_BOY') {
-              this.router.navigateByUrl('/delivery/orders');
-            } else {
-              this.router.navigateByUrl('/home');
-            }
-          },
-          error: (err) => {
-            this.error = this.getErrorMessage(err, '❌ Login failed. Please try again.');
-            this.loading = false; 
-          }
-    });
-  }
-
-  resendOtp() {
-    if (!this.otpSent || this.resendSecondsRemaining > 0 || this.loading) {
-      return;
-    }
-
-    this.error = '';
-    this.loading = true;
-    this.auth.requestOtp(this.phone).subscribe({
-      next: () => {
-        this.otp = '';
-        this.startResendCooldown();
-        this.successMessage = '✅ OTP resent successfully.';
-        this.loading = false;
-      },
-      error: (err) => {
-        this.error = this.getErrorMessage(err, '🌐 Could not resend OTP. Check your connection.');
-        this.loading = false;
-      }
-    });
-  }
-
-  private startResendCooldown(seconds: number = 30) {
-            this.successMessage = '✅ OTP verified successfully.';
-    this.clearResendTimer();
-    this.resendSecondsRemaining = seconds;
-
-    this.resendTimerId = window.setInterval(() => {
-      this.resendSecondsRemaining -= 1;
-      if (this.resendSecondsRemaining <= 0) {
-        this.resendSecondsRemaining = 0;
-        this.clearResendTimer();
-      }
-    }, 1000);
-  }
-
-  private clearResendTimer() {
-    if (this.resendTimerId !== null) {
-      window.clearInterval(this.resendTimerId);
-      this.resendTimerId = null;
+  private saveLocationOnLogin(): void {
+    const loc = this.locationService.currentLocation();
+    if (loc) {
+      sessionStorage.setItem('user_location_at_login', JSON.stringify({
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        address: loc.address,
+        timestamp: new Date().toISOString()
+      }));
     }
   }
 }

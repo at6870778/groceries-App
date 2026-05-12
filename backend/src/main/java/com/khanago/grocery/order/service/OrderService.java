@@ -7,6 +7,7 @@ import com.khanago.grocery.common.enums.PaymentMode;
 import com.khanago.grocery.common.exception.ApiException;
 import com.khanago.grocery.delivery.DeliveryAssignment;
 import com.khanago.grocery.delivery.repository.DeliveryAssignmentRepository;
+import com.khanago.grocery.delivery.service.DeliveryFeeService;
 import com.khanago.grocery.order.Order;
 import com.khanago.grocery.order.OrderItem;
 import com.khanago.grocery.order.dto.AdminOrderDetailDto;
@@ -40,13 +41,17 @@ public class OrderService {
     private final UserRepository userRepository;
     private final DeliveryAssignmentRepository deliveryAssignmentRepository;
     private final CartService cartService;
+    private final DeliveryFeeService deliveryFeeService;
 
+    @Transactional
     public OrderDto checkout(CheckoutRequestDto request) {
         Long userId = SecurityUtils.getCurrentUserId();
         User customer = userRepository.findById(userId).orElseThrow(() -> new ApiException("User not found"));
-        Address address = addressRepository.findById(request.addressId()).orElseThrow(() -> new ApiException("Address not found"));
+        Address address = (request.addressId() != null)
+                ? addressRepository.findById(request.addressId()).orElseThrow(() -> new ApiException("Address not found"))
+                : null;
 
-        if (!address.getUser().getId().equals(userId)) {
+        if (address != null && !address.getUser().getId().equals(userId)) {
             throw new ApiException("Address does not belong to current user.");
         }
 
@@ -59,7 +64,12 @@ public class OrderService {
                 .map(i -> i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal deliveryFee = new BigDecimal("20.00");
+        BigDecimal deliveryFee;
+        if (request.customerLat() != null && request.customerLng() != null) {
+            deliveryFee = deliveryFeeService.calculateFee(request.customerLat(), request.customerLng());
+        } else {
+            deliveryFee = new BigDecimal("50.00");
+        }
 
         Order order = new Order();
         order.setCustomer(customer);
@@ -91,11 +101,13 @@ public class OrderService {
         return toDto(order, orderItems);
     }
 
-    public Page<OrderDto> myOrders(int page, int size) {
-        return orderRepository.findByCustomerId(SecurityUtils.getCurrentUserId(), PageRequest.of(page, size))
-                .map(this::toDto);
+    @Transactional(readOnly = true)
+    public java.util.List<OrderDto> myOrders() {
+        return orderRepository.findByCustomerIdOrderByCreatedAtDesc(SecurityUtils.getCurrentUserId())
+                .stream().map(this::toDto).toList();
     }
 
+    @Transactional(readOnly = true)
     public OrderDto getOrder(Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new ApiException("Order not found"));
         if (!order.getCustomer().getId().equals(SecurityUtils.getCurrentUserId())) {
@@ -104,6 +116,7 @@ public class OrderService {
         return toDto(order);
     }
 
+    @Transactional(readOnly = true)
     public OrderDto getOrderForDelivery(Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new ApiException("Order not found"));
         return toDto(order);
@@ -130,6 +143,7 @@ public class OrderService {
         return orders.map(this::toAdminDetailDto);
     }
 
+    @Transactional
     public OrderDto updateOrderStatus(Long orderId, OrderStatus status) {
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new ApiException("Order not found"));
         order.setStatus(status);
@@ -142,8 +156,17 @@ public class OrderService {
     }
 
     private OrderDto toDto(Order order, List<OrderItem> items) {
+        String customerName = (order.getCustomer() != null && order.getCustomer().getFullName() != null)
+                ? order.getCustomer().getFullName() : "Unknown";
+        String customerPhone = (order.getCustomer() != null && order.getCustomer().getPhone() != null)
+                ? order.getCustomer().getPhone() : "N/A";
+        String address = order.getAddress() != null ?
+                order.getAddress().getLine1() +
+                (order.getAddress().getLine2() != null && !order.getAddress().getLine2().isBlank() ? ", " + order.getAddress().getLine2() : "") +
+                ", " + order.getAddress().getCity() + " - " + order.getAddress().getPostalCode() : "N/A";
         return new OrderDto(
                 order.getId(),
+                null,
                 null,
                 order.getStatus().name(),
                 order.getPaymentMode().name(),
@@ -152,7 +175,10 @@ public class OrderService {
                 order.getTotalAmount(),
                 order.getNotes(),
                 order.getCreatedAt(),
-                items.stream().map(i -> new OrderItemDto(i.getProductName(), i.getUnit(), i.getQuantity(), i.getUnitPrice(), i.getLineTotal())).toList()
+                items.stream().map(i -> new OrderItemDto(i.getProductName(), i.getUnit(), i.getQuantity(), i.getUnitPrice(), i.getLineTotal())).toList(),
+                customerName,
+                customerPhone,
+                address
         );
     }
 

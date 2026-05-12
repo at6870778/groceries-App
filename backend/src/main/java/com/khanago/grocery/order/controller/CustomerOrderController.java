@@ -4,13 +4,14 @@ import com.khanago.grocery.order.dto.CheckoutRequestDto;
 import com.khanago.grocery.order.dto.OrderDto;
 import com.khanago.grocery.order.service.OrderService;
 import com.khanago.grocery.order.service.BillService;
+import com.khanago.grocery.delivery.dto.DeliveryFeeDto;
 import com.khanago.grocery.delivery.dto.DeliveryTrackingDto;
+import com.khanago.grocery.delivery.service.DeliveryFeeService;
 import com.khanago.grocery.delivery.service.DeliveryService;
 import com.khanago.grocery.common.dto.ApiSuccessResponse;
 import com.khanago.grocery.common.enums.OrderStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ public class CustomerOrderController {
     private final OrderService orderService;
     private final BillService billService;
     private final DeliveryService deliveryService;
+    private final DeliveryFeeService deliveryFeeService;
 
     @PostMapping("/checkout")
     public OrderDto checkout(@Valid @RequestBody CheckoutRequestDto request) {
@@ -31,9 +33,8 @@ public class CustomerOrderController {
     }
 
     @GetMapping
-    public Page<OrderDto> myOrders(@RequestParam(defaultValue = "0") int page,
-                                   @RequestParam(defaultValue = "10") int size) {
-        return orderService.myOrders(page, size);
+    public java.util.List<OrderDto> myOrders() {
+        return orderService.myOrders();
     }
 
     @GetMapping("/{orderId}")
@@ -61,5 +62,15 @@ public class CustomerOrderController {
     public ApiSuccessResponse<DeliveryTrackingDto> trackDelivery(@PathVariable Long orderId) {
         DeliveryTrackingDto tracking = deliveryService.getDeliveryTracking(orderId);
         return new ApiSuccessResponse<>("Delivery tracking info", tracking);
+    }
+
+    @GetMapping("/delivery-fee")
+    public DeliveryFeeDto getDeliveryFee(
+            @RequestParam double lat,
+            @RequestParam double lng) {
+        DeliveryFeeService.DeliveryFeeResult result = deliveryFeeService.calculateFeeWithDetails(lat, lng);
+        String label = String.format("₹%s for %.1f km (%s distance)",
+                result.fee().toPlainString(), result.distanceKm(), result.method());
+        return new DeliveryFeeDto(result.fee(), result.distanceKm(), result.method(), label);
     }
 }

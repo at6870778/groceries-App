@@ -16,6 +16,7 @@ public class AppProperties {
     private Cors cors = new Cors();
     private Razorpay razorpay = new Razorpay();
     private Msg91 msg91 = new Msg91();
+    private Cloudinary cloudinary = new Cloudinary();
 
     @Getter
     @Setter
@@ -49,6 +50,8 @@ public class AppProperties {
     @Setter
     public static class Msg91 {
         private String authKey;
+        private String tokenAuth;
+        private String widgetId;
         private String templateId;
         private String senderId = "KHNAGO";
         private String countryCode = "91";
@@ -57,6 +60,24 @@ public class AppProperties {
         /** True only when an auth key has actually been configured. */
         public boolean isEnabled() {
             return authKey != null && !authKey.isBlank();
+        }
+
+        public boolean isWidgetEnabled() {
+            return isEnabled() && widgetId != null && !widgetId.isBlank();
+        }
+    }
+
+    @Getter
+    @Setter
+    public static class Cloudinary {
+        private String cloudName;
+        private String apiKey;
+        private String apiSecret;
+
+        public boolean isConfigured() {
+            return cloudName != null && !cloudName.isBlank()
+                && apiKey != null && !apiKey.isBlank()
+                && apiSecret != null && !apiSecret.isBlank();
         }
     }
 }

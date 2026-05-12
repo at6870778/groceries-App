@@ -46,77 +46,138 @@ declare global {
 
       <ng-template #cartOrEmpty>
       <ng-container *ngIf="cartState.items().length > 0; else emptyCart">
-        
-        <!-- Location Display -->
-        <div class="location-card" *ngIf="locationService.currentLocation() as loc">
-          <div class="location-header">
-            <span class="location-icon">📍</span>
-            <span class="location-title">Delivery Location</span>
-          </div>
-          <div class="location-details">
-            <div class="detail-row">
-              <span class="label">Coordinates</span>
-              <span class="value">{{ loc.latitude.toFixed(4) }}, {{ loc.longitude.toFixed(4) }}</span>
-            </div>
-            <div class="detail-row" *ngIf="loc.address">
-              <span class="label">Address</span>
-              <span class="value">{{ loc.address }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Accuracy</span>
-              <span class="value">{{ (loc.accuracy || 0).toFixed(0) }}m</span>
-            </div>
-          </div>
-        </div>
 
-        <div class="payment-card">
-          <div class="payment-title">Choose payment method</div>
-          <div class="payment-subtitle">Select UPI to pay online or choose COD to pay on delivery.</div>
-          <div class="payment-actions">
-            <button class="mode-btn" [class.active]="paymentMode() === 'UPI'" (click)="selectPaymentMode('UPI')">
-              <span class="mode-icon">📱</span>
-              <span>
-                <strong>UPI</strong>
-                <small>PhonePe / GPay / Paytm</small>
-              </span>
-            </button>
-            <button class="mode-btn" [class.active]="paymentMode() === 'COD'" (click)="selectPaymentMode('COD')">
-              <span class="mode-icon">💵</span>
-              <span>
-                <strong>COD</strong>
-                <small>Pay when delivered</small>
-              </span>
-            </button>
+        <!-- ===== STEP 1: CART REVIEW ===== -->
+        <ng-container *ngIf="checkoutStep() === 'cart'">
+
+          <!-- Delivery address chip -->
+          <div class="delivery-loc" *ngIf="locationService.currentLocation() as loc">
+            <span>📍</span>
+            <span class="loc-addr">{{ loc.address || (loc.latitude.toFixed(3) + ', ' + loc.longitude.toFixed(3)) }}</span>
           </div>
-          <div class="upi-panel" *ngIf="paymentMode() === 'UPI'">
-            <div class="upi-qr">QR</div>
-            <div>
-              <div class="upi-label">Pay to UPI ID</div>
-              <div class="upi-value">orderkro&#64;upi</div>
-              <div class="upi-note">Tap the button below to open Razorpay and complete UPI payment securely.</div>
+
+          <!-- Item list with images + stepper -->
+          <div class="cart-items-list">
+            <div class="cart-item" *ngFor="let item of cartState.items()">
+              <img class="cart-thumb" [src]="productImage(item)" [alt]="item.name">
+              <div class="cart-item-info">
+                <div class="cart-item-name">{{ item.name }}</div>
+                <div class="cart-item-unit">{{ scaledUnit(item.unit, item.quantity) }}</div>
+                <div class="cart-item-price">₹{{ item.unitPrice }} × {{ item.quantity }}</div>
+              </div>
+              <div class="cart-stepper">
+                <button class="cstep-btn" (click)="decrementItem(item)">−</button>
+                <span class="cstep-qty">{{ item.quantity }}</span>
+                <button class="cstep-btn" (click)="incrementItem(item)">+</button>
+              </div>
             </div>
           </div>
-          <div class="cod-note" *ngIf="paymentMode() === 'COD'">
-            You selected Cash on Delivery. Tap confirm to place the order.
-          </div>
-        </div>
 
-        <ion-list>
-          <ion-item *ngFor="let i of cartState.items()">
-            <ion-label>
-              <h2>{{ i.name }}</h2>
-              <p>Qty: {{ i.quantity }}</p>
-            </ion-label>
-            <ion-text slot="end"><strong>Rs {{ i.lineTotal }}</strong></ion-text>
-          </ion-item>
-        </ion-list>
-        <div style="margin-top:16px;text-align:right;font-size:1.1rem;">
-          <strong>Subtotal: Rs {{ cartState.subtotal() }}</strong>
-        </div>
-        <ion-button expand="block" style="margin-top:16px;" (click)="checkout()" [disabled]="checking || !canCheckout()">
-          {{ checking ? 'Placing Order...' : paymentMode() === 'UPI' ? 'Confirm UPI Payment & Place Order' : 'Confirm COD Order' }}
-        </ion-button>
-        <p *ngIf="orderMsg" [style.color]="orderMsg.includes('✅') ? 'green' : 'red'" style="text-align:center;margin-top:12px;">{{ orderMsg }}</p>
+          <!-- Bill Summary -->
+          <div class="bill-box">
+            <div class="bill-title">Bill Summary</div>
+            <div class="bill-row" *ngFor="let item of cartState.items()">
+              <span>{{ item.name }} × {{ item.quantity }}</span>
+              <span>₹{{ item.lineTotal }}</span>
+            </div>
+            <div class="bill-divider"></div>
+            <div class="bill-row">
+              <span>Subtotal</span>
+              <span>₹{{ cartState.subtotal() }}</span>
+            </div>
+            <div class="bill-row">
+              <span>Delivery Fee</span>
+              <span>₹50</span>
+            </div>
+            <div class="bill-divider"></div>
+            <div class="bill-row total-row">
+              <span>Total</span>
+              <span>₹{{ cartState.subtotal() + 50 }}</span>
+            </div>
+          </div>
+
+          <p *ngIf="orderMsg" style="color:red;text-align:center;margin:8px 0;">{{ orderMsg }}</p>
+          <ion-button expand="block" class="proceed-btn" (click)="proceedToPayment()" [disabled]="fetchingFee()">
+            {{ fetchingFee() ? 'Calculating delivery fee...' : 'Proceed to Payment →' }}
+          </ion-button>
+        </ng-container>
+
+        <!-- ===== STEP 2: PAYMENT ===== -->
+        <ng-container *ngIf="checkoutStep() === 'payment'">
+          <button class="back-step-btn" (click)="checkoutStep.set('cart')">← Back to Cart</button>
+
+          <!-- order summary chip -->
+          <div class="order-chip">
+            <span>🛒 {{ cartState.items().length }} item{{ cartState.items().length > 1 ? 's' : '' }}</span>
+            <span class="chip-total">₹{{ cartState.subtotal() + deliveryFee() }} <span style="font-size:0.75rem;opacity:0.7">(incl. ₹{{ deliveryFee() }} delivery)</span></span>
+          </div>
+
+          <!-- Location + delivery fee breakdown -->
+          <div class="location-card" *ngIf="locationService.currentLocation() as loc">
+            <div class="location-header">
+              <span class="location-icon">📍</span>
+              <span class="location-title">Delivery Location</span>
+            </div>
+            <div class="location-details">
+              <div class="detail-row" *ngIf="loc.address">
+                <span class="label">Address</span>
+                <span class="value">{{ loc.address }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Delivery Charge</span>
+                <span class="value" style="color:#2e7d32;font-weight:700;">{{ deliveryFeeLabel() }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="payment-card">
+            <div class="payment-title">Choose payment method</div>
+            <div class="payment-subtitle">Select UPI to pay online or choose COD to pay on delivery.</div>
+            <div class="payment-actions">
+              <button class="mode-btn" [class.active]="paymentMode() === 'UPI'" (click)="selectPaymentMode('UPI')">
+                <span class="mode-icon">📱</span>
+                <span>
+                  <strong>UPI</strong>
+                  <small>PhonePe / GPay / Paytm</small>
+                </span>
+              </button>
+              <button class="mode-btn" [class.active]="paymentMode() === 'COD'" (click)="selectPaymentMode('COD')">
+                <span class="mode-icon">💵</span>
+                <span>
+                  <strong>COD</strong>
+                  <small>Pay when delivered</small>
+                </span>
+              </button>
+            </div>
+            <div class="upi-panel" *ngIf="paymentMode() === 'UPI'">
+              <div class="upi-qr">QR</div>
+              <div>
+                <div class="upi-label">Pay to UPI ID</div>
+                <div class="upi-value">orderkro&#64;upi</div>
+                <div class="upi-note">Tap the button below to open Razorpay and complete UPI payment securely.</div>
+              </div>
+            </div>
+            <div class="cod-note" *ngIf="paymentMode() === 'COD' && !confirmingCod()">
+              You selected Cash on Delivery. Tap confirm to place the order.
+            </div>
+
+            <!-- Inline COD confirmation -->
+            <div class="cod-confirm-card" *ngIf="confirmingCod()">
+              <div class="cod-confirm-title">Confirm COD Order?</div>
+              <div class="cod-confirm-sub">Pay <strong>₹{{ cartState.subtotal() + deliveryFee() | number:'1.0-0' }}</strong> cash on delivery.</div>
+              <div class="cod-confirm-actions">
+                <button class="cod-yes-btn" (click)="confirmCod()" [disabled]="checking">✅ Yes, Place Order</button>
+                <button class="cod-no-btn" (click)="confirmingCod.set(false)">Cancel</button>
+              </div>
+            </div>
+          </div>
+
+          <ion-button expand="block" style="margin-top:16px;" (click)="checkout()" [disabled]="checking || !canCheckout() || confirmingCod()">
+            {{ checking ? 'Placing Order...' : paymentMode() === 'UPI' ? 'Confirm UPI Payment & Place Order' : 'Confirm COD Order' }}
+          </ion-button>
+          <p *ngIf="orderMsg" [style.color]="orderMsg.includes('✅') ? 'green' : 'red'" style="text-align:center;margin-top:12px;">{{ orderMsg }}</p>
+        </ng-container>
+
       </ng-container>
       </ng-template>
       <ng-template #emptyCart>
@@ -385,17 +446,225 @@ declare global {
       font-size: 0.9rem;
       padding: 10px 12px;
     }
+    .cod-confirm-card {
+      margin-top: 14px;
+      border-radius: 14px;
+      border: 2px solid #16a34a;
+      background: #f0faf5;
+      padding: 14px;
+      text-align: center;
+    }
+    .cod-confirm-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: #14532d;
+      margin-bottom: 4px;
+    }
+    .cod-confirm-sub {
+      font-size: 0.9rem;
+      color: #166534;
+      margin-bottom: 14px;
+    }
+    .cod-confirm-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .cod-yes-btn {
+      flex: 1;
+      background: #16a34a;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 11px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .cod-yes-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .cod-no-btn {
+      flex: 1;
+      background: #f0f0f0;
+      color: #444;
+      border: none;
+      border-radius: 10px;
+      padding: 11px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ===== CART REVIEW SCREEN ===== */
+    .delivery-loc {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #f0faf5;
+      border: 1px solid #c8e6c9;
+      border-radius: 12px;
+      padding: 8px 12px;
+      margin-bottom: 14px;
+      font-size: 0.85rem;
+      color: #2e7d32;
+      font-weight: 600;
+    }
+    .loc-addr {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cart-items-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .cart-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid #e8eef8;
+      padding: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .cart-thumb {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+      border-radius: 10px;
+      background: #f5f7ff;
+      flex-shrink: 0;
+      padding: 4px;
+    }
+    .cart-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .cart-item-name {
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: #1a1a1a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cart-item-unit {
+      font-size: 0.78rem;
+      color: #888;
+      margin-top: 2px;
+    }
+    .cart-item-price {
+      font-size: 0.85rem;
+      color: #667eea;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .cart-stepper {
+      display: flex;
+      align-items: center;
+      background: #16a34a;
+      border-radius: 10px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .cstep-btn {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    .cstep-qty {
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      min-width: 22px;
+      text-align: center;
+    }
+    /* Bill summary */
+    .bill-box {
+      background: #fff;
+      border: 1px solid #e8eef8;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+    .bill-title {
+      font-weight: 800;
+      font-size: 1rem;
+      color: #1a1a1a;
+      margin-bottom: 10px;
+    }
+    .bill-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      color: #444;
+      padding: 4px 0;
+    }
+    .bill-divider {
+      border-top: 1px dashed #d8def0;
+      margin: 8px 0;
+    }
+    .total-row {
+      font-weight: 800;
+      font-size: 1rem;
+      color: #1a1a1a;
+    }
+    .proceed-btn {
+      --background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+      --border-radius: 14px;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    /* Step 2 back button + order chip */
+    .back-step-btn {
+      background: none;
+      border: none;
+      color: #667eea;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0;
+      margin-bottom: 12px;
+      cursor: pointer;
+    }
+    .order-chip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f0faf5;
+      border: 1px solid #c8e6c9;
+      border-radius: 12px;
+      padding: 8px 14px;
+      margin-bottom: 14px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #2e7d32;
+    }
+    .chip-total {
+      font-weight: 800;
+      color: #16a34a;
+      font-size: 1rem;
+    }
   `]
 })
 export class CartPage implements OnInit, OnDestroy {
   checking = false;
   orderMsg = '';
+  readonly checkoutStep = signal<'cart' | 'payment'>('cart');
   readonly paymentMode = signal<'UPI' | 'COD'>('UPI');
+  readonly confirmingCod = signal(false);
   readonly upiReference = signal('');
   readonly upiPaymentVerified = signal(false);
   readonly checkoutSuccess = signal(false);
   readonly lastPlacedAmount = signal(0);
   readonly lastPlacedOrderId = signal<number | null>(null);
+  readonly deliveryFee = signal(50);
+  readonly deliveryFeeLabel = signal('₹50 (standard)');
+  readonly fetchingFee = signal(false);
   private destroy$ = new Subject<void>();
 
   private getErrorMessage(err: any, fallback: string): string {
@@ -426,6 +695,7 @@ export class CartPage implements OnInit, OnDestroy {
 
   ngOnInit(): void { 
     this.checkoutSuccess.set(false);
+    this.checkoutStep.set('cart');
     this.loadCart();
   }
 
@@ -449,6 +719,56 @@ export class CartPage implements OnInit, OnDestroy {
     this.api.get<any>('/customer/cart')
       .pipe(takeUntil(this.destroy$))
       .subscribe((cart) => this.cartState.setItems(cart.items || []));
+  }
+
+  incrementItem(item: any) {
+    this.cartState.addOrIncrement({ id: item.productId || item.id, name: item.name, sellingPrice: item.unitPrice, unit: item.unit });
+    this.api.post('/customer/cart/items', { productId: item.productId || item.id, quantity: 1 })
+      .pipe(takeUntil(this.destroy$)).subscribe({ error: () => {} });
+  }
+
+  decrementItem(item: any) {
+    this.cartState.removeOrDecrement({ id: item.productId || item.id });
+    this.api.post('/customer/cart/items', { productId: item.productId || item.id, quantity: -1 })
+      .pipe(takeUntil(this.destroy$)).subscribe({ error: () => {} });
+  }
+
+  private readonly productPhotoByKeyword: Record<string, string> = {
+    banana: 'assets/items/banana.svg', milk: 'assets/items/milk.svg',
+    tomato: 'assets/items/tomato.svg', bread: 'assets/items/bread.svg',
+    juice: 'assets/items/juice.svg', chips: 'assets/items/chips.svg',
+    rice: 'assets/items/rice.svg', atta: 'assets/items/atta.svg',
+    dal: 'assets/items/toor-daal.svg', daal: 'assets/items/toor-daal.svg',
+    sugar: 'assets/items/chini.svg', jeera: 'assets/items/jeera.svg',
+    dishwash: 'assets/items/dishwash.svg', surf: 'assets/items/surf-excel.svg',
+  };
+
+  productImage(item: any): string {
+    if (item?.imageUrl) return item.imageUrl;
+    const name = String(item?.name || '').toLowerCase();
+    const match = Object.keys(this.productPhotoByKeyword).find(k => name.includes(k));
+    return match ? this.productPhotoByKeyword[match]
+      : 'assets/items/placeholder.svg';
+  }
+
+  scaledUnit(unit: string, qty: number): string {
+    if (!unit || qty <= 1) return unit || '';
+    const match = unit.match(/^(\d+(?:\.\d+)?)\s*(.+)$/);
+    if (!match) return unit;
+    const base = parseFloat(match[1]);
+    const suffix = match[2].trim();
+    const total = base * qty;
+    const lo = suffix.toLowerCase();
+    if (lo === 'g' || lo === 'gm' || lo === 'gms' || lo === 'gram' || lo === 'grams') {
+      if (total >= 1000) { const v = total / 1000; return `${v % 1 === 0 ? v : v.toFixed(1)} kg`; }
+      return `${total} ${suffix}`;
+    }
+    if (lo === 'ml') {
+      if (total >= 1000) { const v = total / 1000; return `${v % 1 === 0 ? v : v.toFixed(1)} L`; }
+      return `${total} ml`;
+    }
+    const v = total % 1 === 0 ? total : parseFloat(total.toFixed(1));
+    return `${v} ${suffix}`;
   }
 
   private ensureRazorpayScript(): Promise<void> {
@@ -475,6 +795,37 @@ export class CartPage implements OnInit, OnDestroy {
     }
   }
 
+  proceedToPayment() {
+    const loc = this.locationService.currentLocation();
+    if (!loc) {
+      this.checkoutStep.set('payment');
+      return;
+    }
+    this.fetchingFee.set(true);
+    this.api.get<any>(`/customer/orders/delivery-fee?lat=${loc.latitude}&lng=${loc.longitude}`)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.deliveryFee.set(Number(res.fee) || 50);
+          this.deliveryFeeLabel.set(res.feeLabel || `₹${res.fee}`);
+          this.fetchingFee.set(false);
+          this.checkoutStep.set('payment');
+        },
+        error: (err) => {
+          this.fetchingFee.set(false);
+          // If out of range, show error, else use default ₹50
+          const msg = err?.error?.message || '';
+          if (msg.includes('beyond') || msg.includes('km')) {
+            this.orderMsg = '❌ ' + msg;
+          } else {
+            this.deliveryFee.set(50);
+            this.deliveryFeeLabel.set('₹50 (standard)');
+            this.checkoutStep.set('payment');
+          }
+        }
+      });
+  }
+
   canCheckout() {
     return true;
   }
@@ -484,14 +835,15 @@ export class CartPage implements OnInit, OnDestroy {
       this.startRazorpayUpiCheckout();
       return;
     }
-
     if (this.paymentMode() === 'COD') {
-      const ok = window.confirm('Confirm Cash on Delivery order?');
-      if (!ok) {
-        return;
-      }
+      this.confirmingCod.set(true);
+      return;
     }
+    this.placeOrderAfterPayment();
+  }
 
+  confirmCod() {
+    this.confirmingCod.set(false);
     this.placeOrderAfterPayment();
   }
 
@@ -500,19 +852,10 @@ export class CartPage implements OnInit, OnDestroy {
     this.orderMsg = '';
     this.checkoutSuccess.set(false);
 
-    this.api.get<any[]>('/customer/profile/addresses')
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((addresses) => {
-      const firstAddress = addresses?.[0];
-      if (!firstAddress) {
-        this.checking = false;
-        this.orderMsg = '❌ No saved address found.';
-        return;
-      }
-
+    // Address check temporarily skipped — order allowed without saved address
+    const placeOrder = () => {
       // Build checkout request with location
       const checkoutData: any = {
-        addressId: firstAddress.id,
         paymentMode: this.paymentMode(),
         notes: 'Deliver fast'
       };
@@ -521,21 +864,18 @@ export class CartPage implements OnInit, OnDestroy {
         checkoutData.upiReference = this.upiReference() || 'RAZORPAY_UPI';
       }
 
-      // Add location if available
+      // Add location for dynamic delivery fee calculation
       const location = this.locationService.currentLocation();
       if (location) {
-        checkoutData.userLocation = {
-          latitude: location.latitude,
-          longitude: location.longitude,
-          accuracy: location.accuracy
-        };
+        checkoutData.customerLat = location.latitude;
+        checkoutData.customerLng = location.longitude;
       }
 
       this.api.post<any>('/customer/orders/checkout', checkoutData)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
         next: (response) => {
-          const placedAmount = this.cartState.subtotal();
+          const placedAmount = this.cartState.subtotal() + this.deliveryFee();
           const orderId = response?.id;
           
           // For UPI orders, mark as paid since payment was already verified
@@ -580,7 +920,8 @@ export class CartPage implements OnInit, OnDestroy {
           this.orderMsg = this.getErrorMessage(err, '❌ Order failed. Try again.');
         }
       });
-    });
+    };
+    placeOrder();
   }
 
   private startRazorpayUpiCheckout() {

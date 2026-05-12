@@ -51,6 +51,10 @@ export class ApiService {
     return this.http.post<T>(this.buildUrl(path), body);
   }
 
+  put<T>(path: string, body: unknown) {
+    return this.http.put<T>(this.buildUrl(path), body);
+  }
+
   patch<T>(path: string, body: unknown) {
     return this.http.patch<T>(this.buildUrl(path), body);
   }

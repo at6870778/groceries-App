@@ -104,7 +104,7 @@ export class LocationService {
 
       // Extract address components
       const address = data.address || {};
-      const parts = [];
+      const parts: string[] = [];
 
       if (address.road) parts.push(address.road);
       if (address.suburb) parts.push(address.suburb);

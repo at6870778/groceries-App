@@ -43,3 +43,28 @@ body {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Fix: mat-select / mat-menu dropdown panel transparent background */
+.mat-mdc-select-panel,
+.mat-mdc-autocomplete-panel,
+.mat-mdc-menu-panel {
+  background-color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.14) !important;
+}
+
+.mat-mdc-option {
+  background-color: #ffffff;
+}
+
+.mat-mdc-option:hover,
+.mat-mdc-option.mat-mdc-option-active {
+  background-color: #f0f7f3 !important;
+}
+
+/* Snackbar success/error styling */
+.snack-success .mdc-snackbar__surface {
+  background-color: #1b5e20 !important;
+}
+.snack-error .mdc-snackbar__surface {
+  background-color: #b71c1c !important;
+}

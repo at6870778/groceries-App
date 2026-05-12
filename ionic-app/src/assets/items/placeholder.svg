@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <rect width="200" height="200" rx="16" fill="#f5f5f5"/>
+  <!-- Shopping bag outline -->
+  <rect x="55" y="80" width="90" height="75" rx="8" fill="none" stroke="#ccc" stroke-width="6"/>
+  <!-- Bag handles -->
+  <path d="M75 80 Q75 55 100 55 Q125 55 125 80" fill="none" stroke="#ccc" stroke-width="6" stroke-linecap="round"/>
+  <!-- Small image icon inside bag -->
+  <rect x="72" y="100" width="56" height="38" rx="5" fill="#e8e8e8"/>
+  <circle cx="84" cy="112" r="5" fill="#bbb"/>
+  <path d="M72 130 L86 116 L98 126 L108 118 L128 138" fill="none" stroke="#bbb" stroke-width="3" stroke-linejoin="round"/>
+  <!-- Text -->
+  <text x="100" y="175" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#bbb">No Image</text>
+</svg>

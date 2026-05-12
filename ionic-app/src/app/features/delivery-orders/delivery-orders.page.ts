@@ -22,6 +22,10 @@ import { ApiService } from '../../core/services/api.service';
         <ion-refresher-content pullingIcon="chevron-down-circle-outline" pullingText="Pull to refresh" refreshingSpinner="circles" refreshingText="Refreshing..."></ion-refresher-content>
       </ion-refresher>
 
+      <div *ngIf="errorMsg()" style="background:#fee;color:#c00;padding:12px;border-radius:8px;margin:12px;font-size:13px;">
+        ⚠️ {{ errorMsg() }} — <span style="text-decoration:underline;cursor:pointer;" (click)="load()">Retry</span>
+      </div>
+
       <div class="stats-bar">
         <div class="stat">
           <div class="stat-label">Total Earnings</div>
@@ -47,19 +51,19 @@ import { ApiService } from '../../core/services/api.service';
         <div *ngFor="let order of orders()" class="order-card">
           <div class="card-header">
             <div class="order-id">Order #{{ order.id }}</div>
-            <div [ngClass]="'status-badge status-' + (order.status || 'PENDING').toLowerCase()">
-              {{ getStatusLabel(order.status) }}
+            <div [ngClass]="'status-badge status-' + (order.assignmentStatus || 'ASSIGNED').toLowerCase()">
+              {{ getStatusLabel(order.assignmentStatus) }}
             </div>
           </div>
 
           <div class="order-details">
             <div class="detail-row">
               <span class="label">Customer</span>
-              <span class="value">{{ order.customer?.name || 'N/A' }}</span>
+              <span class="value">{{ order.customerName || 'N/A' }}</span>
             </div>
             <div class="detail-row">
               <span class="label">Phone</span>
-              <span class="value">{{ order.customer?.phone || 'N/A' }}</span>
+              <span class="value">{{ order.customerPhone || 'N/A' }}</span>
             </div>
             <div class="detail-row">
               <span class="label">Items</span>
@@ -71,7 +75,7 @@ import { ApiService } from '../../core/services/api.service';
             </div>
             <div class="detail-row address">
               <span class="label">📍 Delivery To</span>
-              <span class="value">{{ order.address?.addressLine1 || 'N/A' }}, {{ order.address?.city || '' }}</span>
+              <span class="value">{{ order.deliveryAddress || 'N/A' }}</span>
             </div>
           </div>
 
@@ -259,6 +263,11 @@ import { ApiService } from '../../core/services/api.service';
       color: #f57c00;
     }
 
+    .status-badge.status-assigned {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+
     .status-badge.status-picked {
       background: #e8eaf6;
       color: #3f51b5;
@@ -435,6 +444,7 @@ import { ApiService } from '../../core/services/api.service';
 export class DeliveryOrdersPage implements OnInit {
   readonly orders = signal<any[]>([]);
   readonly loading = signal(false);
+  readonly errorMsg = signal('');
 
   constructor(private api: ApiService, private router: Router) {}
 
@@ -444,12 +454,17 @@ export class DeliveryOrdersPage implements OnInit {
 
   load() {
     this.loading.set(true);
+    this.errorMsg.set('');
     this.api.get<any[]>('/delivery/orders').subscribe({
       next: (res) => {
         this.orders.set(res || []);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false)
+      error: (err) => {
+        this.loading.set(false);
+        const msg = err?.error?.message || err?.message || 'Failed to load orders';
+        this.errorMsg.set(msg);
+      }
     });
   }
 
@@ -460,34 +475,41 @@ export class DeliveryOrdersPage implements OnInit {
 
   update(order: any, status: string) {
     const assignmentId = order.assignmentId || order.id;
-    this.api.patch(`/delivery/assignments/${assignmentId}/status`, { status }).subscribe(() => this.load());
+    this.api.patch(`/delivery/assignments/${assignmentId}/status`, { status }).subscribe({
+      next: () => this.load(),
+      error: (err) => {
+        const msg = err?.error?.message || err?.message || 'Update failed';
+        this.errorMsg.set(msg);
+      }
+    });
   }
 
   getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
-      'PENDING': '⏳ Pending',
+      'ASSIGNED': '📋 Assigned',
       'PICKED': '📦 Picked',
       'OUT_FOR_DELIVERY': '🚴 On the Way',
       'DELIVERED': '✓ Delivered',
       'CANCELLED': '❌ Cancelled'
     };
-    return labels[status] || status;
+    return labels[status] || status || 'Assigned';
   }
 
-  isStatusReached(order: any, targetStatus: string): boolean {
-    const statuses = ['PICKED', 'OUT_FOR_DELIVERY', 'DELIVERED'];
-    const currentIndex = statuses.indexOf(order.status);
-    const targetIndex = statuses.indexOf(targetStatus);
-    return currentIndex >= targetIndex;
+  isStatusReached(order: any, targetAssignmentStatus: string): boolean {
+    const progression = ['PICKED', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+    const current = order.assignmentStatus || '';
+    const currentIndex = progression.indexOf(current);
+    const targetIndex = progression.indexOf(targetAssignmentStatus);
+    return currentIndex >= targetIndex && targetIndex >= 0;
   }
 
   countByStatus(status: string): number {
-    return this.orders().filter(o => o.status === status).length;
+    return this.orders().filter(o => o.assignmentStatus === status).length;
   }
 
   calculateEarnings(): number {
     return this.orders()
-      .filter(o => o.status === 'DELIVERED')
+      .filter(o => o.assignmentStatus === 'DELIVERED')
       .reduce((sum, order) => sum + (order.totalAmount || 0), 0);
   }
 }

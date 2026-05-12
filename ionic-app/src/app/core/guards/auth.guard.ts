@@ -4,7 +4,19 @@ import { Router } from '@angular/router';
 
 export const authGuard: CanActivateFn = () => {
   const router = inject(Router);
-  const rawToken = localStorage.getItem('customer_token');
-  const hasCustomerToken = !!rawToken && rawToken !== 'undefined' && rawToken !== 'null';
-  return hasCustomerToken ? true : router.parseUrl('/login');
+  const token = localStorage.getItem('customer_token');
+  if (!token || token === 'undefined' || token === 'null') {
+    return router.parseUrl('/login');
+  }
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      localStorage.removeItem('customer_token');
+      return router.parseUrl('/login');
+    }
+  } catch {
+    localStorage.removeItem('customer_token');
+    return router.parseUrl('/login');
+  }
+  return true;
 };

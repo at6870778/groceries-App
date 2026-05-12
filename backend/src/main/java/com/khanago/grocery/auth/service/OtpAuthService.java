@@ -63,6 +63,7 @@ public class OtpAuthService {
     @Transactional
     public String requestOtp(OtpRequestDto request, String clientIp) {
         String phone = request.phone();
+        boolean widgetEnabled = appProperties.getMsg91().isWidgetEnabled();
 
         // 1. Resend cooldown: reject if last OTP was sent within RESEND_COOLDOWN_SECS
         otpRecordRepository.findLatestByPhone(phone).ifPresent(latest -> {
@@ -83,27 +84,47 @@ public class OtpAuthService {
                     RATE_LOCKOUT_MINUTES + " minutes before retrying.");
         }
 
-        // 3. Generate cryptographically-random 6-digit OTP
-        String otp = String.format("%06d", secureRandom.nextInt(1_000_000));
-
-        // 4. Invalidate all prior active OTPs for this phone (one-at-a-time principle)
+        // 3. Invalidate all prior active OTPs for this phone (one-at-a-time principle)
         otpRecordRepository.invalidateAllActiveForPhone(phone);
 
-        // 5. Persist hashed OTP — plaintext is discarded after this point
+        // 4. Persist OTP metadata for resend/rate-limit tracking.
+        String placeholderOtp = widgetEnabled ? "widget-otp" : String.format("%06d", secureRandom.nextInt(1_000_000));
         OtpRecord record = new OtpRecord();
         record.setPhone(phone);
-        record.setOtpHash(passwordEncoder.encode(otp));
+        record.setOtpHash(passwordEncoder.encode(placeholderOtp));
         record.setExpiresAt(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES));
         record.setAttemptCount(0);
         record.setUsed(false);
         record.setInvalidated(false);
         otpRecordRepository.save(record);
 
-        // 6. Dispatch SMS
-        msg91SmsService.sendOtp(phone, otp);
+        String requestId;
+        if (widgetEnabled) {
+            requestId = msg91SmsService.sendWidgetOtp(phone);
+        } else {
+            msg91SmsService.sendOtp(phone, placeholderOtp);
+            requestId = "LOCAL-OTP";
+        }
 
         writeAuditLog(phone, "REQUEST_SUCCESS", clientIp, "OTP dispatched");
-        return "OTP sent to registered mobile number.";
+        return requestId;
+    }
+
+    @Transactional
+    public String retryOtp(String phone, String reqId, String clientIp) {
+        if (reqId == null || reqId.isBlank()) {
+            throw new ApiException("Invalid OTP retry request id.");
+        }
+
+        boolean widgetEnabled = appProperties.getMsg91().isWidgetEnabled();
+        if (!widgetEnabled) {
+            writeAuditLog(phone, "RETRY_OTP_SKIPPED", clientIp, "MSG91 widget not configured");
+            return reqId;
+        }
+
+        String nextReqId = msg91SmsService.retryWidgetOtp(reqId);
+        writeAuditLog(phone, "RETRY_SUCCESS", clientIp, "OTP retried with new reqId");
+        return nextReqId;
     }
 
     @Transactional
@@ -111,6 +132,7 @@ public class OtpAuthService {
         String phone = request.phone();
         boolean acceptAnyOtp = appProperties.getAuth().isAcceptAnyOtp();
         String staticOtp = appProperties.getAuth().getStaticOtp();
+        boolean widgetEnabled = appProperties.getMsg91().isWidgetEnabled();
 
         // ── Role guard ────────────────────────────────────────────────────────────
         // ADMIN and DELIVERY_BOY cannot self-register; they must already exist in DB
@@ -141,33 +163,45 @@ public class OtpAuthService {
             throw new ApiException("OTP expired or not requested. Please request a new OTP.");
         }
 
+        if (widgetEnabled && (request.reqId() == null || request.reqId().isBlank()) && !acceptAnyOtp) {
+            writeAuditLog(phone, "VERIFY_MISSING_REQID", clientIp, "Missing MSG91 widget request id");
+            throw new ApiException("Missing OTP request id. Please request a new OTP.");
+        }
+
         // ── Max-attempts lockout ──────────────────────────────────────────────────
         if (record != null && record.getAttemptCount() >= MAX_VERIFY_ATTEMPTS) {
             writeAuditLog(phone, "VERIFY_LOCKED", clientIp, "Max verify attempts exceeded");
             throw new ApiException("OTP locked after too many failed attempts. Please request a new OTP.");
         }
 
-        // ── Verify (constant-time hash comparison via BCrypt) ─────────────────────
-        if (record != null && !acceptAnyOtp && !passwordEncoder.matches(request.otp(), record.getOtpHash())) {
-            record.setAttemptCount(record.getAttemptCount() + 1);
-            otpRecordRepository.save(record);
-            int remaining = MAX_VERIFY_ATTEMPTS - record.getAttemptCount();
-            writeAuditLog(phone, "VERIFY_FAILED", clientIp,
-                    "Invalid OTP, " + remaining + " attempt(s) remaining");
-            throw new ApiException("Invalid OTP. " + remaining + " attempt(s) remaining.");
-        }
-
-        if (acceptAnyOtp) {
-            if (!request.otp().equals(staticOtp)) {
-                writeAuditLog(phone, "VERIFY_STATIC_OTP_FAILED", clientIp, "Wrong static OTP entered");
-                throw new ApiException("Invalid OTP.");
+        // ── Verify using MSG91 widget OTP if widget is configured ─────────────────
+        if (widgetEnabled && request.reqId() != null && !request.reqId().isBlank()) {
+            if (!msg91SmsService.verifyWidgetOtp(request.reqId(), request.otp())) {
+                if (record != null) {
+                    record.setAttemptCount(record.getAttemptCount() + 1);
+                    otpRecordRepository.save(record);
+                }
+                int remaining = record != null ? MAX_VERIFY_ATTEMPTS - record.getAttemptCount() : MAX_VERIFY_ATTEMPTS;
+                writeAuditLog(phone, "VERIFY_FAILED", clientIp,
+                        "Invalid MSG91 access token, " + remaining + " attempt(s) remaining");
+                throw new ApiException("Invalid OTP. " + remaining + " attempt(s) remaining.");
             }
-            if (record == null) {
-                writeAuditLog(phone, "VERIFY_BYPASS_NO_OTP", clientIp,
-                        "No active OTP record required because dev bypass is enabled for " + roleName);
+        } else {
+            // ── Verify against locally stored OTP hash ────────────────────────────
+            // acceptAnyOtp bypasses hash check (dev/testing only)
+            boolean otpValid = acceptAnyOtp
+                    ? (request.otp() != null && request.otp().equals(staticOtp))
+                    : (record != null && passwordEncoder.matches(request.otp(), record.getOtpHash()));
+            if (!otpValid) {
+                if (record != null) {
+                    record.setAttemptCount(record.getAttemptCount() + 1);
+                    otpRecordRepository.save(record);
+                }
+                int remaining = record != null ? MAX_VERIFY_ATTEMPTS - record.getAttemptCount() : MAX_VERIFY_ATTEMPTS;
+                writeAuditLog(phone, "VERIFY_FAILED", clientIp,
+                        "Invalid OTP, " + remaining + " attempt(s) remaining");
+                throw new ApiException("Invalid OTP. " + remaining + " attempt(s) remaining.");
             }
-            writeAuditLog(phone, "VERIFY_BYPASS", clientIp,
-                    "OTP and role guard accepted by dev bypass flag for " + roleName);
         }
 
         // ── Mark OTP as consumed (one-time use) ───────────────────────────────────
@@ -183,15 +217,32 @@ public class OtpAuthService {
         User user = userRepository.findByPhone(phone).orElseGet(() -> {
             User u = new User();
             u.setPhone(phone);
-            u.setFullName(request.fullName());
+            u.setFullName(phone); // temporary, will be updated below
             u.setPasswordHash(passwordEncoder.encode(phone));
             return u;
         });
 
-        if (user.getFullName() == null || user.getFullName().isBlank()) {
-            user.setFullName(request.fullName());
+        // For existing users, validate they actually have the requested role
+        // (prevents cross-role login e.g. customer logging in as admin)
+        if (user.getId() != null) {
+            boolean hasRole = user.getRoles().stream().anyMatch(r -> r.getName() == roleName);
+            if (!hasRole) {
+                writeAuditLog(phone, "VERIFY_ROLE_MISMATCH", clientIp,
+                        "Phone " + phone + " does not have role " + roleName);
+                throw new ApiException("Access denied. Your account does not have the " + roleName + " role.");
+            }
+        } else {
+            // New user – assign the requested role
+            user.setRoles(new java.util.HashSet<>(Set.of(role)));
         }
-        user.setRoles(new java.util.HashSet<>(Set.of(role)));
+
+        // Always update name if user provides a non-blank value; fallback to phone number
+        String providedName = (request.fullName() != null) ? request.fullName().trim() : "";
+        if (!providedName.isBlank()) {
+            user.setFullName(providedName);
+        } else if (user.getFullName() == null || user.getFullName().isBlank()) {
+            user.setFullName(phone); // use phone as name when none provided
+        }
         user = userRepository.save(user);
 
         // ── Issue JWT + refresh token ─────────────────────────────────────────────

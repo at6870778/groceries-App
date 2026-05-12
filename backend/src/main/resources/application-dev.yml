@@ -1,9 +1,13 @@
 spring:
   datasource:
-    url: jdbc:h2:file:./data/grocerydb;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:file:./data/grocerydb;MODE=MySQL;DATABASE_TO_LOWER=TRUE;AUTO_SERVER=TRUE
     driver-class-name: org.h2.Driver
     username: sa
     password:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
   jpa:
     hibernate:
       ddl-auto: validate
@@ -30,6 +34,19 @@ app:
     key-id: ${RAZORPAY_KEY_ID:rzp_test_replace_me}
     key-secret: ${RAZORPAY_KEY_SECRET:replace_with_test_secret}
   msg91:
+    auth-key: ${MSG91_AUTH_KEY:515371AIRutVUf6a01ceaeP1}
+    token-auth: ${MSG91_TOKEN_AUTH:515371TBUKkcE2V69fffd1fP1}
+    widget-id: ${MSG91_WIDGET_ID:36656b6c7653363134323434}
     trust-all-ssl: true
+  store:
+    latitude: ${STORE_LATITUDE:20.2961}
+    longitude: ${STORE_LONGITUDE:85.8245}
+  google:
+    maps:
+      api-key: ${GOOGLE_MAPS_API_KEY:}
   cors:
     allowed-origins: http://localhost:*,http://127.0.0.1:*,http://localhost:4200,http://localhost:8100,http://localhost:8101,http://localhost:8102,http://localhost:65477,http://localhost:65478
+  cloudinary:
+    cloud-name: dbwtaon6r
+    api-key: 388313319841217
+    api-secret: lYgIjNDWQzOPkk0gIK9SWbT7AE8

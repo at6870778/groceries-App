@@ -751,6 +751,9 @@ export class CartPage implements OnInit, OnDestroy {
         },
         error: () => {} // local state already updated
       });
+  }
+
+  private readonly productPhotoByKeyword: Record<string, string> = {
     banana: 'assets/items/banana.svg', milk: 'assets/items/milk.svg',
     tomato: 'assets/items/tomato.svg', bread: 'assets/items/bread.svg',
     juice: 'assets/items/juice.svg', chips: 'assets/items/chips.svg',

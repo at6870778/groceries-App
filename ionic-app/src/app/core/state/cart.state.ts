@@ -38,7 +38,7 @@ export class CartState {
     this.items.set(Array.isArray(items) ? items : []);
   }
 
-  addOrIncrement(product: { id: number; name: string; sellingPrice: number; unit?: string }) {
+  addOrIncrement(product: { id: number; name: string; sellingPrice: number; unit?: string; imageUrl?: string }) {
     const next = [...this.items()];
     // Always match by productId — never by cart row id to avoid collisions
     const existing = next.find((item) => Number(item.productId) === Number(product.id));
@@ -48,6 +48,7 @@ export class CartState {
       existing.quantity = qty;
       existing.lineTotal = qty * Number(product.sellingPrice || existing.unitPrice || 0);
       existing.unitPrice = Number(product.sellingPrice || existing.unitPrice || 0);
+      if (product.imageUrl && !existing.imageUrl) existing.imageUrl = product.imageUrl;
       this.items.set(next);
       return;
     }
@@ -59,7 +60,8 @@ export class CartState {
       unit: product.unit || '',
       quantity: 1,
       unitPrice,
-      lineTotal: unitPrice
+      lineTotal: unitPrice,
+      imageUrl: product.imageUrl || ''
     });
     this.items.set(next);
   }

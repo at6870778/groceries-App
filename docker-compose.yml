@@ -25,7 +25,7 @@ services:
       MSG91_AUTH_KEY: ${MSG91_AUTH_KEY:-515371AIRutVUf6a01ceaeP1}
       MSG91_TOKEN_AUTH: ${MSG91_TOKEN_AUTH:-515371TBUKkcE2V69fffd1fP1}
       MSG91_WIDGET_ID: ${MSG91_WIDGET_ID:-36656b6c7653363134323434}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://orderkro.in,https://www.orderkro.in,https://admin.orderkro.in}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://orderkro.in,https://www.orderkro.in,https://admin.orderkro.in,capacitor://localhost,http://localhost,ionic://localhost,https://localhost}
       ACCEPT_ANY_OTP: ${ACCEPT_ANY_OTP:-false}
       STATIC_OTP: ${STATIC_OTP:-123456}
       APP_PORT: ${APP_PORT:-8080}

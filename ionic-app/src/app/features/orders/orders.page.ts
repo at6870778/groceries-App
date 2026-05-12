@@ -19,7 +19,7 @@ import { takeUntil, switchMap } from 'rxjs/operators';
         <ion-title>My Orders</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content [scrollEvents]="true" [fullscreen]="false" class="ion-padding" style="--padding-bottom: 72px;">
+    <ion-content [scrollEvents]="true" [fullscreen]="false" class="ion-padding" style="--padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px))">
       <ion-refresher slot="fixed" (ionRefresh)="onRefresh($event)">
         <ion-refresher-content></ion-refresher-content>
       </ion-refresher>
@@ -35,20 +35,18 @@ import { takeUntil, switchMap } from 'rxjs/operators';
         <ion-button size="small" (click)="loadOrders()">Retry</ion-button>
       </div>
       
-      <div class="status-info">
-        <p><span class="status-badge status-pending">PENDING</span> Order confirmed, waiting for delivery</p>
-        <p><span class="status-badge status-confirmed">CONFIRMED</span> Payment received, order confirmed</p>
-        <p><span class="status-badge status-delivered">DELIVERED</span> Order delivered successfully</p>
-      </div>
-      
       <ion-list *ngIf="!loading() && !errorMsg() && orders().length > 0; else noOrders">
-        <ion-item *ngFor="let o of orders()" [routerLink]="['/delivery-tracking', o.id]" detail>
-          <ion-label>
-            <h2>#{{ o.id }} <span [class]="'status-badge status-' + (o.status?.toLowerCase() || 'pending')">{{ o.status || 'PENDING' }}</span></h2>
-            <p>Rs {{ o.totalAmount }} • {{ o.paymentMode || 'N/A' }}</p>
-            <p class="order-date" *ngIf="o.createdAt">{{ formatDate(o.createdAt) }}</p>
-          </ion-label>
-        </ion-item>
+        <div class="order-card" *ngFor="let o of orders()" [routerLink]="['/delivery-tracking', o.id]">
+          <div class="order-card-top">
+            <span [class]="'status-badge status-' + (o.status?.toLowerCase() || 'pending')">{{ o.status || 'PENDING' }}</span>
+            <span class="order-id">#{{ o.id }}</span>
+          </div>
+          <div class="order-card-body">
+            <span class="order-amount">₹{{ o.totalAmount }}</span>
+            <span class="order-payment">{{ o.paymentMode || 'N/A' }}</span>
+          </div>
+          <p class="order-date" *ngIf="o.createdAt">🕐 {{ formatDate(o.createdAt) }}</p>
+        </div>
       </ion-list>
 
       <ng-template #noOrders>
@@ -58,62 +56,117 @@ import { takeUntil, switchMap } from 'rxjs/operators';
           <ion-button routerLink="/products">Start Shopping</ion-button>
         </div>
       </ng-template>
+
+      <!-- Status legend at bottom -->
+      <div class="status-info" *ngIf="!loading() && orders().length > 0">
+        <p class="status-info-title">Order Status Guide</p>
+        <div class="status-info-row"><span class="status-badge status-pending">PENDING</span><span>Waiting to be confirmed</span></div>
+        <div class="status-info-row"><span class="status-badge status-confirmed">CONFIRMED</span><span>Payment received, being prepared</span></div>
+        <div class="status-info-row"><span class="status-badge status-delivered">DELIVERED</span><span>Order delivered successfully</span></div>
+        <div class="status-info-row"><span class="status-badge status-cancelled">CANCELLED</span><span>Order was cancelled</span></div>
+      </div>
     </ion-content>
     <app-bottom-nav></app-bottom-nav>
   `,
   styles: [`
-    .status-info {
-      background: #f0f4ff;
-      border: 1px solid #dae5ff;
-      border-radius: 12px;
-      padding: 12px 14px;
-      margin-bottom: 16px;
-      font-size: 0.85rem;
+    /* ── Order cards ── */
+    .order-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+      border: 1px solid #f0f0f0;
+      cursor: pointer;
+      transition: box-shadow 0.15s;
     }
+    .order-card:active { box-shadow: 0 2px 12px rgba(0,0,0,0.14); }
 
-    .status-info p {
-      margin: 6px 0;
+    .order-card-top {
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
+      margin-bottom: 10px;
     }
 
-    .status-badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      min-width: 80px;
-      text-align: center;
+    .order-id {
+      font-size: 0.82rem;
+      color: #999;
+      font-weight: 500;
     }
 
-    .status-pending {
-      background-color: #fff3cd;
-      color: #856404;
+    .order-card-body {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
     }
 
-    .status-confirmed {
-      background-color: #d4edda;
-      color: #155724;
+    .order-amount {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #1a1a1a;
     }
 
-    .status-delivered {
-      background-color: #cfe2ff;
-      color: #084298;
-    }
-
-    .status-cancelled {
-      background-color: #f8d7da;
-      color: #721c24;
+    .order-payment {
+      font-size: 0.78rem;
+      color: #777;
+      background: #f5f5f5;
+      padding: 2px 8px;
+      border-radius: 20px;
     }
 
     .order-date {
-      font-size: 0.85rem;
-      color: #666;
-      margin-top: 4px;
+      font-size: 0.78rem;
+      color: #aaa;
+      margin: 0;
     }
+
+    /* ── Status badge ── */
+    .status-badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .status-pending  { background: #fff3cd; color: #856404; }
+    .status-confirmed { background: #d4edda; color: #155724; }
+    .status-delivered { background: #cfe2ff; color: #084298; }
+    .status-cancelled { background: #f8d7da; color: #721c24; }
+
+    /* ── Status legend at bottom ── */
+    .status-info {
+      background: #fafafa;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-top: 8px;
+      margin-bottom: 16px;
+    }
+
+    .status-info-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0 0 10px;
+    }
+
+    .status-info-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 0.82rem;
+      color: #555;
+    }
+    .status-info-row:last-child { margin-bottom: 0; }
   `]
 })
 export class OrdersPage implements OnInit, OnDestroy {

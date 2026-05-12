@@ -33,7 +33,7 @@ import { takeUntil } from 'rxjs/operators';
         </ion-searchbar>
       </ion-toolbar>
     </ion-header>
-    <ion-content [scrollEvents]="true" [fullscreen]="false" class="products-content ion-padding" style="--padding-bottom: 72px;">
+    <ion-content [scrollEvents]="true" [fullscreen]="false" class="products-content ion-padding" style="--padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px))">
       <ion-refresher slot="fixed" (ionRefresh)="onRefresh($event)">
         <ion-refresher-content></ion-refresher-content>
       </ion-refresher>

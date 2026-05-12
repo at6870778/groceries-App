@@ -20,89 +20,118 @@ import { takeUntil } from 'rxjs/operators';
     </ion-header>
 
     <ion-content class="ion-padding">
-      <ng-container *ngIf="tracking(); else loading">
-        <!-- Order Status Timeline -->
-        <ion-card class="status-timeline">
-          <ion-card-header>
-            <ion-card-title>Order Status</ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            <div class="timeline">
-              <div class="timeline-item" [class.completed]="isStatusCompleted('CONFIRMED')">
-                <div class="timeline-dot">✓</div>
-                <div class="timeline-content">
-                  <p class="timeline-label">Order Confirmed</p>
-                  <p class="timeline-desc">Payment received</p>
+
+      <!-- Error loading order -->
+      <div *ngIf="orderError()" class="state-box error-box">
+        <p style="font-size:2rem;">⚠️</p>
+        <p>Could not load order details.</p>
+        <ion-button size="small" (click)="loadAll()">Retry</ion-button>
+      </div>
+
+      <!-- Loading: order not yet fetched -->
+      <div *ngIf="!orderError() && !order()" class="loading-container">
+        <ion-spinner></ion-spinner>
+        <p>Loading order...</p>
+      </div>
+
+      <ng-container *ngIf="order() && !orderError()">
+
+        <!-- PENDING: no rider assigned yet -->
+        <div *ngIf="order().status === 'PENDING'" class="state-box pending-box">
+          <p class="state-icon">⏳</p>
+          <p class="state-title">Order Received!</p>
+          <p class="state-desc">Your order <strong>#{{ orderId }}</strong> is waiting for store confirmation. We'll update you once it's confirmed.</p>
+          <div class="order-summary-row"><span>Amount</span><strong>₹{{ order().totalAmount }}</strong></div>
+          <div class="order-summary-row"><span>Payment</span><strong>{{ order().paymentMode || 'N/A' }}</strong></div>
+        </div>
+
+        <!-- CANCELLED -->
+        <div *ngIf="order().status === 'CANCELLED'" class="state-box cancelled-box">
+          <p class="state-icon">❌</p>
+          <p class="state-title">Order Cancelled</p>
+          <p class="state-desc">Order <strong>#{{ orderId }}</strong> has been cancelled.</p>
+        </div>
+
+        <!-- Active / Delivered: show full timeline -->
+        <ng-container *ngIf="order().status !== 'PENDING' && order().status !== 'CANCELLED'">
+
+          <!-- Order Status Timeline -->
+          <ion-card class="status-timeline">
+            <ion-card-header>
+              <ion-card-title>Order Status</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              <div class="timeline">
+                <div class="timeline-item" [class.completed]="isStatusCompleted('CONFIRMED')">
+                  <div class="timeline-dot">✓</div>
+                  <div class="timeline-content">
+                    <p class="timeline-label">Order Confirmed</p>
+                    <p class="timeline-desc">Payment received</p>
+                  </div>
+                </div>
+
+                <div class="timeline-line" [class.active]="isStatusCompleted('CONFIRMED')"></div>
+
+                <div class="timeline-item" [class.completed]="isStatusCompleted('PREPARING') || isStatusCompleted('OUT_FOR_DELIVERY') || isStatusCompleted('DELIVERED')" [class.active]="isStatusActive('PREPARING')">
+                  <div class="timeline-dot">📦</div>
+                  <div class="timeline-content">
+                    <p class="timeline-label">Preparing Order</p>
+                    <p class="timeline-desc">Picking items from warehouse</p>
+                  </div>
+                </div>
+
+                <div class="timeline-line" [class.active]="isStatusCompleted('PREPARING')"></div>
+
+                <div class="timeline-item" [class.completed]="isStatusCompleted('OUT_FOR_DELIVERY') || isStatusCompleted('DELIVERED')" [class.active]="isStatusActive('OUT_FOR_DELIVERY')">
+                  <div class="timeline-dot">🚚</div>
+                  <div class="timeline-content">
+                    <p class="timeline-label">Out for Delivery</p>
+                    <p class="timeline-desc">On the way to you</p>
+                  </div>
+                </div>
+
+                <div class="timeline-line" [class.active]="isStatusCompleted('OUT_FOR_DELIVERY')"></div>
+
+                <div class="timeline-item" [class.completed]="isStatusCompleted('DELIVERED')" [class.active]="isStatusActive('DELIVERED')">
+                  <div class="timeline-dot">✓</div>
+                  <div class="timeline-content">
+                    <p class="timeline-label">Delivered</p>
+                    <p class="timeline-desc">Order received</p>
+                  </div>
                 </div>
               </div>
+            </ion-card-content>
+          </ion-card>
 
-              <div class="timeline-line" [class.active]="isStatusCompleted('CONFIRMED')"></div>
-
-              <div class="timeline-item" [class.completed]="isStatusCompleted('PREPARING') || isStatusCompleted('OUT_FOR_DELIVERY') || isStatusCompleted('DELIVERED')">
-                <div class="timeline-dot" [class.active]="isStatusActive('PREPARING')">📦</div>
-                <div class="timeline-content">
-                  <p class="timeline-label">Preparing Order</p>
-                  <p class="timeline-desc">Picking items from warehouse</p>
+          <!-- Delivery Boy Info (from tracking) -->
+          <ion-card class="delivery-info" *ngIf="tracking()?.deliveryBoyName">
+            <ion-card-header>
+              <ion-card-title>Delivery Partner</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              <div class="delivery-boy">
+                <div class="avatar">🚴</div>
+                <div class="details">
+                  <p class="name">{{ tracking().deliveryBoyName }}</p>
+                  <p class="phone">📞 {{ tracking().deliveryBoyPhone }}</p>
                 </div>
               </div>
+            </ion-card-content>
+          </ion-card>
 
-              <div class="timeline-line" [class.active]="isStatusCompleted('PREPARING')"></div>
+          <!-- Current Status Badge -->
+          <ion-card class="current-status">
+            <ion-card-content>
+              <p class="status-label">Current Status</p>
+              <p [class]="'status-badge status-' + (order().status?.toLowerCase() || 'confirmed')">
+                {{ order().status }}
+              </p>
+            </ion-card-content>
+          </ion-card>
 
-              <div class="timeline-item" [class.completed]="isStatusCompleted('OUT_FOR_DELIVERY') || isStatusCompleted('DELIVERED')" [class.active]="isStatusActive('OUT_FOR_DELIVERY')">
-                <div class="timeline-dot">🚚</div>
-                <div class="timeline-content">
-                  <p class="timeline-label">Out for Delivery</p>
-                  <p class="timeline-desc">On the way to you</p>
-                </div>
-              </div>
-
-              <div class="timeline-line" [class.active]="isStatusCompleted('OUT_FOR_DELIVERY')"></div>
-
-              <div class="timeline-item" [class.completed]="isStatusCompleted('DELIVERED')" [class.active]="isStatusActive('DELIVERED')">
-                <div class="timeline-dot">✓</div>
-                <div class="timeline-content">
-                  <p class="timeline-label">Delivered</p>
-                  <p class="timeline-desc">Order received</p>
-                </div>
-              </div>
-            </div>
-          </ion-card-content>
-        </ion-card>
-
-        <!-- Delivery Boy Info -->
-        <ion-card class="delivery-info" *ngIf="tracking()?.deliveryBoyName">
-          <ion-card-header>
-            <ion-card-title>Delivery Partner</ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            <div class="delivery-boy">
-              <div class="avatar">🚴</div>
-              <div class="details">
-                <p class="name">{{ tracking().deliveryBoyName }}</p>
-                <p class="phone">📞 {{ tracking().deliveryBoyPhone }}</p>
-              </div>
-            </div>
-          </ion-card-content>
-        </ion-card>
-
-        <!-- Current Status Badge -->
-        <ion-card class="current-status">
-          <ion-card-content>
-            <p class="status-label">Current Status</p>
-            <p [class]="'status-badge status-' + (tracking().orderStatus?.toLowerCase() || 'pending')">
-              {{ tracking().orderStatus || 'PENDING' }}
-            </p>
-          </ion-card-content>
-        </ion-card>
-
+        </ng-container>
       </ng-container>
 
-      <ng-template #loading>
-        <div class="loading-container">
-          <ion-spinner></ion-spinner>
-          <p>Loading tracking info...</p>
-        </div>
-      </ng-template>
     </ion-content>
   `,
   styles: [`
@@ -292,10 +321,39 @@ import { takeUntil } from 'rxjs/operators';
       gap: 16px;
       color: #999;
     }
+
+    /* State boxes for PENDING / CANCELLED / ERROR */
+    .state-box {
+      border-radius: 16px;
+      padding: 32px 20px;
+      text-align: center;
+      margin-top: 24px;
+    }
+    .state-icon { font-size: 3rem; margin: 0 0 8px; }
+    .state-title { font-size: 1.2rem; font-weight: 700; margin: 0 0 8px; color: #222; }
+    .state-desc { font-size: 0.9rem; color: #666; margin: 0 0 20px; line-height: 1.5; }
+
+    .pending-box { background: #fffbea; border: 1px solid #ffe082; }
+    .cancelled-box { background: #fff0f0; border: 1px solid #ffcdd2; }
+    .error-box { background: #fff0f0; border: 1px solid #ffcdd2; }
+
+    .order-summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.7);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      color: #555;
+    }
   `]
 })
 export class DeliveryTrackingPage implements OnInit, OnDestroy {
   readonly tracking = signal<any>(null);
+  readonly order = signal<any>(null);
+  readonly trackingError = signal<boolean>(false);
+  readonly orderError = signal<boolean>(false);
   private destroy$ = new Subject<void>();
   private orderId: number = 0;
 
@@ -306,30 +364,59 @@ export class DeliveryTrackingPage implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.orderId = Number(this.route.snapshot.paramMap.get('orderId'));
-    this.loadTracking();
+    this.loadAll();
 
     // Auto-refresh every 10 seconds
     interval(10000)
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.loadTracking());
+      .subscribe(() => this.loadAll());
+  }
+
+  loadAll(): void {
+    // Always load order details first — works even for PENDING orders
+    this.api.get<any>(`/customer/orders/${this.orderId}`)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (order) => {
+          this.order.set(order);
+          // Only attempt tracking if order has progressed past PENDING
+          if (order?.status && order.status !== 'PENDING') {
+            this.loadTracking();
+          } else {
+            // PENDING: no tracking record yet — mark loading done
+            this.trackingError.set(false);
+          }
+        },
+        error: () => {
+          this.orderError.set(true);
+        }
+      });
   }
 
   loadTracking(): void {
     this.api.get<any>(`/customer/orders/${this.orderId}/tracking`)
       .pipe(takeUntil(this.destroy$))
-      .subscribe((res) => {
-        this.tracking.set(res.data);
+      .subscribe({
+        next: (res) => {
+          this.tracking.set(res.data ?? res);
+          this.trackingError.set(false);
+        },
+        error: () => {
+          // Tracking record doesn't exist yet — not an error we show harshly
+          this.trackingError.set(true);
+        }
       });
   }
 
   isStatusCompleted(status: string): boolean {
-    const orderStatus = this.tracking()?.orderStatus;
+    const orderStatus = this.tracking()?.orderStatus ?? this.order()?.status;
     const statusOrder = ['CONFIRMED', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED'];
     return statusOrder.indexOf(orderStatus) >= statusOrder.indexOf(status);
   }
 
   isStatusActive(status: string): boolean {
-    return this.tracking()?.orderStatus === status;
+    const orderStatus = this.tracking()?.orderStatus ?? this.order()?.status;
+    return orderStatus === status;
   }
 
   ngOnDestroy(): void {

@@ -110,12 +110,12 @@ import { SyncService } from '../../core/services/sync.service';
 
         <!-- 6 digit boxes -->
         <div class="otp-boxes">
-          <input id="otpbox-0" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[0]" (input)="onOtpInput(0,$event)" (keydown)="onOtpKeydown(0,$event)">
-          <input id="otpbox-1" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[1]" (input)="onOtpInput(1,$event)" (keydown)="onOtpKeydown(1,$event)">
-          <input id="otpbox-2" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[2]" (input)="onOtpInput(2,$event)" (keydown)="onOtpKeydown(2,$event)">
-          <input id="otpbox-3" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[3]" (input)="onOtpInput(3,$event)" (keydown)="onOtpKeydown(3,$event)">
-          <input id="otpbox-4" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[4]" (input)="onOtpInput(4,$event)" (keydown)="onOtpKeydown(4,$event)">
-          <input id="otpbox-5" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[5]" (input)="onOtpInput(5,$event)" (keydown)="onOtpKeydown(5,$event)">
+          <input id="otpbox-0" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[0]" (input)="onOtpInput(0,$event)" (change)="onOtpInput(0,$event)" (keydown)="onOtpKeydown(0,$event)">
+          <input id="otpbox-1" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[1]" (input)="onOtpInput(1,$event)" (change)="onOtpInput(1,$event)" (keydown)="onOtpKeydown(1,$event)">
+          <input id="otpbox-2" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[2]" (input)="onOtpInput(2,$event)" (change)="onOtpInput(2,$event)" (keydown)="onOtpKeydown(2,$event)">
+          <input id="otpbox-3" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[3]" (input)="onOtpInput(3,$event)" (change)="onOtpInput(3,$event)" (keydown)="onOtpKeydown(3,$event)">
+          <input id="otpbox-4" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[4]" (input)="onOtpInput(4,$event)" (change)="onOtpInput(4,$event)" (keydown)="onOtpKeydown(4,$event)">
+          <input id="otpbox-5" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[5]" (input)="onOtpInput(5,$event)" (change)="onOtpInput(5,$event)" (keydown)="onOtpKeydown(5,$event)">
         </div>
 
         <!-- Name field -->
@@ -761,6 +761,15 @@ export class DeliveryLoginPage implements OnInit, OnDestroy {
   }
 
   verifyOtp(): void {
+    // Sync DOM values into otpDigits in case SMS auto-fill bypassed (input) events
+    for (let i = 0; i < 6; i++) {
+      const el = document.getElementById('otpbox-' + i) as HTMLInputElement;
+      if (el && el.value && !this.otpDigits[i]) {
+        const newDigits = [...this.otpDigits];
+        newDigits[i] = el.value.replace(/[^0-9]/g, '').slice(-1);
+        this.otpDigits = newDigits;
+      }
+    }
     if (!this.isOtpComplete || this.loading) return;
     this.loading = true;
     this.error = '';

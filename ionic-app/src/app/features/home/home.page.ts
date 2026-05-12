@@ -45,7 +45,7 @@ import { takeUntil } from 'rxjs/operators';
         </ion-searchbar>
       </ion-toolbar>
     </ion-header>
-    <ion-content [scrollEvents]="true" [fullscreen]="false" class="home-content" style="--padding-bottom: 72px;">
+    <ion-content [scrollEvents]="true" [fullscreen]="false" class="home-content" style="--padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px))">
       <div class="hero-section">
         <div class="hero-banner">
           <h1>Fresh Groceries<br><span class="highlight">In 10 Minutes</span></h1>

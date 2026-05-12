@@ -7,6 +7,10 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https'
   },
+  android: {
+    // Ensures WebView draws behind system bars so env(safe-area-inset-*) returns correct values
+    edgeToEdge: true
+  },
   plugins: {
     StatusBar: {
       style: 'DARK',

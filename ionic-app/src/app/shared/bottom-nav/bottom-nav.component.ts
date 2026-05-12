@@ -40,15 +40,28 @@ import { CartState } from '../../core/state/cart.state';
       bottom: 0;
       left: 0;
       right: 0;
-      height: 62px;
+      height: calc(62px + env(safe-area-inset-bottom, 0px));
       background: #fff;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-around;
+      padding-top: 0;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
       box-shadow: 0 -2px 16px rgba(0,0,0,0.10);
       border-top: 1px solid #f0f0f0;
       z-index: 1000;
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    /* Dark strip behind Android system nav buttons — Flipkart style */
+    .bottom-nav::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: env(safe-area-inset-bottom, 0px);
+      background: #111;
+      pointer-events: none;
+      z-index: -1;
     }
     .nav-item {
       display: flex;
@@ -56,6 +69,7 @@ import { CartState } from '../../core/state/cart.state';
       align-items: center;
       justify-content: center;
       flex: 1;
+      height: 62px;
       text-decoration: none;
       color: #aaa;
       gap: 2px;

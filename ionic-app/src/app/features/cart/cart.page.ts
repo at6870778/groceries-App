@@ -2,6 +2,9 @@ import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonButtons, IonBackButton, IonText } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
 import { CartState } from '../../core/state/cart.state';
@@ -1010,22 +1013,46 @@ export class CartPage implements OnInit, OnDestroy {
   }
 
   downloadBill(orderId: number) {
-    if (!orderId) {
-      return;
-    }
+    if (!orderId) return;
 
     this.http.get(this.api.buildUrl(`/customer/orders/${orderId}/bill`), { responseType: 'blob' })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (blob) => {
-          const objectUrl = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = objectUrl;
-          link.download = `Order-${orderId}-receipt.pdf`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(objectUrl);
+        next: async (blob) => {
+          const fileName = `Order-${orderId}-receipt.pdf`;
+
+          if (Capacitor.isNativePlatform()) {
+            // Native Android: write to cache dir then share/open
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+              const base64 = (reader.result as string).split(',')[1];
+              try {
+                const result = await Filesystem.writeFile({
+                  path: fileName,
+                  data: base64,
+                  directory: Directory.Cache
+                });
+                await Share.share({
+                  title: `Receipt - Order #${orderId}`,
+                  url: result.uri,
+                  dialogTitle: 'Open or share your receipt'
+                });
+              } catch (e) {
+                this.orderMsg = '❌ Could not open receipt.';
+              }
+            };
+            reader.readAsDataURL(blob);
+          } else {
+            // Web browser: standard anchor download
+            const objectUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = objectUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+          }
         },
         error: (err) => {
           this.orderMsg = this.getErrorMessage(err, '❌ Could not download receipt.');

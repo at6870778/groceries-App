@@ -24,7 +24,7 @@ import { ActivityState } from '../../core/state/activity.state';
       </ion-toolbar>
     </ion-header>
 
-    <ion-content [fullscreen]="false" class="ion-padding profile-content" style="--padding-bottom: 72px;">
+    <ion-content [fullscreen]="false" class="ion-padding profile-content" style="--padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px))">
 
       <!-- ===== USER CARD ===== -->
       <div class="user-card">

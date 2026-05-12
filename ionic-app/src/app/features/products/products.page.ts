@@ -63,10 +63,21 @@ import { takeUntil } from 'rxjs/operators';
             </div>
             <div class="delivery-time">📦 10 mins</div>
             <div class="action-row">
-              <ion-button size="small" fill="outline" color="medium" (click)="addToCart(p)" [disabled]="adding() === p.id" class="add-btn">
-                <span *ngIf="adding() !== p.id">➕ Add</span>
-                <span *ngIf="adding() === p.id">Adding...</span>
-              </ion-button>
+              <div class="stepper-wrap" (click)="$event.stopPropagation()">
+                <ng-container *ngIf="cartQty(p.id) === 0; else stepper">
+                  <ion-button size="small" fill="outline" color="medium" (click)="addToCart(p)" [disabled]="adding() === p.id" class="add-btn">
+                    <span *ngIf="adding() !== p.id">➕ Add</span>
+                    <span *ngIf="adding() === p.id">Adding...</span>
+                  </ion-button>
+                </ng-container>
+                <ng-template #stepper>
+                  <div class="stepper">
+                    <button class="step-btn" (click)="removeFromCart(p)">−</button>
+                    <span class="step-qty">{{ cartQty(p.id) }}</span>
+                    <button class="step-btn" (click)="addToCart(p)">+</button>
+                  </div>
+                </ng-template>
+              </div>
               <ion-button size="small" (click)="buyNow(p)" [disabled]="adding() === p.id" class="buy-btn" expand="block">
                 <span *ngIf="adding() !== p.id">Buy Now</span>
                 <span *ngIf="adding() === p.id">Opening...</span>
@@ -227,8 +238,37 @@ import { takeUntil } from 'rxjs/operators';
       gap: 6px;
       width: 100%;
     }
-    .add-btn {
+    .stepper-wrap {
       flex: 0 0 auto;
+    }
+    .stepper {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: #f0f0f0;
+      border-radius: 20px;
+      overflow: hidden;
+      height: 32px;
+    }
+    .step-btn {
+      background: none;
+      border: none;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #667eea;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step-qty {
+      min-width: 22px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #1a1a1a;
     }
     .buy-btn {
       flex: 1;
@@ -330,7 +370,10 @@ export class ProductsPage implements OnInit, OnDestroy {
       });
     this.api.get<any>('/customer/cart')
       .pipe(takeUntil(this.destroy$))
-      .subscribe((cart) => this.cartCount.set(cart?.items?.length || 0));
+      .subscribe((cart) => {
+        this.cartState.setItems(cart?.items || []);
+        this.cartCount.set(cart?.items?.length || 0);
+      });
   }
 
   ngOnDestroy(): void {
@@ -388,27 +431,52 @@ export class ProductsPage implements OnInit, OnDestroy {
     return 'linear-gradient(135deg,#edf3ff,#dde8fb)';
   }
 
+  cartQty(productId: number): number {
+    const item = this.cartState.items().find(i => Number(i.productId) === Number(productId));
+    return item ? Number(item.quantity || 0) : 0;
+  }
+
   addToCart(product: any) {
+    const currentQty = this.cartQty(product.id);
+    const newQty = currentQty + 1;
     this.adding.set(product.id);
-    this.api.post('/customer/cart/items', { productId: product.id, quantity: 1 })
+    this.cartState.addOrIncrement(product);
+    this.api.post('/customer/cart/items', { productId: product.id, quantity: newQty })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.adding.set(null);
-          this.cartCount.set(this.cartCount() + 1);
-          this.cartState.addOrIncrement(product);
+          this.cartCount.set(this.cartState.items().reduce((s, i) => s + Number(i.quantity || 0), 0));
           this.activityState.log('cart_add', `Added ${product.name} to cart`, { productId: product.id });
-          this.toastMsg.set('Added to cart!');
-          this.toastColor.set('success');
-          this.toastOpen.set(true);
+          if (currentQty === 0) {
+            this.toastMsg.set('Added to cart!');
+            this.toastColor.set('success');
+            this.toastOpen.set(true);
+          }
         },
         error: (err) => {
           this.adding.set(null);
+          this.cartState.removeOrDecrement({ id: product.id }); // revert optimistic
           const msg = err?.error?.message || 'Could not add to cart';
           this.toastMsg.set(msg);
           this.toastColor.set('danger');
           this.toastOpen.set(true);
         }
+      });
+  }
+
+  removeFromCart(product: any) {
+    const currentQty = this.cartQty(product.id);
+    this.cartState.removeOrDecrement({ id: product.id });
+    const request$ = currentQty <= 1
+      ? this.api.delete(`/customer/cart/items/${product.id}`)
+      : this.api.post('/customer/cart/items', { productId: product.id, quantity: currentQty - 1 });
+    request$.pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.cartCount.set(this.cartState.items().reduce((s, i) => s + Number(i.quantity || 0), 0));
+        },
+        error: () => { this.cartState.addOrIncrement(product); } // revert optimistic
       });
   }
 

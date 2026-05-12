@@ -579,7 +579,9 @@ import { takeUntil } from 'rxjs/operators';
     .card-actions {
       margin-top: 10px;
       display: flex;
+      align-items: center;
       gap: 6px;
+      min-height: 34px;
     }
     .add-btn {
       flex: 1;
@@ -599,15 +601,20 @@ import { takeUntil } from 'rxjs/operators';
     .stepper {
       flex: 1;
       display: flex;
-      align-items: center;
+      align-items: stretch;
       justify-content: space-between;
       background: #16a34a;
       border-radius: 10px;
       overflow: hidden;
+      height: 34px;
       min-height: 34px;
+      max-height: 34px;
+      box-sizing: border-box;
     }
     .stepper-sm {
+      height: 30px;
       min-height: 30px;
+      max-height: 30px;
       border-radius: 8px;
     }
     .step-btn {
@@ -616,17 +623,24 @@ import { takeUntil } from 'rxjs/operators';
       color: #fff;
       font-size: 1.1rem;
       font-weight: 700;
-      padding: 0 10px;
+      width: 34px;
+      flex: 0 0 34px;
       cursor: pointer;
-      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
       line-height: 1;
     }
     .step-qty {
       color: #fff;
       font-weight: 700;
       font-size: 0.95rem;
-      min-width: 20px;
+      flex: 1;
       text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .buy-now-btn {
       flex: 1;
@@ -1003,18 +1017,20 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   addToCart(product: any) {
+    const currentQty = this.cartQty(product.id);
     this.cartState.addOrIncrement(product);
     this.activityState.log('cart_add', `Added ${product.name} to cart`, { productId: product.id });
-    // also sync to backend (fire-and-forget)
-    this.api.post('/customer/cart/items', { productId: product.id, quantity: 1 })
-      .pipe(takeUntil(this.destroy$)).subscribe({ error: () => {} });
+    this.api.post('/customer/cart/items', { productId: product.id, quantity: currentQty + 1 })
+      .pipe(takeUntil(this.destroy$)).subscribe({ error: () => { this.cartState.removeOrDecrement({ id: product.id }); } });
   }
 
   removeFromCart(product: any) {
+    const currentQty = this.cartQty(product.id);
     this.cartState.removeOrDecrement(product);
-    // sync to backend (fire-and-forget)
-    this.api.post('/customer/cart/items', { productId: product.id, quantity: -1 })
-      .pipe(takeUntil(this.destroy$)).subscribe({ error: () => {} });
+    const request$ = currentQty <= 1
+      ? this.api.delete(`/customer/cart/items/${product.id}`)
+      : this.api.post('/customer/cart/items', { productId: product.id, quantity: currentQty - 1 });
+    request$.pipe(takeUntil(this.destroy$)).subscribe({ error: () => { this.cartState.addOrIncrement(product); } });
   }
 
   totalCartItems(): number {

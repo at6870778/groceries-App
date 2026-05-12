@@ -31,7 +31,7 @@ declare global {
         <ion-title>My Cart</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content [scrollEvents]="true" [fullscreen]="false" class="ion-padding">
+    <ion-content [scrollEvents]="true" [fullscreen]="false" class="ion-padding" style="--padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px))">
       <ng-container *ngIf="checkoutSuccess(); else cartOrEmpty">
         <div class="success-card">
           <div class="success-emoji">✅</div>
@@ -733,10 +733,8 @@ export class CartPage implements OnInit, OnDestroy {
     this.api.post('/customer/cart/items', { productId: pid, quantity: 1 })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (cart: any) => {
-          if (cart?.items) this.cartState.setItems(cart.items);
-        },
-        error: () => {}
+        next: () => {},
+        error: () => { this.loadCart(); } // reload only on error
       });
   }
 
@@ -746,9 +744,8 @@ export class CartPage implements OnInit, OnDestroy {
     this.api.post('/customer/cart/items', { productId: pid, quantity: -1 })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (cart: any) => {
-          if (cart?.items) this.cartState.setItems(cart.items);
-        },
+        next: () => {},
+        error: () => { this.loadCart(); }, // reload only on error
         error: () => {} // local state already updated
       });
   }

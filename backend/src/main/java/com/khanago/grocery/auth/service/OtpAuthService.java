@@ -158,7 +158,10 @@ public class OtpAuthService {
                 .findActiveOtp(phone, LocalDateTime.now())
                 .orElse(null);
 
-        if (record == null && !acceptAnyOtp) {
+        // When MSG91 widget is the verifier (reqId present), skip local record check —
+        // MSG91 is the source of truth. Local record is still used for rate-limiting only.
+        boolean usingWidget = widgetEnabled && request.reqId() != null && !request.reqId().isBlank();
+        if (record == null && !acceptAnyOtp && !usingWidget) {
             writeAuditLog(phone, "VERIFY_NO_ACTIVE_OTP", clientIp, "No valid OTP found");
             throw new ApiException("OTP expired or not requested. Please request a new OTP.");
         }

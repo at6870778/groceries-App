@@ -43,8 +43,8 @@ app:
     api-key: ${CLOUDINARY_API_KEY}
     api-secret: ${CLOUDINARY_API_SECRET}
   store:
-    latitude: ${STORE_LATITUDE:20.2961}
-    longitude: ${STORE_LONGITUDE:85.8245}
+    latitude: ${STORE_LATITUDE:26.7333}
+    longitude: ${STORE_LONGITUDE:83.8167}
   google:
     maps:
       api-key: ${GOOGLE_MAPS_API_KEY:}

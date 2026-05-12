@@ -39,8 +39,8 @@ app:
     widget-id: ${MSG91_WIDGET_ID:36656b6c7653363134323434}
     trust-all-ssl: true
   store:
-    latitude: ${STORE_LATITUDE:20.2961}
-    longitude: ${STORE_LONGITUDE:85.8245}
+    latitude: ${STORE_LATITUDE:26.7333}
+    longitude: ${STORE_LONGITUDE:83.8167}
   google:
     maps:
       api-key: ${GOOGLE_MAPS_API_KEY:}

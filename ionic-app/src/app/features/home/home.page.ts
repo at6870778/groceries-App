@@ -839,8 +839,11 @@ export class HomePage implements OnInit, OnDestroy {
       return `${label}${defaultAddr.line1 || defaultAddr.addressLine1 || ''}`;
     }
     const gpsAddr = this.locationService.currentLocation()?.address;
-    if (gpsAddr) return gpsAddr.split(',').slice(0, 2).join(', ');
-    if (this.locationService.isLocating()) return 'Detecting location…';
+    // Skip raw coordinate strings (e.g. "26.7333, 83.8167") — geocode still loading
+    if (gpsAddr && !/^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(gpsAddr.trim())) {
+      return gpsAddr.split(',').slice(0, 2).join(', ');
+    }
+    if (this.locationService.isLocating() || this.locationService.currentLocation()) return 'Detecting location…';
     return 'Add your location →';
   });
 

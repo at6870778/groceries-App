@@ -109,12 +109,15 @@ export class LocationService {
       const address = data.address || {};
       const parts: string[] = [];
 
-      if (address.road) parts.push(address.road);
-      if (address.suburb) parts.push(address.suburb);
-      if (address.city) parts.push(address.city);
+      const road = address.road || address.pedestrian || address.footway || address.path;
+      if (road) parts.push(road);
+      const suburb = address.suburb || address.neighbourhood || address.quarter;
+      if (suburb) parts.push(suburb);
+      const city = address.city || address.town || address.village || address.hamlet || address.county;
+      if (city) parts.push(city);
       if (address.state) parts.push(address.state);
 
-      return parts.join(', ') || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      return parts.join(', ') || address.display_name?.split(',').slice(0, 3).join(',').trim() || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
     } catch (error) {
       console.warn('Could not reverse geocode location:', error);
       throw error;

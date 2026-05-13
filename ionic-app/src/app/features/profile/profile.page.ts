@@ -506,6 +506,8 @@ export class ProfilePage implements OnInit, OnDestroy {
     state: '',
     postalCode: '',
     landmark: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
     isDefault: false
   };
 
@@ -567,6 +569,8 @@ export class ProfilePage implements OnInit, OnDestroy {
         state: structured.state,
         postalCode: structured.postcode || '',
         landmark: '',
+        latitude: loc.latitude,
+        longitude: loc.longitude,
         isDefault: true
       };
       this.api.post<any>('/customer/profile/addresses', payload)
@@ -587,6 +591,8 @@ export class ProfilePage implements OnInit, OnDestroy {
       this.form.city = structured.city || this.form.city;
       this.form.state = structured.state || this.form.state;
       this.form.postalCode = structured.postcode || this.form.postalCode;
+      this.form.latitude = loc.latitude;
+      this.form.longitude = loc.longitude;
     } catch (_) {
       this.formError.set('Could not detect location. Please fill manually.');
     } finally {
@@ -609,7 +615,7 @@ export class ProfilePage implements OnInit, OnDestroy {
 
   openAddForm() {
     this.editingId.set(null);
-    this.form = { label: 'Home', line1: '', line2: '', city: '', state: '', postalCode: '', landmark: '', isDefault: this.addresses().length === 0 };
+    this.form = { label: 'Home', line1: '', line2: '', city: '', state: '', postalCode: '', landmark: '', latitude: null, longitude: null, isDefault: this.addresses().length === 0 };
     this.formError.set('');
     this.showForm.set(true);
   }
@@ -624,6 +630,8 @@ export class ProfilePage implements OnInit, OnDestroy {
       state: a.state || '',
       postalCode: a.postalCode || '',
       landmark: a.landmark || '',
+      latitude: a.latitude ? Number(a.latitude) : null,
+      longitude: a.longitude ? Number(a.longitude) : null,
       isDefault: a.isDefault || false
     };
     this.formError.set('');

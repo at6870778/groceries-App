@@ -372,7 +372,7 @@ export class ProductsPage implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((cart) => {
         this.cartState.setItems(cart?.items || []);
-        this.cartCount.set(cart?.items?.length || 0);
+        this.cartCount.set((cart?.items || []).reduce((s: number, i: any) => s + Number(i.quantity || 0), 0));
       });
   }
 

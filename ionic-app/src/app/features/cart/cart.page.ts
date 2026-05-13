@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -54,10 +54,49 @@ declare global {
         <ng-container *ngIf="checkoutStep() === 'cart'">
 
           <!-- Delivery address chip -->
-          <div class="delivery-loc" *ngIf="locationService.currentLocation() as loc">
+          <div class="delivery-loc">
             <span>📍</span>
-            <span class="loc-addr">{{ loc.address || 'Detecting location…' }}</span>
-            <button class="loc-change-btn" (click)="detectAndRetry()" [disabled]="refetchingLoc()">{{ refetchingLoc() ? '...' : 'Change' }}</button>
+            <span class="loc-addr">{{ selectedAddressLabel() }}</span>
+            <button class="loc-change-btn" (click)="openAddressPicker()">Change</button>
+          </div>
+
+          <!-- Address picker bottom sheet -->
+          <div class="addr-picker-overlay" *ngIf="showAddressPicker()" (click)="showAddressPicker.set(false)"></div>
+          <div class="addr-picker-sheet" *ngIf="showAddressPicker()">
+            <div class="addr-picker-title">Select Delivery Address</div>
+
+            <!-- Detect live GPS option -->
+            <div class="addr-picker-item" [class.selected]="selectedAddressId() === 'gps'" (click)="selectGpsAddress()">
+              <span class="addr-item-icon">📡</span>
+              <div class="addr-item-body">
+                <div class="addr-item-label">Use Current Location</div>
+                <div class="addr-item-line">{{ locationService.currentLocation()?.address || (locationService.isLocating() ? 'Detecting…' : 'Tap to detect GPS') }}</div>
+              </div>
+              <span class="addr-tick" *ngIf="selectedAddressId() === 'gps'">✓</span>
+            </div>
+
+            <!-- Saved addresses -->
+            <div class="addr-picker-item" *ngFor="let a of savedAddresses()"
+                 [class.selected]="selectedAddressId() === a.id"
+                 (click)="selectSavedAddress(a)">
+              <span class="addr-item-icon">🏠</span>
+              <div class="addr-item-body">
+                <div class="addr-item-label">{{ a.label || 'Address' }}</div>
+                <div class="addr-item-line">{{ a.line1 || a.addressLine1 }}{{ a.city ? ', ' + a.city : '' }}</div>
+              </div>
+              <span class="addr-tick" *ngIf="selectedAddressId() === a.id">✓</span>
+            </div>
+
+            <!-- No saved addresses + GPS unavailable -->
+            <div *ngIf="savedAddresses().length === 0 && !locationService.currentLocation()" class="addr-picker-empty">
+              <p>No saved addresses found.</p>
+              <button class="loc-retry-btn" (click)="detectGpsFromPicker()" [disabled]="locationService.isLocating()">
+                📍 {{ locationService.isLocating() ? 'Detecting...' : 'Detect my GPS location' }}
+              </button>
+              <button class="addr-manual-btn" routerLink="/profile">+ Add Address in Profile</button>
+            </div>
+
+            <button class="addr-picker-close" (click)="showAddressPicker.set(false)">Done</button>
           </div>
 
           <!-- Item list with images + stepper -->
@@ -101,9 +140,6 @@ declare global {
           </div>
 
           <p *ngIf="orderMsg" style="color:red;text-align:center;margin:8px 0;">{{ orderMsg }}</p>
-          <button *ngIf="orderMsg && (orderMsg.includes('km') || orderMsg.includes('deliver'))" class="loc-retry-btn" (click)="detectAndRetry()" [disabled]="refetchingLoc()">
-            📍 {{ refetchingLoc() ? 'Detecting...' : 'Detect my location & retry' }}
-          </button>
         </ng-container>
 
         <!-- ===== STEP 2: PAYMENT ===== -->
@@ -707,6 +743,44 @@ declare global {
       color: #16a34a;
       font-size: 1rem;
     }
+    /* ===== ADDRESS PICKER ===== */
+    .addr-picker-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 900;
+    }
+    .addr-picker-sheet {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: #fff; border-radius: 20px 20px 0 0;
+      padding: 20px 16px 32px; z-index: 901;
+      box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+      max-height: 75vh; overflow-y: auto;
+    }
+    .addr-picker-title {
+      font-weight: 800; font-size: 1rem; color: #1a1a1a; margin-bottom: 14px; text-align: center;
+    }
+    .addr-picker-item {
+      display: flex; align-items: center; gap: 12px;
+      border: 1px solid #e8eef8; border-radius: 14px; padding: 12px 14px;
+      margin-bottom: 10px; cursor: pointer; background: #fafcff;
+    }
+    .addr-picker-item.selected { border-color: #16a34a; background: #f0faf5; }
+    .addr-item-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .addr-item-body { flex: 1; min-width: 0; }
+    .addr-item-label { font-weight: 700; font-size: 0.9rem; color: #1a1a1a; }
+    .addr-item-line { font-size: 0.8rem; color: #666; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .addr-tick { color: #16a34a; font-weight: 900; font-size: 1.1rem; flex-shrink: 0; }
+    .addr-picker-empty { text-align: center; padding: 12px 0; color: #888; }
+    .addr-picker-empty p { margin-bottom: 10px; }
+    .addr-manual-btn {
+      display: block; width: 100%; margin-top: 8px;
+      padding: 10px; background: #fff; color: #667eea;
+      border: 1.5px solid #667eea; border-radius: 12px;
+      font-size: 0.9rem; font-weight: 700; cursor: pointer;
+    }
+    .addr-picker-close {
+      display: block; width: 100%; margin-top: 14px;
+      padding: 12px; background: #16a34a; color: #fff;
+      border: none; border-radius: 14px; font-size: 1rem; font-weight: 700; cursor: pointer;
+    }
   `]
 })
 export class CartPage implements OnInit, OnDestroy {
@@ -724,6 +798,20 @@ export class CartPage implements OnInit, OnDestroy {
   readonly deliveryFeeLabel = signal('₹50 (standard)');
   readonly fetchingFee = signal(false);
   readonly refetchingLoc = signal(false);
+  readonly savedAddresses = signal<any[]>([]);
+  readonly selectedAddressId = signal<any>('gps'); // 'gps' | address.id
+  readonly selectedAddress = signal<any | null>(null); // null = use GPS
+  readonly showAddressPicker = signal(false);
+
+  readonly selectedAddressLabel = computed(() => {
+    const addr = this.selectedAddress();
+    if (addr) return `${addr.label ? addr.label + ': ' : ''}${addr.line1 || addr.addressLine1 || ''}${addr.city ? ', ' + addr.city : ''}`;
+    const loc = this.locationService.currentLocation();
+    if (loc?.address) return loc.address;
+    if (this.locationService.isLocating()) return 'Detecting location…';
+    return 'No address selected – tap Change';
+  });
+
   private destroy$ = new Subject<void>();
 
   private getErrorMessage(err: any, fallback: string): string {
@@ -759,8 +847,11 @@ export class CartPage implements OnInit, OnDestroy {
 
   ionViewWillEnter(): void {
     this.loadCart();
-    // Always refresh GPS on cart entry to avoid stale cached coordinates
-    this.locationService.detectCurrentLocation().catch(() => {});
+    this.loadSavedAddresses();
+    // Only detect GPS if no location is set yet — don't override user-selected address
+    if (!this.locationService.currentLocation()) {
+      this.locationService.detectCurrentLocation().catch(() => {});
+    }
   }
 
   ngOnDestroy(): void {
@@ -777,6 +868,54 @@ export class CartPage implements OnInit, OnDestroy {
         // Silently fail - location is optional for ordering
       });
     }
+  }
+
+  loadSavedAddresses() {
+    this.api.get<any[]>('/customer/profile/addresses')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.savedAddresses.set(res || []);
+          // Auto-select default saved address if no address chosen yet and GPS unavailable
+          if (this.selectedAddressId() === 'gps' && !this.locationService.currentLocation()) {
+            const def = (res || []).find((a: any) => a.isDefault) || (res || [])[0];
+            if (def) {
+              this.selectedAddress.set(def);
+              this.selectedAddressId.set(def.id);
+            }
+          }
+        },
+        error: () => {}
+      });
+  }
+
+  openAddressPicker() {
+    this.showAddressPicker.set(true);
+  }
+
+  selectGpsAddress() {
+    this.selectedAddress.set(null);
+    this.selectedAddressId.set('gps');
+    this.showAddressPicker.set(false);
+    if (!this.locationService.currentLocation()) {
+      this.locationService.detectCurrentLocation().catch(() => {});
+    }
+  }
+
+  selectSavedAddress(addr: any) {
+    this.selectedAddress.set(addr);
+    this.selectedAddressId.set(addr.id);
+    this.showAddressPicker.set(false);
+  }
+
+  detectGpsFromPicker() {
+    this.locationService.detectCurrentLocation()
+      .then(() => {
+        this.selectedAddress.set(null);
+        this.selectedAddressId.set('gps');
+        this.showAddressPicker.set(false);
+      })
+      .catch(() => {});
   }
 
   loadCart() {
@@ -889,35 +1028,32 @@ export class CartPage implements OnInit, OnDestroy {
   }
 
   proceedToPayment() {
+    const saved = this.selectedAddress();
+    if (saved) {
+      // User picked a saved address
+      if (saved.latitude && saved.longitude) {
+        this.fetchDeliveryFee(saved.latitude, saved.longitude);
+      } else {
+        // Saved address has no coordinates — proceed with standard fee
+        this.deliveryFee.set(50);
+        this.deliveryFeeLabel.set('₹50 (standard)');
+        this.checkoutStep.set('payment');
+      }
+      return;
+    }
+    // GPS mode
     const loc = this.locationService.currentLocation();
     if (loc) {
       this.fetchDeliveryFee(loc.latitude, loc.longitude);
       return;
     }
-    // Live GPS not available — try saved address lat/lng
-    this.fetchingFee.set(true);
-    this.api.get<any[]>('/customer/profile/addresses')
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (addresses) => {
-          const withCoords = (addresses || []).find(a => a.latitude && a.longitude);
-          if (withCoords) {
-            this.fetchDeliveryFee(withCoords.latitude, withCoords.longitude);
-          } else {
-            // No coordinates available anywhere — use default fee and proceed
-            this.fetchingFee.set(false);
-            this.deliveryFee.set(50);
-            this.deliveryFeeLabel.set('₹50 (standard)');
-            this.checkoutStep.set('payment');
-          }
-        },
-        error: () => {
-          this.fetchingFee.set(false);
-          this.deliveryFee.set(50);
-          this.deliveryFeeLabel.set('₹50 (standard)');
-          this.checkoutStep.set('payment');
-        }
-      });
+    // Nothing available — ask user to pick an address
+    if (this.savedAddresses().length > 0) {
+      this.orderMsg = '📍 Please select a delivery address.';
+      this.showAddressPicker.set(true);
+    } else {
+      this.orderMsg = '📍 Please add an address in your Profile or enable GPS.';
+    }
   }
 
   private fetchDeliveryFee(lat: number, lng: number) {
@@ -997,11 +1133,17 @@ export class CartPage implements OnInit, OnDestroy {
         checkoutData.upiReference = this.upiReference() || 'RAZORPAY_UPI';
       }
 
-      // Add location for dynamic delivery fee calculation (live GPS preferred, saved address fallback)
-      const location = this.locationService.currentLocation();
-      if (location) {
-        checkoutData.customerLat = location.latitude;
-        checkoutData.customerLng = location.longitude;
+      // Use selected address coords, or fall back to GPS
+      const saved = this.selectedAddress();
+      if (saved?.latitude && saved?.longitude) {
+        checkoutData.customerLat = saved.latitude;
+        checkoutData.customerLng = saved.longitude;
+      } else {
+        const location = this.locationService.currentLocation();
+        if (location) {
+          checkoutData.customerLat = location.latitude;
+          checkoutData.customerLng = location.longitude;
+        }
       }
 
       this.api.post<any>('/customer/orders/checkout', checkoutData)

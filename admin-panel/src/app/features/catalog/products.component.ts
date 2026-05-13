@@ -8,7 +8,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
-import { MatTableModule } from '@angular/material/table';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../../core/services/api.service';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
@@ -24,100 +25,207 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
-    MatTableModule,
+    MatIconModule,
+    MatTooltipModule,
     MatProgressSpinnerModule
   ],
+  styles: [`
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0 12px;
+      align-items: start;
+    }
+    .hint-wrap { display: flex; flex-direction: column; }
+    .hint-wrap mat-form-field { width: 100%; }
+    .field-hint { font-size: 11px; color: #888; margin-top: -14px; padding-left: 14px; margin-bottom: 8px; }
+    .upload-cell {
+      display: flex; flex-direction: column; gap: 8px; justify-content: center; padding-top: 6px;
+    }
+    .img-preview { width: 52px; height: 52px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; }
+    .action-row { display: flex; gap: 10px; align-items: center; padding-top: 6px; grid-column: span 2; }
+
+    /* Product card grid */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+      margin-top: 4px;
+    }
+    .product-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: box-shadow 0.2s;
+      background: #fff;
+    }
+    .product-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+    .product-img-wrap { position: relative; height: 140px; background: #f5f5f5; display: flex; align-items: center; justify-content: center; }
+    .product-thumb { width: 100%; height: 100%; object-fit: cover; }
+    .product-thumb-placeholder mat-icon { font-size: 48px; width: 48px; height: 48px; color: #bbb; }
+    .stock-badge {
+      position: absolute; bottom: 6px; right: 6px;
+      padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;
+      background: #43a047; color: #fff;
+    }
+    .stock-badge.low { background: #e53935; }
+    .stock-badge.mid { background: #fb8c00; }
+    .product-info { padding: 10px 12px; flex: 1; }
+    .product-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; line-height: 1.3; }
+    .product-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+    .category-tag { background: #e3f2fd; color: #1565c0; font-size: 11px; padding: 2px 7px; border-radius: 10px; font-weight: 500; }
+    .sku-tag { background: #f3e5f5; color: #6a1b9a; font-size: 11px; padding: 2px 7px; border-radius: 10px; }
+    .product-price { display: flex; gap: 6px; align-items: baseline; }
+    .selling-price { font-size: 16px; font-weight: 700; color: #1a1a1a; }
+    .mrp { font-size: 12px; color: #999; text-decoration: line-through; }
+    .discount { font-size: 11px; color: #43a047; font-weight: 600; }
+    .product-actions { display: flex; gap: 8px; padding: 8px 12px 10px; border-top: 1px solid #f0f0f0; }
+    .product-actions button { flex: 1; }
+
+    /* Pagination */
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 20px; }
+    .page-info { font-weight: 500; font-size: 14px; color: #555; }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 48px 0; color: #aaa; }
+    .empty-state mat-icon { font-size: 56px; width: 56px; height: 56px; }
+    .empty-state p { margin-top: 8px; font-size: 15px; }
+  `],
   template: `
     <h2 class="page-title">Product Management</h2>
 
-    <section class="metric-card" style="margin-bottom:12px;">
-      <h3 style="margin-top:0;">Create Category</h3>
-      <form [formGroup]="categoryForm" (ngSubmit)="createCategory()" style="display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;align-items:start;">
+    <!-- ── Category form ── -->
+    <section class="metric-card" style="margin-bottom:16px;">
+      <h3 style="margin:0 0 14px;">Create Category</h3>
+      <form [formGroup]="categoryForm" (ngSubmit)="createCategory()" class="form-grid">
         <mat-form-field appearance="outline"><mat-label>Name</mat-label><input matInput formControlName="name" /></mat-form-field>
-        <mat-form-field appearance="outline"><mat-label>Slug</mat-label><input matInput formControlName="slug" /><mat-hint>Auto-filled from name</mat-hint></mat-form-field>
+
+        <div class="hint-wrap">
+          <mat-form-field appearance="outline"><mat-label>Slug</mat-label><input matInput formControlName="slug" /></mat-form-field>
+          <span class="field-hint">Auto-filled from name</span>
+        </div>
+
         <mat-form-field appearance="outline"><mat-label>Image URL</mat-label><input matInput formControlName="imageUrl" /></mat-form-field>
-        <div style="display:flex;flex-direction:column;gap:4px;justify-content:center;">
+
+        <div class="upload-cell">
           <input #catFileInput type="file" accept="image/*" style="display:none" (change)="uploadCategoryImage($any($event.target).files[0])" />
           <button mat-stroked-button type="button" [disabled]="catUploading()" (click)="catFileInput.click()">
-            <mat-spinner *ngIf="catUploading()" diameter="16" style="display:inline-block;margin-right:4px;"></mat-spinner>
-            {{ catUploading() ? 'Uploading…' : '📂 Upload' }}
+            <mat-icon>cloud_upload</mat-icon>&nbsp;{{ catUploading() ? 'Uploading…' : 'Upload Image' }}
           </button>
-          <img *ngIf="categoryForm.get('imageUrl')?.value" [src]="categoryForm.get('imageUrl')?.value" alt="preview" style="width:48px;height:48px;object-fit:cover;border-radius:4px;border:1px solid #ddd;" />
-        </div>
-        <div style="display:flex;align-items:center;">
-          <button mat-flat-button color="primary" type="submit" [disabled]="catSaving()">
-            <mat-spinner *ngIf="catSaving()" diameter="16" style="display:inline-block;margin-right:6px;"></mat-spinner>
-            {{ catSaving() ? 'Saving…' : 'Save Category' }}
+          <img *ngIf="categoryForm.get('imageUrl')?.value" [src]="categoryForm.get('imageUrl')?.value" alt="preview" class="img-preview" />
+          <button mat-raised-button color="primary" type="submit" [disabled]="catSaving()">
+            <mat-icon>save</mat-icon>&nbsp;{{ catSaving() ? 'Saving…' : 'Save Category' }}
           </button>
         </div>
       </form>
     </section>
 
-    <section #productFormSection class="metric-card" style="margin-bottom:12px;">
-      <h3 style="margin-top:0;">{{ editingProductId() ? 'Update Product' : 'Create Product' }}</h3>
-      <form [formGroup]="productForm" (ngSubmit)="saveProduct()" style="display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;">
+    <!-- ── Product form ── -->
+    <section #productFormSection class="metric-card" style="margin-bottom:16px;">
+      <h3 style="margin:0 0 14px;">{{ editingProductId() ? 'Update Product' : 'Create Product' }}</h3>
+      <form [formGroup]="productForm" (ngSubmit)="saveProduct()" class="form-grid">
         <mat-form-field appearance="outline">
           <mat-label>Category</mat-label>
           <mat-select formControlName="categoryId">
             <mat-option *ngFor="let c of categories()" [value]="c.id">{{ c.name }}</mat-option>
           </mat-select>
         </mat-form-field>
+
         <mat-form-field appearance="outline"><mat-label>Name</mat-label><input matInput formControlName="name" /></mat-form-field>
-        <mat-form-field appearance="outline"><mat-label>SKU</mat-label><input matInput formControlName="sku" /><mat-hint>Auto-filled from name &amp; unit</mat-hint></mat-form-field>
-        <mat-form-field appearance="outline"><mat-label>Unit</mat-label><input matInput formControlName="unit" /></mat-form-field>
-        <mat-form-field appearance="outline"><mat-label>Stock</mat-label><input matInput type="number" formControlName="stockQty" /></mat-form-field>
-        <mat-form-field appearance="outline"><mat-label>MRP</mat-label><input matInput type="number" formControlName="mrp" /></mat-form-field>
-        <mat-form-field appearance="outline"><mat-label>Selling</mat-label><input matInput type="number" formControlName="sellingPrice" /></mat-form-field>
+
+        <div class="hint-wrap">
+          <mat-form-field appearance="outline"><mat-label>SKU</mat-label><input matInput formControlName="sku" /></mat-form-field>
+          <span class="field-hint">Auto-filled from name &amp; unit</span>
+        </div>
+
+        <mat-form-field appearance="outline"><mat-label>Unit (e.g. 500g)</mat-label><input matInput formControlName="unit" /></mat-form-field>
+
+        <mat-form-field appearance="outline"><mat-label>Stock Qty</mat-label><input matInput type="number" formControlName="stockQty" /></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>MRP (₹)</mat-label><input matInput type="number" formControlName="mrp" /></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Selling Price (₹)</mat-label><input matInput type="number" formControlName="sellingPrice" /></mat-form-field>
+        <mat-form-field appearance="outline" style="grid-column:span 1"><mat-label>Description</mat-label><input matInput formControlName="description" /></mat-form-field>
+
         <mat-form-field appearance="outline"><mat-label>Image URL</mat-label><input matInput formControlName="imageUrl" /></mat-form-field>
-        <div style="display:flex;flex-direction:column;gap:4px;justify-content:center;">
+
+        <div class="upload-cell">
           <input #prodFileInput type="file" accept="image/*" style="display:none" (change)="uploadProductImage($any($event.target).files[0])" />
           <button mat-stroked-button type="button" [disabled]="prodUploading()" (click)="prodFileInput.click()">
-            <mat-spinner *ngIf="prodUploading()" diameter="16" style="display:inline-block;margin-right:4px;"></mat-spinner>
-            {{ prodUploading() ? 'Uploading…' : '📂 Upload' }}
+            <mat-icon>cloud_upload</mat-icon>&nbsp;{{ prodUploading() ? 'Uploading…' : 'Upload Image' }}
           </button>
-          <img *ngIf="productForm.get('imageUrl')?.value" [src]="productForm.get('imageUrl')?.value" alt="preview" style="width:48px;height:48px;object-fit:cover;border-radius:4px;border:1px solid #ddd;" />
+          <img *ngIf="productForm.get('imageUrl')?.value" [src]="productForm.get('imageUrl')?.value" alt="preview" class="img-preview" />
         </div>
-        <mat-form-field appearance="outline" style="grid-column: span 2;"><mat-label>Description</mat-label><input matInput formControlName="description" /></mat-form-field>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
-            <mat-spinner *ngIf="saving()" diameter="16" style="display:inline-block;margin-right:6px;"></mat-spinner>
-            {{ saving() ? 'Saving…' : (editingProductId() ? 'Update' : 'Create') }}
+
+        <div class="action-row">
+          <button mat-raised-button color="primary" type="submit" [disabled]="saving()">
+            <mat-icon>{{ editingProductId() ? 'edit' : 'add_circle' }}</mat-icon>&nbsp;{{ saving() ? 'Saving…' : (editingProductId() ? 'Update Product' : 'Create Product') }}
           </button>
-          <button mat-button type="button" *ngIf="editingProductId()" [disabled]="saving()" (click)="cancelEdit()">Cancel</button>
+          <button mat-stroked-button type="button" *ngIf="editingProductId()" [disabled]="saving()" (click)="cancelEdit()">
+            <mat-icon>close</mat-icon>&nbsp;Cancel
+          </button>
         </div>
       </form>
-
     </section>
 
-    <section class="metric-card" style="overflow:auto;">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
-        <mat-form-field appearance="outline" style="max-width:320px;">
+    <!-- ── Product list ── -->
+    <section class="metric-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+        <mat-form-field appearance="outline" style="max-width:320px;margin-bottom:-20px;">
           <mat-label>Search products</mat-label>
+          <mat-icon matPrefix style="margin-right:4px">search</mat-icon>
           <input matInput [value]="searchQuery()" (input)="onSearch(($any($event.target)).value)" />
         </mat-form-field>
+        <span style="font-size:13px;color:#777;">{{ products().length }} product(s) on this page</span>
       </div>
 
-      <table mat-table [dataSource]="products()" style="width:100%;">
-        <ng-container matColumnDef="name"><th mat-header-cell *matHeaderCellDef>Name</th><td mat-cell *matCellDef="let p">{{ p.name }}</td></ng-container>
-        <ng-container matColumnDef="category"><th mat-header-cell *matHeaderCellDef>Category</th><td mat-cell *matCellDef="let p">{{ p.categoryName }}</td></ng-container>
-        <ng-container matColumnDef="price"><th mat-header-cell *matHeaderCellDef>Price</th><td mat-cell *matCellDef="let p">Rs {{ p.sellingPrice }}</td></ng-container>
-        <ng-container matColumnDef="stock"><th mat-header-cell *matHeaderCellDef>Stock</th><td mat-cell *matCellDef="let p">{{ p.stockQty }}</td></ng-container>
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef>Actions</th>
-          <td mat-cell *matCellDef="let p">
-            <button mat-button (click)="editProduct(p)">Edit</button>
-            <button mat-button color="warn" (click)="deleteProduct(p.id)">Delete</button>
-          </td>
-        </ng-container>
+      <div class="product-grid">
+        <div *ngFor="let p of products()" class="product-card">
+          <div class="product-img-wrap">
+            <img *ngIf="p.imageUrl" [src]="p.imageUrl" [alt]="p.name" class="product-thumb" />
+            <div *ngIf="!p.imageUrl" class="product-thumb-placeholder"><mat-icon>image_not_supported</mat-icon></div>
+            <span class="stock-badge" [class.low]="p.stockQty < 10" [class.mid]="p.stockQty >= 10 && p.stockQty < 50">
+              Stock: {{ p.stockQty }}
+            </span>
+          </div>
+          <div class="product-info">
+            <div class="product-name">{{ p.name }}</div>
+            <div class="product-meta">
+              <span class="category-tag">{{ p.categoryName }}</span>
+              <span class="sku-tag">{{ p.sku }}</span>
+            </div>
+            <div class="product-price">
+              <span class="selling-price">₹{{ p.sellingPrice }}</span>
+              <span *ngIf="p.mrp && p.mrp !== p.sellingPrice" class="mrp">₹{{ p.mrp }}</span>
+              <span *ngIf="p.mrp && p.mrp > p.sellingPrice" class="discount">
+                {{ ((p.mrp - p.sellingPrice) / p.mrp * 100).toFixed(0) }}% off
+              </span>
+            </div>
+          </div>
+          <div class="product-actions">
+            <button mat-stroked-button (click)="editProduct(p)" matTooltip="Edit product">
+              <mat-icon>edit</mat-icon>&nbsp;Edit
+            </button>
+            <button mat-stroked-button color="warn" (click)="deleteProduct(p.id)" matTooltip="Delete product">
+              <mat-icon>delete</mat-icon>&nbsp;Delete
+            </button>
+          </div>
+        </div>
+      </div>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-      </table>
+      <div *ngIf="products().length === 0" class="empty-state">
+        <mat-icon>inventory_2</mat-icon>
+        <p>No products found</p>
+      </div>
 
-      <div style="display:flex;justify-content:flex-end;gap:8px;align-items:center;margin-top:10px;">
-        <button mat-button (click)="prevPage()" [disabled]="currentPage() === 0">Previous</button>
-        <span>Page {{ currentPage() + 1 }} / {{ totalPages() }}</span>
-        <button mat-button (click)="nextPage()" [disabled]="currentPage() + 1 >= totalPages()">Next</button>
+      <div class="pagination">
+        <button mat-stroked-button (click)="prevPage()" [disabled]="currentPage() === 0">
+          <mat-icon>chevron_left</mat-icon>&nbsp;Previous
+        </button>
+        <span class="page-info">Page {{ currentPage() + 1 }} / {{ totalPages() }}</span>
+        <button mat-stroked-button (click)="nextPage()" [disabled]="currentPage() + 1 >= totalPages()">
+          Next&nbsp;<mat-icon>chevron_right</mat-icon>
+        </button>
       </div>
     </section>
   `
@@ -129,7 +237,6 @@ export class ProductsComponent implements OnInit, OnDestroy {
   readonly currentPage = signal(0);
   readonly totalPages = signal(1);
   readonly searchQuery = signal('');
-  readonly displayedColumns = ['name', 'category', 'price', 'stock', 'actions'];
   readonly prodUploading = signal(false);
   readonly catUploading = signal(false);
   readonly saving = signal(false);

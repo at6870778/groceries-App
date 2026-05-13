@@ -890,12 +890,39 @@ export class CartPage implements OnInit, OnDestroy {
 
   proceedToPayment() {
     const loc = this.locationService.currentLocation();
-    if (!loc) {
-      this.checkoutStep.set('payment');
+    if (loc) {
+      this.fetchDeliveryFee(loc.latitude, loc.longitude);
       return;
     }
+    // Live GPS not available — try saved address lat/lng
     this.fetchingFee.set(true);
-    this.api.get<any>(`/customer/orders/delivery-fee?lat=${loc.latitude}&lng=${loc.longitude}`)
+    this.api.get<any[]>('/customer/profile/addresses')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (addresses) => {
+          const withCoords = (addresses || []).find(a => a.latitude && a.longitude);
+          if (withCoords) {
+            this.fetchDeliveryFee(withCoords.latitude, withCoords.longitude);
+          } else {
+            // No coordinates available anywhere — use default fee and proceed
+            this.fetchingFee.set(false);
+            this.deliveryFee.set(50);
+            this.deliveryFeeLabel.set('₹50 (standard)');
+            this.checkoutStep.set('payment');
+          }
+        },
+        error: () => {
+          this.fetchingFee.set(false);
+          this.deliveryFee.set(50);
+          this.deliveryFeeLabel.set('₹50 (standard)');
+          this.checkoutStep.set('payment');
+        }
+      });
+  }
+
+  private fetchDeliveryFee(lat: number, lng: number) {
+    this.fetchingFee.set(true);
+    this.api.get<any>(`/customer/orders/delivery-fee?lat=${lat}&lng=${lng}`)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
@@ -906,7 +933,6 @@ export class CartPage implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.fetchingFee.set(false);
-          // If out of range, show error, else use default ₹50
           const msg = err?.error?.message || '';
           if (msg.includes('beyond') || msg.includes('km')) {
             this.orderMsg = '❌ ' + msg;
@@ -971,7 +997,7 @@ export class CartPage implements OnInit, OnDestroy {
         checkoutData.upiReference = this.upiReference() || 'RAZORPAY_UPI';
       }
 
-      // Add location for dynamic delivery fee calculation
+      // Add location for dynamic delivery fee calculation (live GPS preferred, saved address fallback)
       const location = this.locationService.currentLocation();
       if (location) {
         checkoutData.customerLat = location.latitude;

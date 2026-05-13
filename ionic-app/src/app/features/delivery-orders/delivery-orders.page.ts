@@ -17,7 +17,7 @@ import { ApiService } from '../../core/services/api.service';
       </ion-toolbar>
     </ion-header>
 
-    <ion-content [scrollEvents]="true" [fullscreen]="false" class="ion-padding">
+    <ion-content [scrollEvents]="true" [fullscreen]="false" class="ion-padding" style="--padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px))">
       <ion-refresher slot="fixed" (ionRefresh)="onRefresh($event)">
         <ion-refresher-content pullingIcon="chevron-down-circle-outline" pullingText="Pull to refresh" refreshingSpinner="circles" refreshingText="Refreshing..."></ion-refresher-content>
       </ion-refresher>
@@ -113,21 +113,9 @@ import { ApiService } from '../../core/services/api.service';
         </div>
       </div>
     </ion-content>
+    <div style="position:fixed;bottom:0;left:0;right:0;height:env(safe-area-inset-bottom,0px);background:#111;z-index:999;pointer-events:none;"></div>
   `,
   styles: [`
-    :host {
-      --ion-background-color: #f8fafc;
-    }
-
-    ion-header {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    }
-
-    .header-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       --color: white;
       padding: 12px 16px;
     }

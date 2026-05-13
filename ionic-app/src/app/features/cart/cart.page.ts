@@ -31,7 +31,7 @@ declare global {
         <ion-title>My Cart</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content [scrollEvents]="true" [fullscreen]="false" class="ion-padding" style="--padding-bottom: 16px">
+    <ion-content [scrollEvents]="true" [fullscreen]="false" class="ion-padding" style="--padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px))">
       <ng-container *ngIf="checkoutSuccess(); else cartOrEmpty">
         <div class="success-card">
           <div class="success-emoji">✅</div>
@@ -201,9 +201,9 @@ declare global {
         </ion-button>
       </ion-toolbar>
     </ion-footer>
+    <!-- Android system nav button safe area — dark strip consistent with home screen -->
+    <div style="position:fixed;bottom:0;left:0;right:0;height:env(safe-area-inset-bottom,0px);background:#111;z-index:999;pointer-events:none;"></div>
   `,
-  styles: [`
-    .success-card {
       text-align: center;
       background: linear-gradient(135deg, #ecfff2 0%, #f8fffb 100%);
       border: 1px solid #bce4cb;

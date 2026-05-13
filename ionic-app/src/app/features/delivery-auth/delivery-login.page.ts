@@ -94,6 +94,9 @@ import { SyncService } from '../../core/services/sync.service';
           </div>
 
           <p class="terms-text">By continuing, you agree to our <span class="terms-link">Terms &amp; Conditions</span></p>
+
+          <!-- sendOtp error shown inline -->
+          <div class="error-banner" *ngIf="error && !otpSent">{{ error }}</div>
         </div>
       </div>
 
@@ -133,15 +136,15 @@ import { SyncService } from '../../core/services/sync.service';
           </ion-button>
         </div>
 
+        <!-- OTP error shown inline so it's always visible above the keyboard -->
+        <div class="error-banner otp-error-inline" *ngIf="error">{{ error }}</div>
+
         <div class="resend-row">
           <button class="resend-btn" [disabled]="resendSecondsRemaining > 0" (click)="resendOtp()">
             {{ resendSecondsRemaining > 0 ? ('Resend OTP in ' + resendSecondsRemaining + 's') : 'Resend OTP' }}
           </button>
         </div>
       </div>
-
-      <!-- ERROR -->
-      <div class="error-banner" *ngIf="error">{{ error }}</div>
 
     </ion-content>
   `,
@@ -786,7 +789,8 @@ export class DeliveryLoginPage implements OnInit, OnDestroy {
         this.saveLocationOnLogin();
         if (this.mode === 'CUSTOMER') this.sync.syncCart(); // pull saved cart immediately
         this.loading = false;
-        this.router.navigateByUrl(this.mode === 'DELIVERY_BOY' ? '/delivery/orders' : '/home');
+        // replaceUrl: true clears the login page from back-stack so Android back button exits the app
+        this.router.navigateByUrl(this.mode === 'DELIVERY_BOY' ? '/delivery/orders' : '/home', { replaceUrl: true });
       },
       error: (err) => {
         this.error = this.getErrorMessage(err, 'Login failed. Please try again.');

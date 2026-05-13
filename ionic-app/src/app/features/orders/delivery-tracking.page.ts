@@ -19,7 +19,7 @@ import { takeUntil } from 'rxjs/operators';
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="ion-padding">
+    <ion-content class="ion-padding" style="--padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px))">
 
       <!-- Error loading order -->
       <div *ngIf="orderError()" class="state-box error-box">
@@ -133,9 +133,9 @@ import { takeUntil } from 'rxjs/operators';
       </ng-container>
 
     </ion-content>
+    <!-- Android system nav button safe area — same dark strip as home screen -->
+    <div style="position:fixed;bottom:0;left:0;right:0;height:env(safe-area-inset-bottom,0px);background:#111;z-index:999;pointer-events:none;"></div>
   `,
-  styles: [`
-    .status-timeline {
       margin-top: 16px;
     }
 

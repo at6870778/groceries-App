@@ -51,9 +51,9 @@ app:
     bot-token: ${TELEGRAM_BOT_TOKEN:}
     chat-id: ${TELEGRAM_CHAT_ID:}
   store:
-    latitude: ${STORE_LATITUDE:0.0}
-    longitude: ${STORE_LONGITUDE:0.0}
-    max-delivery-km: ${STORE_MAX_DELIVERY_KM:15.0}
+    latitude: ${STORE_LATITUDE:26.7333}
+    longitude: ${STORE_LONGITUDE:83.8167}
+    max-delivery-km: ${STORE_MAX_DELIVERY_KM:50.0}
   google:
     maps:
       api-key: ${GOOGLE_MAPS_API_KEY:}

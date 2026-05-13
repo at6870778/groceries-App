@@ -1,12 +1,12 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonButton, IonBadge, IonIcon, IonRefresher, IonRefresherContent } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonRefresher, IonRefresherContent } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonButton, IonBadge, IonIcon, IonRefresher, IonRefresherContent],
+  imports: [CommonModule, IonContent, IonHeader, IonTitle, IonToolbar, IonRefresher, IonRefresherContent],
   template: `
     <ion-header>
       <ion-toolbar class="header-bar">
@@ -116,6 +116,7 @@ import { ApiService } from '../../core/services/api.service';
     <div style="position:fixed;bottom:0;left:0;right:0;height:env(safe-area-inset-bottom,0px);background:#111;z-index:999;pointer-events:none;"></div>
   `,
   styles: [`
+    ion-toolbar {
       --color: white;
       padding: 12px 16px;
     }

@@ -136,6 +136,8 @@ import { takeUntil } from 'rxjs/operators';
     <!-- Android system nav button safe area — same dark strip as home screen -->
     <div style="position:fixed;bottom:0;left:0;right:0;height:env(safe-area-inset-bottom,0px);background:#111;z-index:999;pointer-events:none;"></div>
   `,
+  styles: [`
+    ion-card {
       margin-top: 16px;
     }
 

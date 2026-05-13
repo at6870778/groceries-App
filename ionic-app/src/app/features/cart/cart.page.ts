@@ -5,7 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
-import { IonContent, IonFooter, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonButtons, IonBackButton, IonText } from '@ionic/angular/standalone';
+import { IonContent, IonFooter, IonHeader, IonTitle, IonToolbar, IonButton, IonButtons, IonBackButton } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
 import { CartState } from '../../core/state/cart.state';
 import { ActivityState } from '../../core/state/activity.state';
@@ -21,7 +21,7 @@ declare global {
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, IonContent, IonFooter, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonButtons, IonBackButton, IonText],
+  imports: [CommonModule, RouterLink, IonContent, IonFooter, IonHeader, IonTitle, IonToolbar, IonButton, IonButtons, IonBackButton],
   template: `
     <ion-header>
       <ion-toolbar>
@@ -204,6 +204,8 @@ declare global {
     <!-- Android system nav button safe area — dark strip consistent with home screen -->
     <div style="position:fixed;bottom:0;left:0;right:0;height:env(safe-area-inset-bottom,0px);background:#111;z-index:999;pointer-events:none;"></div>
   `,
+  styles: [`
+    .success-box {
       text-align: center;
       background: linear-gradient(135deg, #ecfff2 0%, #f8fffb 100%);
       border: 1px solid #bce4cb;

@@ -3,14 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { IonContent, IonButton, IonText } from '@ionic/angular/standalone';
+import { IonContent, IonButton } from '@ionic/angular/standalone';
 import { AuthService } from '../../core/services/auth.service';
 import { LocationService } from '../../core/services/location.service';
 import { SyncService } from '../../core/services/sync.service';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonButton, IonText],
+  imports: [CommonModule, FormsModule, IonContent, IonButton],
   template: `
     <!-- LOCATION PERMISSION OVERLAY (Blinkit-style) -->
     <div class="loc-overlay" *ngIf="showLocationPrompt">

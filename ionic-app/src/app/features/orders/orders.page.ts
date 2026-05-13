@@ -2,14 +2,14 @@ import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonIcon, IonRefresher, IonRefresherContent, IonButtons, IonBackButton } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonList, IonButton, IonRefresher, IonRefresherContent, IonButtons, IonBackButton } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
 import { Subject, interval } from 'rxjs';
 import { takeUntil, switchMap } from 'rxjs/operators';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, IonContent, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonIcon, IonRefresher, IonRefresherContent, IonButtons, IonBackButton, BottomNavComponent],
+  imports: [CommonModule, RouterLink, IonContent, IonHeader, IonTitle, IonToolbar, IonList, IonButton, IonRefresher, IonRefresherContent, IonButtons, IonBackButton, BottomNavComponent],
   template: `
     <ion-header>
       <ion-toolbar color="primary">

@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardHeader, IonCardTitle, IonButtons, IonButton, IonSearchbar, IonBadge } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonToolbar, IonButtons, IonButton, IonSearchbar } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
 import { Router, RouterLink } from '@angular/router';
 import { CartState } from '../../core/state/cart.state';
@@ -12,7 +12,7 @@ import { takeUntil } from 'rxjs/operators';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardHeader, IonCardTitle, IonButtons, IonButton, IonSearchbar, IonBadge, BottomNavComponent],
+  imports: [CommonModule, RouterLink, IonContent, IonHeader, IonToolbar, IonButtons, IonButton, IonSearchbar, BottomNavComponent],
   template: `
     <ion-header translucent>
       <ion-toolbar color="primary">

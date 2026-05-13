@@ -16,7 +16,6 @@ import { takeUntil } from 'rxjs/operators';
   template: `
     <ion-header translucent>
       <ion-toolbar color="primary">
-        <!-- Delivering To section -->
         <div slot="start" class="deliver-to-wrap" (click)="goToProfile()">
           <div class="deliver-label">📍 Delivering to</div>
           <div class="deliver-addr">
@@ -27,17 +26,16 @@ import { takeUntil } from 'rxjs/operators';
         <ion-buttons slot="end">
           <ion-button routerLink="/cart">
             <span class="cart-icon-wrap">
-              🛒
+              <svg style="width:24px;height:24px;fill:white" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.9 18 9 18h12v-2H9.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0 0 23.25 8H5.21l-.94-2H1zm16 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
               <span class="cart-badge" *ngIf="totalCartItems() > 0">{{ totalCartItems() }}</span>
             </span>
           </ion-button>
-          <ion-button routerLink="/profile">👤</ion-button>
         </ion-buttons>
       </ion-toolbar>
       <ion-toolbar class="sticky-search-toolbar">
         <ion-searchbar
           class="header-search"
-          placeholder="Search: milk, banana, rice..."
+          placeholder="Search groceries, vegetables..."
           [value]="searchTerm()"
           (ionInput)="searchTerm.set($any($event).detail.value || '')"
           (ionChange)="submitSearch($any($event).detail.value || '')"
@@ -45,201 +43,172 @@ import { takeUntil } from 'rxjs/operators';
         </ion-searchbar>
       </ion-toolbar>
     </ion-header>
-    <ion-content [scrollEvents]="true" [fullscreen]="false" class="home-content" style="--padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px))">
-      <div class="hero-section">
-        <div class="hero-banner">
-          <h1>Fresh Groceries<br><span class="highlight">In 10 Minutes</span></h1>
-          <p>Daily staples, fresh produce & beverages at your doorstep</p>
-        </div>
 
-        <div class="quick-search">
-          <button class="quick-btn" *ngFor="let q of quickSearches" (click)="quickSearch(q)">{{ q }}</button>
+    <ion-content [scrollEvents]="true" [fullscreen]="false" class="home-content" style="--padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px))">
+
+      <div class="error-banner-top" *ngIf="errorMsg()">{{ errorMsg() }}</div>
+
+      <!-- ===== SEARCH MODE ===== -->
+      <div *ngIf="hasSearchTerm()" class="browse-pad">
+        <div class="section-row">
+          <h3 class="section-title">Results for "{{ searchTerm().trim() }}"</h3>
+          <span class="item-count">{{ filteredProducts().length }} items</span>
         </div>
+        <div class="prod-grid" *ngIf="filteredProducts().length > 0; else noSearchResults">
+          <div class="prod-card" *ngFor="let p of filteredProducts().slice(0,24); let i = index" [style.animationDelay.ms]="i*30" [routerLink]="['/products']" [queryParams]="{ query: p.name }">
+            <div class="disc-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
+            <div class="prod-img-wrap" [style.background]="p.imageUrl ? '#f8f9f0' : productBg(p)">
+              <img class="prod-img" [src]="productImage(p)" [alt]="p.name">
+            </div>
+            <div class="prod-body">
+              <div class="prod-name">{{ p.name }}</div>
+              <div class="prod-unit">{{ scaledUnit(p.unit, cartQty(p.id)) }}</div>
+              <div class="prod-price-row">
+                <span class="prod-mrp" *ngIf="getDiscount(p) > 0">₹{{ getOriginalPrice(p) }}</span>
+                <span class="prod-price">₹{{ p.sellingPrice }}</span>
+              </div>
+              <div class="prod-actions" (click)="$event.stopPropagation()">
+                <ng-container *ngIf="cartQty(p.id) === 0; else searchStepper">
+                  <button class="add-btn-flat" (click)="addToCart(p)">+ Add</button>
+                </ng-container>
+                <ng-template #searchStepper>
+                  <div class="stepper"><button class="step-btn" (click)="removeFromCart(p)">−</button><span class="step-qty">{{ cartQty(p.id) }}</span><button class="step-btn" (click)="addToCart(p)">+</button></div>
+                </ng-template>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ng-template #noSearchResults>
+          <div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No items found</div><div class="empty-sub">Try "milk", "banana" or "rice"</div></div>
+        </ng-template>
       </div>
 
-      <div class="content-wrapper ion-padding">
-        <section class="reveal" *ngIf="errorMsg()">
-          <p class="error">{{ errorMsg() }}</p>
-        </section>
+      <!-- ===== BROWSE MODE ===== -->
+      <ng-container *ngIf="!hasSearchTerm()">
 
-        <section class="search-results-section reveal" *ngIf="hasSearchTerm()">
-          <div class="section-header">
-            <h2>Search Results</h2>
-            <div class="search-meta">{{ filteredProducts().length }} match{{ filteredProducts().length === 1 ? '' : 'es' }}</div>
+        <!-- Promo strip -->
+        <div class="promo-strip" *ngIf="getHotDeals().length > 0">
+          <span>🔥 {{ getHotDeals().length }} items on sale · up to {{ maxDiscount() }}% off!</span>
+          <button class="promo-link" (click)="selectCategory(null)">View all</button>
+        </div>
+
+        <!-- Category chips strip -->
+        <div class="cat-strip-wrap">
+          <div class="cat-strip">
+            <button class="cat-pill" [class.active]="selectedCategoryId() === null" (click)="selectCategory(null)">
+              <div class="cat-emoji">🛒</div>
+              <div class="cat-name">All</div>
+            </button>
+            <button class="cat-pill" *ngFor="let c of categories()"
+                    [class.active]="selectedCategoryId() === c.id"
+                    (click)="selectCategory(c.id)">
+              <div class="cat-emoji">{{ catEmoji(c.slug) }}</div>
+              <div class="cat-name">{{ c.name }}</div>
+            </button>
           </div>
-          <div class="search-query-chip">Showing results for "{{ searchTerm().trim() }}"</div>
+        </div>
 
-          <div class="product-grid" *ngIf="filteredProducts().length > 0; else noSearchResults">
-            <ion-card class="product-card premium" *ngFor="let p of filteredProducts().slice(0, 8); let i = index" [style.animationDelay.ms]="i * 45" [routerLink]="['/products']" [queryParams]="{ query: p.name }">
-              <div class="card-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
-              <div class="product-art" [style.background]="p.imageUrl ? '#fff' : productBg(p)">
-                <img class="art-image" [class.photo-img]="p.imageUrl" [src]="productImage(p)" [alt]="p.name">
-              </div>
-              <ion-card-header class="product-info">
-                <div class="product-brand">{{ getBrandName(p.name) }}</div>
-                <ion-card-title class="product-name">{{ p.name }}</ion-card-title>
-                <p class="unit">{{ scaledUnit(p.unit, cartQty(p.id)) }}</p>
-                <div class="price-row">
-                  <span class="original-price" *ngIf="getDiscount(p) > 0">₹{{ getOriginalPrice(p) }}</span>
-                  <span class="sale-price">₹{{ p.sellingPrice }}</span>
+        <!-- ALL view -->
+        <div *ngIf="selectedCategoryId() === null" class="browse-pad">
+
+          <!-- Hot deals row -->
+          <ng-container *ngIf="getHotDeals().length > 0">
+            <div class="section-row"><h3 class="section-title">🔥 Hot Deals</h3></div>
+            <div class="deals-row">
+              <div class="deal-chip" *ngFor="let p of getHotDeals()" [routerLink]="['/products']" [queryParams]="{ query: p.name }">
+                <img class="deal-chip-img" [src]="productImage(p)" [alt]="p.name">
+                <div class="deal-chip-body">
+                  <div class="deal-chip-name">{{ p.name }}</div>
+                  <div class="deal-chip-unit">{{ p.unit }}</div>
+                  <div class="deal-chip-prices">
+                    <span class="deal-chip-mrp">₹{{ getOriginalPrice(p) }}</span>
+                    <span class="deal-chip-price">₹{{ p.sellingPrice }}</span>
+                  </div>
                 </div>
-                <div class="card-actions" (click)="$event.stopPropagation()">
-                  <ng-container *ngIf="cartQty(p.id) === 0; else stepper1">
-                    <ion-button size="small" class="add-btn" (click)="addToCart(p)">
-                      + Add
-                    </ion-button>
+                <div class="deal-chip-badge">{{ getDiscount(p) }}%<br>OFF</div>
+                <div class="deal-chip-action" (click)="$event.stopPropagation()">
+                  <ng-container *ngIf="cartQty(p.id) === 0; else dealStepper">
+                    <button class="add-btn-flat" (click)="addToCart(p)">+ Add</button>
                   </ng-container>
-                  <ng-template #stepper1>
-                    <div class="stepper" (click)="$event.stopPropagation()">
-                      <button class="step-btn" (click)="removeFromCart(p)">−</button>
-                      <span class="step-qty">{{ cartQty(p.id) }}</span>
-                      <button class="step-btn" (click)="addToCart(p)">+</button>
-                    </div>
+                  <ng-template #dealStepper>
+                    <div class="stepper stepper-xs"><button class="step-btn" (click)="removeFromCart(p)">−</button><span class="step-qty">{{ cartQty(p.id) }}</span><button class="step-btn" (click)="addToCart(p)">+</button></div>
                   </ng-template>
-                  <ion-button size="small" class="buy-now-btn" (click)="buyNow(p)" [disabled]="adding() === p.id">
-                    {{ adding() === p.id ? '...' : 'Buy' }}
-                  </ion-button>
                 </div>
-              </ion-card-header>
-            </ion-card>
-          </div>
-          <ng-template #noSearchResults>
-            <div class="empty search-empty">No items found for "{{ searchTerm().trim() }}"</div>
-          </ng-template>
-        </section>
-
-        <!-- HOT DEALS SECTION -->
-        <section class="hot-deals-section reveal" *ngIf="getHotDeals().length > 0">
-          <div class="section-header">
-            <h2>🔥 Hot Deals</h2>
-            <ion-button fill="clear" size="small" (click)="viewAllDeals()">View All</ion-button>
-          </div>
-          <div class="deals-scroll">
-            <ion-card class="deal-card" *ngFor="let p of getHotDeals(); let i = index" button="true" [routerLink]="['/products']" [queryParams]="{ query: p.name }" [style.animationDelay.ms]="i * 40">
-              <div class="deal-badge">{{ getDiscount(p) }}% OFF</div>
-              <div class="product-art" [style.background]="p.imageUrl ? '#fff' : productBg(p)">
-                <img class="art-image" [class.photo-img]="p.imageUrl" [src]="productImage(p)" [alt]="p.name">
               </div>
-              <ion-card-header class="deal-info">
-                <div class="brand">{{ getBrandName(p.name) }}</div>
-                <ion-card-title class="product-name">{{ p.name }}</ion-card-title>
-                <div class="product-unit">{{ p.unit }}</div>
-                <div class="price-section">
-                  <span class="original-price">₹{{ getOriginalPrice(p) }}</span>
-                  <span class="sale-price">₹{{ p.sellingPrice }}</span>
+            </div>
+          </ng-container>
+
+          <!-- All products grid -->
+          <div class="section-row" style="margin-top:16px">
+            <h3 class="section-title">✨ All Products</h3>
+            <span class="item-count">{{ products().length }} items</span>
+          </div>
+          <div class="prod-grid" *ngIf="products().length > 0; else noItems">
+            <div class="prod-card" *ngFor="let p of products().slice(0,40); let i = index" [style.animationDelay.ms]="i*20" [routerLink]="['/products']" [queryParams]="{ query: p.name }">
+              <div class="disc-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
+              <div class="prod-img-wrap" [style.background]="p.imageUrl ? '#f8f9f0' : productBg(p)">
+                <img class="prod-img" [src]="productImage(p)" [alt]="p.name">
+              </div>
+              <div class="prod-body">
+                <div class="prod-cat-tag">{{ p.categoryName }}</div>
+                <div class="prod-name">{{ p.name }}</div>
+                <div class="prod-unit">{{ scaledUnit(p.unit, cartQty(p.id)) }}</div>
+                <div class="prod-price-row">
+                  <span class="prod-mrp" *ngIf="getDiscount(p) > 0">₹{{ getOriginalPrice(p) }}</span>
+                  <span class="prod-price">₹{{ p.sellingPrice }}</span>
                 </div>
-                <div class="delivery-badge">📦 10 mins</div>
-              </ion-card-header>
-            </ion-card>
-          </div>
-        </section>
-
-        <!-- SHOP BY CATEGORY -->
-        <section class="reveal">
-          <div class="section-header">
-            <h2>Shop By Category</h2>
-          </div>
-          <div class="category-grid">
-            <ion-card class="category-card" button="true" *ngFor="let c of filteredCategories(); let i = index" [routerLink]="['/products']" [queryParams]="{ categoryId: c.id, categoryName: c.name }" [style.animationDelay.ms]="i * 45">
-              <div class="category-art" [style.background]="categoryBg(c)">
-                <img class="art-image" [src]="categoryImage(c)" [alt]="c.name">
-              </div>
-              <div class="category-info">
-                <div class="category-name">{{ c.name }}</div>
-                <div class="category-count">{{ categoryItemCount(c.id) }} items</div>
-              </div>
-            </ion-card>
-          </div>
-        </section>
-
-        <!-- POPULAR ITEMS -->
-        <section class="reveal">
-          <div class="section-header">
-            <h2>✨ Popular Items</h2>
-            <ion-button fill="clear" size="small" (click)="openSearch(searchTerm())">View More</ion-button>
-          </div>
-          <div class="product-grid" *ngIf="featuredProducts().length > 0; else noItems">
-            <ion-card class="product-card premium" *ngFor="let p of featuredProducts(); let i = index" [style.animationDelay.ms]="i * 55" [routerLink]="['/products']" [queryParams]="{ query: p.name }">
-              <div class="card-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
-              <div class="product-art" [style.background]="p.imageUrl ? '#fff' : productBg(p)">
-                <img class="art-image" [class.photo-img]="p.imageUrl" [src]="productImage(p)" [alt]="p.name">
-              </div>
-              <ion-card-header class="product-info">
-                <div class="product-brand">{{ getBrandName(p.name) }}</div>
-                <ion-card-title class="product-name">{{ p.name }}</ion-card-title>
-                <p class="unit">{{ scaledUnit(p.unit, cartQty(p.id)) }}</p>
-                <div class="price-row">
-                  <span class="original-price" *ngIf="getDiscount(p) > 0">₹{{ getOriginalPrice(p) }}</span>
-                  <span class="sale-price">₹{{ p.sellingPrice }}</span>
-                </div>
-                <div class="card-actions" (click)="$event.stopPropagation()">
-                  <ng-container *ngIf="cartQty(p.id) === 0; else stepper2">
-                    <ion-button size="small" class="add-btn" (click)="addToCart(p)">
-                      + Add
-                    </ion-button>
+                <div class="prod-actions" (click)="$event.stopPropagation()">
+                  <ng-container *ngIf="cartQty(p.id) === 0; else allStepper">
+                    <button class="add-btn-flat" (click)="addToCart(p)">+ Add</button>
                   </ng-container>
-                  <ng-template #stepper2>
-                    <div class="stepper" (click)="$event.stopPropagation()">
-                      <button class="step-btn" (click)="removeFromCart(p)">−</button>
-                      <span class="step-qty">{{ cartQty(p.id) }}</span>
-                      <button class="step-btn" (click)="addToCart(p)">+</button>
-                    </div>
+                  <ng-template #allStepper>
+                    <div class="stepper"><button class="step-btn" (click)="removeFromCart(p)">−</button><span class="step-qty">{{ cartQty(p.id) }}</span><button class="step-btn" (click)="addToCart(p)">+</button></div>
                   </ng-template>
-                  <ion-button size="small" class="buy-now-btn" (click)="buyNow(p)" [disabled]="adding() === p.id">
-                    {{ adding() === p.id ? '...' : 'Buy' }}
-                  </ion-button>
                 </div>
-              </ion-card-header>
-            </ion-card>
+              </div>
+            </div>
           </div>
           <ng-template #noItems>
-            <div class="empty">No items found</div>
+            <div class="empty-state"><div class="empty-icon">🛒</div><div class="empty-title">No products yet</div></div>
           </ng-template>
-        </section>
+        </div>
 
-        <!-- TOP PICKS BY CATEGORY -->
-        <section class="reveal" *ngIf="filteredCategories().length > 0">
-          <div class="section-header">
-            <h2>🎯 Top Picks by Category</h2>
+        <!-- CATEGORY-FILTERED view -->
+        <div *ngIf="selectedCategoryId() !== null" class="browse-pad">
+          <div class="section-row">
+            <h3 class="section-title">{{ catEmoji(activeCategorySlug()) }} {{ activeCategoryName() }}</h3>
+            <span class="item-count">{{ categoryProducts().length }} items</span>
           </div>
-          <div class="category-preview" *ngFor="let c of filteredCategories(); let i = index" [style.animationDelay.ms]="i * 40">
-            <div class="category-header">
-              <strong>{{ c.name }}</strong>
-              <ion-button size="small" fill="clear" (click)="openCategory(c)">View All →</ion-button>
-            </div>
-            <div class="preview-items" *ngIf="previewProducts(c.id).length > 0; else emptyCategory">
-              <div class="preview-item" *ngFor="let p of previewProducts(c.id)" [routerLink]="['/products']" [queryParams]="{ query: p.name }">
-                <img class="thumb" [src]="productImage(p)" [alt]="p.name">
-                <div class="item-details">
-                  <div class="item-name">{{ p.name }}</div>
-                  <div class="item-unit">{{ scaledUnit(p.unit, cartQty(p.id)) }}</div>
+          <div class="prod-grid" *ngIf="categoryProducts().length > 0; else emptyCategory">
+            <div class="prod-card" *ngFor="let p of categoryProducts(); let i = index" [style.animationDelay.ms]="i*30" [routerLink]="['/products']" [queryParams]="{ query: p.name }">
+              <div class="disc-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
+              <div class="prod-img-wrap" [style.background]="p.imageUrl ? '#f8f9f0' : productBg(p)">
+                <img class="prod-img" [src]="productImage(p)" [alt]="p.name">
+              </div>
+              <div class="prod-body">
+                <div class="prod-name">{{ p.name }}</div>
+                <div class="prod-unit">{{ scaledUnit(p.unit, cartQty(p.id)) }}</div>
+                <div class="prod-price-row">
+                  <span class="prod-mrp" *ngIf="getDiscount(p) > 0">₹{{ getOriginalPrice(p) }}</span>
+                  <span class="prod-price">₹{{ p.sellingPrice }}</span>
                 </div>
-                <div class="item-price">₹{{ p.sellingPrice }}</div>
-                <div class="preview-actions">
-                  <ng-container *ngIf="cartQty(p.id) === 0; else previewStepper">
-                    <button class="preview-add-btn" (click)="$event.stopPropagation(); addToCart(p)">+ Add</button>
+                <div class="prod-actions" (click)="$event.stopPropagation()">
+                  <ng-container *ngIf="cartQty(p.id) === 0; else catStepper">
+                    <button class="add-btn-flat" (click)="addToCart(p)">+ Add</button>
                   </ng-container>
-                  <ng-template #previewStepper>
-                    <div class="stepper stepper-sm" (click)="$event.stopPropagation()">
-                      <button class="step-btn" (click)="removeFromCart(p)">−</button>
-                      <span class="step-qty">{{ cartQty(p.id) }}</span>
-                      <button class="step-btn" (click)="addToCart(p)">+</button>
-                    </div>
+                  <ng-template #catStepper>
+                    <div class="stepper"><button class="step-btn" (click)="removeFromCart(p)">−</button><span class="step-qty">{{ cartQty(p.id) }}</span><button class="step-btn" (click)="addToCart(p)">+</button></div>
                   </ng-template>
-                  <button class="preview-buy-btn" (click)="$event.stopPropagation(); buyNow(p)" [disabled]="adding() === p.id">
-                    Buy
-                  </button>
                 </div>
               </div>
             </div>
-            <ng-template #emptyCategory>
-              <div class="empty-small">No products available</div>
-            </ng-template>
           </div>
-        </section>
+          <ng-template #emptyCategory>
+            <div class="empty-state"><div class="empty-icon">📦</div><div class="empty-title">No products in this category yet</div><div class="empty-sub">Check back soon!</div></div>
+          </ng-template>
+        </div>
 
-        <ion-button expand="block" class="my-orders-btn" routerLink="/orders" color="secondary">📋 View My Orders</ion-button>
-      </div>
+      </ng-container><!-- end browse mode -->
     </ion-content>
     <app-bottom-nav></app-bottom-nav>
   `,
@@ -253,7 +222,6 @@ import { takeUntil } from 'rxjs/operators';
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.4rem;
     }
     .cart-badge {
       position: absolute;
@@ -275,521 +243,18 @@ import { takeUntil } from 'rxjs/operators';
       z-index: 10;
     }
     .sticky-search-toolbar {
-      --background: rgba(255, 255, 255, 0.96);
-      --min-height: 64px;
+      --background: rgba(255,255,255,0.96);
+      --min-height: 56px;
       padding: 0 8px;
     }
     .header-search {
-      --background: #ffffff;
+      --background: #fff;
       --color: #333;
       --icon-color: #667eea;
-      margin: 8px 0;
+      margin: 6px 0;
     }
     .home-content {
-      --background: linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f5f7ff 100%);
-      --scroll-padding-top: 0;
-      --scroll-padding-bottom: 0;
-      display: flex;
-      flex-direction: column;
-    }
-    .hero-section {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 20px 16px;
-      position: relative;
-      overflow: hidden;
-    }
-    .hero-section::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      right: -10%;
-      width: 300px;
-      height: 300px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 50%;
-      filter: blur(40px);
-    }
-    .hero-banner {
-      position: relative;
-      z-index: 1;
-      margin-bottom: 16px;
-    }
-    .hero-banner h1 {
-      margin: 0 0 8px;
-      font-size: 1.8rem;
-      font-weight: 800;
-      line-height: 1.3;
-      letter-spacing: -0.5px;
-    }
-    .hero-banner .highlight {
-      color: #ffd700;
-      display: block;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-    .hero-banner p {
-      margin: 0;
-      font-size: 0.95rem;
-      opacity: 0.95;
-    }
-    .quick-search {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 8px;
-      margin-bottom: 8px;
-    }
-    .quick-btn {
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      color: white;
-      border-radius: 20px;
-      padding: 6px 12px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      white-space: nowrap;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    .quick-btn:hover {
-      background: rgba(255, 255, 255, 0.3);
-      transform: translateY(-2px);
-    }
-    .content-wrapper {
-      padding: 16px;
-      padding-bottom: 40px;
-    }
-    .search-results-section {
-      margin-bottom: 22px;
-    }
-    .search-meta {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: #667eea;
-      background: #eef1ff;
-      border-radius: 999px;
-      padding: 6px 10px;
-    }
-    .search-query-chip {
-      display: inline-flex;
-      align-items: center;
-      margin-bottom: 12px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: linear-gradient(135deg, #eef3ff 0%, #f8f3ff 100%);
-      color: #4b4f8a;
-      font-size: 0.88rem;
-      font-weight: 600;
-    }
-    .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-    }
-    .section-header h2 {
-      margin: 0;
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: #1a1a1a;
-    }
-    .hot-deals-section {
-      margin-bottom: 20px;
-    }
-    .deals-scroll {
-      display: flex;
-      gap: 12px;
-      overflow-x: auto;
-      padding-bottom: 8px;
-      scroll-behavior: smooth;
-    }
-    .deal-card {
-      flex: 0 0 160px;
-      margin: 0;
-      border-radius: 14px;
-      position: relative;
-      border: none;
-      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.12);
-      overflow: hidden;
-      animation: rise 0.5s ease both;
-      transition: transform 0.3s ease;
-    }
-    .deal-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 12px 32px rgba(102, 126, 234, 0.18);
-    }
-    .deal-badge {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
-      color: white;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      z-index: 3;
-      box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
-    }
-    .product-art {
-      width: 100%;
-      height: 110px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
-    }
-    .art-image {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      padding: 8px;
-    }
-    .art-image.photo-img {
-      object-fit: contain;
-      padding: 8px;
-    }
-    .deal-info {
-      padding: 10px;
-    }
-    .brand {
-      font-size: 0.75rem;
-      color: #888;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-    .product-name {
-      font-size: 0.9rem;
-      line-height: 1.2;
-      margin: 4px 0;
-    }
-    .product-unit {
-      font-size: 0.8rem;
-      color: #999;
-      margin-bottom: 6px;
-    }
-    .price-section {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 6px;
-    }
-    .original-price {
-      text-decoration: line-through;
-      color: #999;
-      font-size: 0.8rem;
-    }
-    .sale-price {
-      font-weight: 700;
-      color: #667eea;
-      font-size: 1rem;
-    }
-    .delivery-badge {
-      font-size: 0.75rem;
-      color: #667eea;
-      font-weight: 600;
-    }
-    .category-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    .category-card {
-      margin: 0;
-      border-radius: 14px;
-      border: none;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-      overflow: hidden;
-      animation: rise 0.45s ease both;
-      transition: transform 0.3s ease;
-    }
-    .category-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 32px rgba(102, 126, 234, 0.15);
-    }
-    .category-art {
-      width: 100%;
-      height: 140px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
-    }
-    .category-info {
-      padding: 12px;
-      background: white;
-    }
-    .category-name {
-      font-weight: 700;
-      font-size: 0.95rem;
-      color: #1a1a1a;
-    }
-    .category-count {
-      font-size: 0.8rem;
-      color: #888;
-      margin-top: 2px;
-    }
-    .product-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    .product-card {
-      margin: 0;
-      border-radius: 14px;
-      border: 1px solid #e8eef8;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-      overflow: hidden;
-      animation: rise 0.5s ease both;
-      transition: all 0.3s ease;
-      position: relative;
-      cursor: pointer;
-    }
-    .product-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 10px 28px rgba(102, 126, 234, 0.12);
-      border-color: #667eea;
-    }
-    .card-badge {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
-      color: white;
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 0.85rem;
-      z-index: 2;
-      box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
-    }
-    .product-info {
-      padding: 10px;
-      background: white;
-    }
-    .card-actions {
-      margin-top: 10px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      min-height: 34px;
-    }
-    .add-btn {
-      flex: 1;
-      margin: 0;
-      --background: #fff;
-      --color: #16a34a;
-      --border-radius: 10px;
-      border: 1.5px solid #16a34a;
-      font-weight: 700;
-      min-height: 34px;
-      font-size: 0.8rem;
-      overflow: hidden;
-      --padding-start: 6px;
-      --padding-end: 6px;
-    }
-    /* Blinkit-style stepper */
-    .stepper {
-      flex: 1;
-      display: flex;
-      align-items: stretch;
-      justify-content: space-between;
-      background: #16a34a;
-      border-radius: 10px;
-      overflow: hidden;
-      height: 34px;
-      min-height: 34px;
-      max-height: 34px;
-      box-sizing: border-box;
-    }
-    .stepper-sm {
-      height: 30px;
-      min-height: 30px;
-      max-height: 30px;
-      border-radius: 8px;
-    }
-    .step-btn {
-      background: transparent;
-      border: none;
-      color: #fff;
-      font-size: 1.1rem;
-      font-weight: 700;
-      width: 34px;
-      flex: 0 0 34px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-      line-height: 1;
-    }
-    .step-qty {
-      color: #fff;
-      font-weight: 700;
-      font-size: 0.95rem;
-      flex: 1;
-      text-align: center;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .buy-now-btn {
-      flex: 1;
-      margin: 0;
-      --background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
-      --box-shadow: 0 8px 18px rgba(34, 197, 94, 0.24);
-      --border-radius: 10px;
-      font-weight: 700;
-      min-height: 36px;
-    }
-    .product-brand {
-      font-size: 0.75rem;
-      color: #888;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-    .price-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .category-preview {
-      background: white;
-      border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 12px;
-      border: 1px solid #e8eef8;
-      animation: rise 0.45s ease both;
-    }
-    .category-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 8px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #f0f3fa;
-    }
-    .preview-items {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .preview-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px;
-      background: #f8f9ff;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .preview-item:hover {
-      background: #eff1ff;
-      transform: translateX(4px);
-    }
-    .thumb {
-      width: 48px;
-      height: 48px;
-      object-fit: contain;
-      flex-shrink: 0;
-    }
-    .item-details {
-      flex: 1;
-      min-width: 0;
-    }
-    .item-name {
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: #1a1a1a;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .item-unit {
-      font-size: 0.8rem;
-      color: #888;
-      margin-top: 2px;
-    }
-    .item-price {
-      font-weight: 700;
-      color: #667eea;
-      white-space: nowrap;
-    }
-    .preview-actions {
-      display: flex;
-      gap: 5px;
-      flex-shrink: 0;
-    }
-    .preview-add-btn, .preview-buy-btn {
-      border: none;
-      border-radius: 8px;
-      padding: 5px 10px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity 0.15s;
-    }
-    .preview-add-btn {
-      background: #fff;
-      color: #16a34a;
-      border: 1.5px solid #16a34a;
-    }
-    .preview-buy-btn {
-      background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
-      color: #fff;
-    }
-    .preview-add-btn:disabled, .preview-buy-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    .empty-small {
-      text-align: center;
-      color: #999;
-      padding: 12px;
-      font-size: 0.9rem;
-    }
-    .search-empty {
-      background: white;
-      border: 1px dashed #d8def0;
-      border-radius: 12px;
-      padding: 18px;
-    }
-    .my-orders-btn {
-      margin-top: 20px;
-      border-radius: 10px;
-      font-weight: 700;
-      --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      height: 48px;
-    }
-    @keyframes rise {
-      from {
-        opacity: 0;
-        transform: translateY(16px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    .reveal {
-      animation: rise 0.45s ease both;
-    }
-    .error {
-      color: #ff6b6b;
-      background: #ffe0e0;
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 12px;
+      --background: #f5f6fa;
     }
     /* ── Delivering to ── */
     .deliver-to-wrap {
@@ -824,10 +289,332 @@ import { takeUntil } from 'rxjs/operators';
       max-width: calc(100vw - 120px);
       line-height: 1.3;
     }
-    .deliver-chevron {
-      font-size: 1rem;
-      opacity: 0.85;
+    .deliver-chevron { font-size: 1rem; opacity: 0.85; flex-shrink: 0; }
+    /* ── Error banner ── */
+    .error-banner-top {
+      margin: 10px 14px 0;
+      padding: 10px 14px;
+      background: #ffebee;
+      color: #c62828;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      border-left: 3px solid #c62828;
+    }
+    /* ── Promo strip ── */
+    .promo-strip {
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      gap: 8px;
+    }
+    .promo-link {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: #fff;
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
       flex-shrink: 0;
+    }
+    /* ── Category strip ── */
+    .cat-strip-wrap {
+      background: #fff;
+      border-bottom: 1px solid #eee;
+      padding: 10px 0 8px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .cat-strip {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 0 14px;
+      scrollbar-width: none;
+    }
+    .cat-strip::-webkit-scrollbar { display: none; }
+    .cat-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: #f5f6fa;
+      border: 1.5px solid #e8ecf4;
+      border-radius: 12px;
+      padding: 8px 10px;
+      cursor: pointer;
+      flex-shrink: 0;
+      min-width: 64px;
+      transition: all 0.18s;
+    }
+    .cat-pill.active {
+      background: #eef1ff;
+      border-color: #667eea;
+    }
+    .cat-emoji {
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+    .cat-name {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #555;
+      white-space: nowrap;
+      text-align: center;
+      line-height: 1.2;
+    }
+    .cat-pill.active .cat-name { color: #667eea; }
+    /* ── Browse pad ── */
+    .browse-pad {
+      padding: 14px 14px 20px;
+    }
+    /* ── Section row ── */
+    .section-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .section-title {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #1a1a1a;
+    }
+    .item-count {
+      font-size: 0.8rem;
+      color: #888;
+      font-weight: 600;
+      background: #f0f0f0;
+      border-radius: 20px;
+      padding: 3px 8px;
+    }
+    /* ── Hot deals horizontal row ── */
+    .deals-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .deal-chip {
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-radius: 14px;
+      padding: 10px 12px;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      cursor: pointer;
+      border: 1px solid #e8ecf4;
+    }
+    .deal-chip-img {
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: #f8f9fa;
+      flex-shrink: 0;
+    }
+    .deal-chip-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .deal-chip-name {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #1a1a1a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .deal-chip-unit {
+      font-size: 0.75rem;
+      color: #888;
+      margin: 1px 0 4px;
+    }
+    .deal-chip-prices {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .deal-chip-mrp {
+      text-decoration: line-through;
+      color: #bbb;
+      font-size: 0.78rem;
+    }
+    .deal-chip-price {
+      font-weight: 800;
+      color: #16a34a;
+      font-size: 1rem;
+    }
+    .deal-chip-badge {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+      color: #fff;
+      border-radius: 8px;
+      padding: 4px 6px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-align: center;
+      line-height: 1.3;
+      flex-shrink: 0;
+    }
+    .deal-chip-action { flex-shrink: 0; }
+    /* ── Product grid ── */
+    .prod-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .prod-card {
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid #e8ecf4;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      animation: rise 0.4s ease both;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+    }
+    .disc-badge {
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+      color: #fff;
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      z-index: 2;
+    }
+    .prod-img-wrap {
+      width: 100%;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .prod-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 6px;
+    }
+    .prod-body {
+      padding: 8px 10px 10px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .prod-cat-tag {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #667eea;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .prod-name {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      line-height: 1.3;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .prod-unit {
+      font-size: 0.75rem;
+      color: #999;
+    }
+    .prod-price-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin: 2px 0 6px;
+    }
+    .prod-mrp {
+      text-decoration: line-through;
+      color: #bbb;
+      font-size: 0.75rem;
+    }
+    .prod-price {
+      font-weight: 800;
+      color: #1a1a1a;
+      font-size: 1rem;
+    }
+    .prod-actions {
+      margin-top: auto;
+    }
+    /* Flat add button */
+    .add-btn-flat {
+      width: 100%;
+      padding: 7px 0;
+      background: #fff;
+      border: 1.5px solid #16a34a;
+      border-radius: 8px;
+      color: #16a34a;
+      font-size: 0.82rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .add-btn-flat:hover { background: #f0faf5; }
+    /* Stepper */
+    .stepper {
+      display: flex;
+      align-items: stretch;
+      background: #16a34a;
+      border-radius: 8px;
+      overflow: hidden;
+      height: 32px;
+    }
+    .stepper-xs { height: 28px; border-radius: 7px; }
+    .step-btn {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      width: 32px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .step-qty {
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.9rem;
+      flex: 1;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 10px; }
+    .empty-title { font-weight: 700; font-size: 1rem; color: #444; }
+    .empty-sub { font-size: 0.85rem; color: #888; margin-top: 4px; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
   `]
 })
@@ -839,6 +626,8 @@ export class HomePage implements OnInit, OnDestroy {
   // 'added' signal removed — stepper driven by cartState.items() directly
   readonly errorMsg = signal('');
   readonly quickSearches = ['Milk', 'Banana', 'Rice', 'Bread', 'Chips', 'Juice'];
+  /** Currently selected category id — null means "All" */
+  readonly selectedCategoryId = signal<number | null>(null);
   private destroy$ = new Subject<void>();
 
   /** Saved addresses loaded from API */
@@ -968,6 +757,40 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   featuredProducts() { return this.filteredProducts().slice(0, 8); }
+
+  selectCategory(id: number | null): void {
+    this.selectedCategoryId.set(id);
+  }
+
+  readonly categoryProducts = computed(() => {
+    const id = this.selectedCategoryId();
+    if (id === null) return this.products();
+    return this.products().filter(p => p.categoryId === id);
+  });
+
+  activeCategoryName(): string {
+    const id = this.selectedCategoryId();
+    return this.categories().find(c => c.id === id)?.name || 'Products';
+  }
+
+  activeCategorySlug(): string {
+    const id = this.selectedCategoryId();
+    return this.categories().find(c => c.id === id)?.slug || '';
+  }
+
+  maxDiscount(): number {
+    if (!this.products().length) return 0;
+    return Math.max(...this.products().map(p => this.getDiscount(p)));
+  }
+
+  catEmoji(slug: string): string {
+    const map: Record<string, string> = {
+      'fruits-vegetables': '🥦', 'dairy-bread': '🥛', 'snacks': '🍿',
+      'beverages': '☕', 'staples-pulses': '🌾', 'spices-masala': '🌶️',
+      'home-care': '🧹', 'pooja-spiritual': '🪔'
+    };
+    return map[slug] || '🛍️';
+  }
 
   previewProducts(catId: number) {
     return this.filteredProducts().filter(p => p.categoryId === catId).slice(0, 2);

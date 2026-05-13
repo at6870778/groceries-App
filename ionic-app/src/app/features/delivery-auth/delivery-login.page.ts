@@ -104,16 +104,15 @@ import { SyncService } from '../../core/services/sync.service';
       <div *ngIf="otpSent" class="page-wrapper otp-page">
 
         <div class="otp-header">
-          <button class="back-btn" (click)="goBack()">←</button>
           <div class="otp-header-text">
             <h2>Verify OTP</h2>
             <p>Sent to +91 {{ phone }}</p>
           </div>
         </div>
 
-        <!-- 6 digit boxes -->
+        <!-- 6 digit boxes (box-0 carries autocomplete for SMS autofill) -->
         <div class="otp-boxes">
-          <input id="otpbox-0" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[0]" (input)="onOtpInput(0,$event)" (change)="onOtpInput(0,$event)" (keydown)="onOtpKeydown(0,$event)">
+          <input id="otpbox-0" class="otp-box" type="tel" inputmode="numeric" maxlength="1" autocomplete="one-time-code" [value]="otpDigits[0]" (input)="onOtpInput(0,$event)" (change)="onOtpInput(0,$event)" (keydown)="onOtpKeydown(0,$event)" (paste)="onOtpPaste($event)">
           <input id="otpbox-1" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[1]" (input)="onOtpInput(1,$event)" (change)="onOtpInput(1,$event)" (keydown)="onOtpKeydown(1,$event)">
           <input id="otpbox-2" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[2]" (input)="onOtpInput(2,$event)" (change)="onOtpInput(2,$event)" (keydown)="onOtpKeydown(2,$event)">
           <input id="otpbox-3" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[3]" (input)="onOtpInput(3,$event)" (change)="onOtpInput(3,$event)" (keydown)="onOtpKeydown(3,$event)">
@@ -724,6 +723,8 @@ export class DeliveryLoginPage implements OnInit, OnDestroy {
         this._otpSent = true;
         this.startResendCooldown();
         this.loading = false;
+        // Try Web OTP API (Android Chrome) to auto-fill SMS OTP
+        this.listenForSmsOtp();
       },
       error: (err) => {
         this.error = this.getErrorMessage(err, 'Could not send OTP. Check your connection.');
@@ -761,6 +762,46 @@ export class DeliveryLoginPage implements OnInit, OnDestroy {
         this.otpDigits = newDigits;
       }
     }
+  }
+
+  /** Distributes a pasted 6-digit OTP across all boxes */
+  onOtpPaste(event: ClipboardEvent): void {
+    const pasted = (event.clipboardData?.getData('text') || '').replace(/[^0-9]/g, '').slice(0, 6);
+    if (pasted.length === 0) return;
+    event.preventDefault();
+    const newDigits = [...this.otpDigits];
+    for (let i = 0; i < 6; i++) {
+      newDigits[i] = pasted[i] || '';
+      const box = document.getElementById('otpbox-' + i) as HTMLInputElement;
+      if (box) box.value = pasted[i] || '';
+    }
+    this.otpDigits = newDigits;
+    const lastFilled = Math.min(pasted.length, 5);
+    const lastBox = document.getElementById('otpbox-' + lastFilled) as HTMLInputElement;
+    if (lastBox) lastBox.focus();
+    if (pasted.length === 6) setTimeout(() => this.verifyOtp(), 150);
+  }
+
+  /** Web OTP API — silently fills OTP on Android Chrome if SMS matches format */
+  private listenForSmsOtp(): void {
+    if (!('OTPCredential' in window)) return;
+    const ac = new AbortController();
+    // Abort after 2 minutes so it doesn't linger
+    const timer = setTimeout(() => ac.abort(), 120_000);
+    (navigator.credentials as any).get({ otp: { transport: ['sms'] }, signal: ac.signal })
+      .then((otp: any) => {
+        clearTimeout(timer);
+        const code = String(otp?.code || '').replace(/[^0-9]/g, '').slice(0, 6);
+        if (code.length !== 6) return;
+        const newDigits = code.split('');
+        this.otpDigits = newDigits;
+        for (let i = 0; i < 6; i++) {
+          const box = document.getElementById('otpbox-' + i) as HTMLInputElement;
+          if (box) box.value = newDigits[i];
+        }
+        setTimeout(() => this.verifyOtp(), 150);
+      })
+      .catch(() => { clearTimeout(timer); /* user dismissed or API unavailable */ });
   }
 
   verifyOtp(): void {

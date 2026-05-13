@@ -45,6 +45,10 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
     .img-preview { width: 52px; height: 52px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; }
     .action-row { display: flex; gap: 10px; align-items: center; padding-top: 6px; grid-column: span 2; }
 
+    /* icon+text buttons — prevent overlap */
+    .btn-inner { display: inline-flex; align-items: center; gap: 6px; line-height: 1; }
+    .btn-inner .mat-icon { font-size: 18px; width: 18px; height: 18px; line-height: 18px; }
+
     /* Product card grid */
     .product-grid {
       display: grid;
@@ -61,10 +65,11 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
       transition: box-shadow 0.2s;
       background: #fff;
     }
+    .product-card.inactive { opacity: 0.6; }
     .product-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
     .product-img-wrap { position: relative; height: 140px; background: #f5f5f5; display: flex; align-items: center; justify-content: center; }
     .product-thumb { width: 100%; height: 100%; object-fit: cover; }
-    .product-thumb-placeholder mat-icon { font-size: 48px; width: 48px; height: 48px; color: #bbb; }
+    .no-img-icon { font-size: 48px !important; width: 48px !important; height: 48px !important; color: #bbb; }
     .stock-badge {
       position: absolute; bottom: 6px; right: 6px;
       padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;
@@ -81,8 +86,19 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
     .selling-price { font-size: 16px; font-weight: 700; color: #1a1a1a; }
     .mrp { font-size: 12px; color: #999; text-decoration: line-through; }
     .discount { font-size: 11px; color: #43a047; font-weight: 600; }
-    .product-actions { display: flex; gap: 8px; padding: 8px 12px 10px; border-top: 1px solid #f0f0f0; }
-    .product-actions button { flex: 1; }
+
+    /* Status toggle chip */
+    .status-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .status-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      cursor: pointer; border: none; transition: all 0.2s;
+    }
+    .status-chip.active-chip { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+    .status-chip.inactive-chip { background: #fafafa; color: #757575; border: 1px solid #e0e0e0; }
+    .status-chip .chip-icon { font-size: 14px !important; width: 14px !important; height: 14px !important; line-height: 14px; }
+
+    .product-actions { display: flex; gap: 4px; padding: 8px 10px 10px; border-top: 1px solid #f0f0f0; justify-content: flex-end; }
 
     /* Pagination */
     .pagination { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 20px; }
@@ -90,7 +106,7 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
 
     /* Empty state */
     .empty-state { text-align: center; padding: 48px 0; color: #aaa; }
-    .empty-state mat-icon { font-size: 56px; width: 56px; height: 56px; }
+    .empty-state .empty-icon { font-size: 56px !important; width: 56px !important; height: 56px !important; }
     .empty-state p { margin-top: 8px; font-size: 15px; }
   `],
   template: `
@@ -112,11 +128,11 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
         <div class="upload-cell">
           <input #catFileInput type="file" accept="image/*" style="display:none" (change)="uploadCategoryImage($any($event.target).files[0])" />
           <button mat-stroked-button type="button" [disabled]="catUploading()" (click)="catFileInput.click()">
-            <mat-icon>cloud_upload</mat-icon>&nbsp;{{ catUploading() ? 'Uploading…' : 'Upload Image' }}
+            <span class="btn-inner"><mat-icon>cloud_upload</mat-icon>{{ catUploading() ? 'Uploading…' : 'Upload Image' }}</span>
           </button>
           <img *ngIf="categoryForm.get('imageUrl')?.value" [src]="categoryForm.get('imageUrl')?.value" alt="preview" class="img-preview" />
           <button mat-raised-button color="primary" type="submit" [disabled]="catSaving()">
-            <mat-icon>save</mat-icon>&nbsp;{{ catSaving() ? 'Saving…' : 'Save Category' }}
+            <span class="btn-inner"><mat-icon>save</mat-icon>{{ catSaving() ? 'Saving…' : 'Save Category' }}</span>
           </button>
         </div>
       </form>
@@ -141,28 +157,29 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
         </div>
 
         <mat-form-field appearance="outline"><mat-label>Unit (e.g. 500g)</mat-label><input matInput formControlName="unit" /></mat-form-field>
-
         <mat-form-field appearance="outline"><mat-label>Stock Qty</mat-label><input matInput type="number" formControlName="stockQty" /></mat-form-field>
         <mat-form-field appearance="outline"><mat-label>MRP (₹)</mat-label><input matInput type="number" formControlName="mrp" /></mat-form-field>
         <mat-form-field appearance="outline"><mat-label>Selling Price (₹)</mat-label><input matInput type="number" formControlName="sellingPrice" /></mat-form-field>
-        <mat-form-field appearance="outline" style="grid-column:span 1"><mat-label>Description</mat-label><input matInput formControlName="description" /></mat-form-field>
-
+        <mat-form-field appearance="outline"><mat-label>Description</mat-label><input matInput formControlName="description" /></mat-form-field>
         <mat-form-field appearance="outline"><mat-label>Image URL</mat-label><input matInput formControlName="imageUrl" /></mat-form-field>
 
         <div class="upload-cell">
           <input #prodFileInput type="file" accept="image/*" style="display:none" (change)="uploadProductImage($any($event.target).files[0])" />
           <button mat-stroked-button type="button" [disabled]="prodUploading()" (click)="prodFileInput.click()">
-            <mat-icon>cloud_upload</mat-icon>&nbsp;{{ prodUploading() ? 'Uploading…' : 'Upload Image' }}
+            <span class="btn-inner"><mat-icon>cloud_upload</mat-icon>{{ prodUploading() ? 'Uploading…' : 'Upload Image' }}</span>
           </button>
           <img *ngIf="productForm.get('imageUrl')?.value" [src]="productForm.get('imageUrl')?.value" alt="preview" class="img-preview" />
         </div>
 
         <div class="action-row">
           <button mat-raised-button color="primary" type="submit" [disabled]="saving()">
-            <mat-icon>{{ editingProductId() ? 'edit' : 'add_circle' }}</mat-icon>&nbsp;{{ saving() ? 'Saving…' : (editingProductId() ? 'Update Product' : 'Create Product') }}
+            <span class="btn-inner">
+              <mat-icon>{{ editingProductId() ? 'edit' : 'add_circle' }}</mat-icon>
+              {{ saving() ? 'Saving…' : (editingProductId() ? 'Update Product' : 'Create Product') }}
+            </span>
           </button>
           <button mat-stroked-button type="button" *ngIf="editingProductId()" [disabled]="saving()" (click)="cancelEdit()">
-            <mat-icon>close</mat-icon>&nbsp;Cancel
+            <span class="btn-inner"><mat-icon>close</mat-icon>Cancel</span>
           </button>
         </div>
       </form>
@@ -180,12 +197,12 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
       </div>
 
       <div class="product-grid">
-        <div *ngFor="let p of products()" class="product-card">
+        <div *ngFor="let p of products()" class="product-card" [class.inactive]="!p.active">
           <div class="product-img-wrap">
             <img *ngIf="p.imageUrl" [src]="p.imageUrl" [alt]="p.name" class="product-thumb" />
-            <div *ngIf="!p.imageUrl" class="product-thumb-placeholder"><mat-icon>image_not_supported</mat-icon></div>
-            <span class="stock-badge" [class.low]="p.stockQty < 10" [class.mid]="p.stockQty >= 10 && p.stockQty < 50">
-              Stock: {{ p.stockQty }}
+            <mat-icon *ngIf="!p.imageUrl" class="no-img-icon">image_not_supported</mat-icon>
+            <span class="stock-badge" [class.low]="p.stockQty === 0" [class.mid]="p.stockQty > 0 && p.stockQty < 10">
+              {{ p.stockQty === 0 ? 'Out of Stock' : 'Stock: ' + p.stockQty }}
             </span>
           </div>
           <div class="product-info">
@@ -201,30 +218,42 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
                 {{ ((p.mrp - p.sellingPrice) / p.mrp * 100).toFixed(0) }}% off
               </span>
             </div>
+            <!-- Visibility toggle -->
+            <div class="status-row">
+              <button type="button" class="status-chip"
+                [class.active-chip]="p.active"
+                [class.inactive-chip]="!p.active"
+                [matTooltip]="p.active ? 'Visible on app — click to hide' : 'Hidden from app — click to show'"
+                (click)="toggleActive(p)">
+                <mat-icon class="chip-icon">{{ p.active ? 'visibility' : 'visibility_off' }}</mat-icon>
+                {{ p.active ? 'Live' : 'Hidden' }}
+              </button>
+              <span style="font-size:11px;color:#aaa;">{{ p.active ? 'Shown in customer app' : 'Not shown to customers' }}</span>
+            </div>
           </div>
           <div class="product-actions">
-            <button mat-stroked-button (click)="editProduct(p)" matTooltip="Edit product">
-              <mat-icon>edit</mat-icon>&nbsp;Edit
+            <button mat-icon-button (click)="editProduct(p)" matTooltip="Edit product" color="primary">
+              <mat-icon>edit</mat-icon>
             </button>
-            <button mat-stroked-button color="warn" (click)="deleteProduct(p.id)" matTooltip="Delete product">
-              <mat-icon>delete</mat-icon>&nbsp;Delete
+            <button mat-icon-button color="warn" (click)="deleteProduct(p.id)" matTooltip="Delete product">
+              <mat-icon>delete</mat-icon>
             </button>
           </div>
         </div>
       </div>
 
       <div *ngIf="products().length === 0" class="empty-state">
-        <mat-icon>inventory_2</mat-icon>
+        <mat-icon class="empty-icon">inventory_2</mat-icon>
         <p>No products found</p>
       </div>
 
       <div class="pagination">
         <button mat-stroked-button (click)="prevPage()" [disabled]="currentPage() === 0">
-          <mat-icon>chevron_left</mat-icon>&nbsp;Previous
+          <span class="btn-inner"><mat-icon>chevron_left</mat-icon>Previous</span>
         </button>
         <span class="page-info">Page {{ currentPage() + 1 }} / {{ totalPages() }}</span>
         <button mat-stroked-button (click)="nextPage()" [disabled]="currentPage() + 1 >= totalPages()">
-          Next&nbsp;<mat-icon>chevron_right</mat-icon>
+          <span class="btn-inner">Next<mat-icon>chevron_right</mat-icon></span>
         </button>
       </div>
     </section>
@@ -431,6 +460,19 @@ export class ProductsComponent implements OnInit, OnDestroy {
     this.productForm.reset({ categoryId: null, name: '', sku: '', description: '', unit: '', mrp: 0, sellingPrice: 0, stockQty: 0, imageUrl: '', active: true });
     // Mark pristine so auto-generate resumes
     this.productForm.get('sku')!.markAsPristine();
+  }
+
+  toggleActive(product: any) {
+    const updated = { ...product, active: !product.active };
+    this.api.put(`/admin/catalog/products/${product.id}`, updated).subscribe({
+      next: () => {
+        this.products.update(list => list.map(p => p.id === product.id ? { ...p, active: !p.active } : p));
+        this.snack.open(updated.active ? 'Product is now visible in app ✓' : 'Product hidden from app', 'OK', { duration: 2500 });
+      },
+      error: (err) => {
+        this.snack.open(err?.error?.message || 'Failed to update visibility', 'OK', { duration: 3000, panelClass: ['snack-error'] });
+      }
+    });
   }
 
   deleteProduct(id: number) {

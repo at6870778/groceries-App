@@ -61,7 +61,7 @@ import { SyncService } from '../../core/services/sync.service';
           </div>
           <div class="loc-chip" *ngIf="locationService.currentLocation() as loc">
             <span>📍</span>
-            <span class="loc-chip-text">{{ loc.address || (loc.latitude.toFixed(3) + ', ' + loc.longitude.toFixed(3)) }}</span>
+            <span class="loc-chip-text">{{ loc.address || 'Detecting location…' }}</span>
           </div>
           <div class="phone-row">
             <span class="country-code">+91</span>

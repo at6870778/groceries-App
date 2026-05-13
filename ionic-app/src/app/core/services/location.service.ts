@@ -45,7 +45,7 @@ export class LocationService {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
             accuracy: position.coords.accuracy,
-            address: `${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`,
+            address: '',
             timestamp: Date.now()
           };
 
@@ -61,7 +61,7 @@ export class LocationService {
               this.saveLocation(loc);
             })
             .catch(() => {
-              loc.address = `${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)}`;
+              loc.address = '';
               this.currentLocation.set(loc);
               this.saveLocation(loc);
             });

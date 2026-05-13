@@ -56,7 +56,7 @@ declare global {
           <!-- Delivery address chip -->
           <div class="delivery-loc" *ngIf="locationService.currentLocation() as loc">
             <span>📍</span>
-            <span class="loc-addr">{{ loc.address || (loc.latitude.toFixed(3) + ', ' + loc.longitude.toFixed(3)) }}</span>
+            <span class="loc-addr">{{ loc.address || 'Detecting location…' }}</span>
             <button class="loc-change-btn" (click)="detectAndRetry()" [disabled]="refetchingLoc()">{{ refetchingLoc() ? '...' : 'Change' }}</button>
           </div>
 

@@ -65,7 +65,10 @@ public class DeliveryFeeService {
             }
         } else {
             distanceKm = haversineDistanceKm(storeLat, storeLng, customerLat, customerLng);
-            log.info("Haversine distance: {} km", String.format("%.2f", distanceKm));
+            log.info("Haversine distance: {} km | store({},{}) -> customer({},{})",
+                String.format("%.2f", distanceKm),
+                String.format("%.4f", storeLat), String.format("%.4f", storeLng),
+                String.format("%.4f", customerLat), String.format("%.4f", customerLng));
         }
 
         return feeForDistance(distanceKm);

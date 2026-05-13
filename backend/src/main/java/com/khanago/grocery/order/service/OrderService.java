@@ -5,6 +5,7 @@ import com.khanago.grocery.cart.service.CartService;
 import com.khanago.grocery.common.enums.OrderStatus;
 import com.khanago.grocery.common.enums.PaymentMode;
 import com.khanago.grocery.common.exception.ApiException;
+import com.khanago.grocery.common.service.AdminNotificationService;
 import com.khanago.grocery.delivery.DeliveryAssignment;
 import com.khanago.grocery.delivery.repository.DeliveryAssignmentRepository;
 import com.khanago.grocery.delivery.service.DeliveryFeeService;
@@ -42,6 +43,7 @@ public class OrderService {
     private final DeliveryAssignmentRepository deliveryAssignmentRepository;
     private final CartService cartService;
     private final DeliveryFeeService deliveryFeeService;
+    private final AdminNotificationService adminNotificationService;
 
     @Transactional
     public OrderDto checkout(CheckoutRequestDto request) {
@@ -98,7 +100,9 @@ public class OrderService {
         orderItemRepository.saveAll(orderItems);
         cartService.clearCart(userId);
 
-        return toDto(order, orderItems);
+        OrderDto orderDto = toDto(order, orderItems);
+        adminNotificationService.notifyNewOrder(orderDto);
+        return orderDto;
     }
 
     @Transactional(readOnly = true)

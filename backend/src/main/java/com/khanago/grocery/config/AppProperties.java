@@ -17,6 +17,7 @@ public class AppProperties {
     private Razorpay razorpay = new Razorpay();
     private Msg91 msg91 = new Msg91();
     private Cloudinary cloudinary = new Cloudinary();
+    private Telegram telegram = new Telegram();
 
     @Getter
     @Setter
@@ -78,6 +79,19 @@ public class AppProperties {
             return cloudName != null && !cloudName.isBlank()
                 && apiKey != null && !apiKey.isBlank()
                 && apiSecret != null && !apiSecret.isBlank();
+        }
+    }
+
+    @Getter
+    @Setter
+    public static class Telegram {
+        private String botToken;
+        private String chatId;
+
+        /** True only when both token and chat ID are set. */
+        public boolean isConfigured() {
+            return botToken != null && !botToken.isBlank()
+                    && chatId != null && !chatId.isBlank();
         }
     }
 }

@@ -857,7 +857,7 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   totalCartItems(): number {
-    return this.cartState.items().reduce((sum, i) => sum + Number(i.quantity || 0), 0);
+    return this.cartState.items().length;
   }
 
   cartQty(productId: number): number {

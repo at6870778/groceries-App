@@ -308,7 +308,7 @@ export class ProductsPage implements OnInit, OnDestroy {
   readonly toastOpen = signal(false);
   readonly toastMsg = signal('');
   readonly toastColor = signal('success');
-  readonly cartCount = computed(() => this.cartState.items().reduce((s, i) => s + Number(i.quantity || 0), 0));
+  readonly cartCount = computed(() => this.cartState.items().length);
   readonly categoryName = signal('');
   readonly loading = signal(false);
   readonly searchTerm = signal('');

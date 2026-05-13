@@ -36,6 +36,9 @@ public class DeliveryFeeService {
     @Value("${app.store.longitude}")
     private double storeLng;
 
+    @Value("${app.store.max-delivery-km:15.0}")
+    private double maxDeliveryKm;
+
     @Value("${app.google.maps.api-key:}")
     private String googleMapsApiKey;
 
@@ -130,9 +133,9 @@ public class DeliveryFeeService {
     private BigDecimal feeForDistance(double distanceKm) {
         if (distanceKm <= 3.0) return new BigDecimal("30");
         if (distanceKm <= 7.0) return new BigDecimal("50");
-        if (distanceKm <= 15.0) return new BigDecimal("80");
+        if (distanceKm <= maxDeliveryKm) return new BigDecimal("80");
         throw new com.khanago.grocery.common.exception.ApiException(
-                "Sorry, we don't deliver beyond 15 km. Your location is " +
+                "Sorry, we don't deliver beyond " + (int) maxDeliveryKm + " km. Your location is " +
                 String.format("%.1f", distanceKm) + " km from our store.");
     }
 

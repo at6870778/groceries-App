@@ -57,6 +57,7 @@ declare global {
           <div class="delivery-loc" *ngIf="locationService.currentLocation() as loc">
             <span>📍</span>
             <span class="loc-addr">{{ loc.address || (loc.latitude.toFixed(3) + ', ' + loc.longitude.toFixed(3)) }}</span>
+            <button class="loc-change-btn" (click)="detectAndRetry()" [disabled]="refetchingLoc()">{{ refetchingLoc() ? '...' : 'Change' }}</button>
           </div>
 
           <!-- Item list with images + stepper -->
@@ -100,6 +101,9 @@ declare global {
           </div>
 
           <p *ngIf="orderMsg" style="color:red;text-align:center;margin:8px 0;">{{ orderMsg }}</p>
+          <button *ngIf="orderMsg && (orderMsg.includes('km') || orderMsg.includes('deliver'))" class="loc-retry-btn" (click)="detectAndRetry()" [disabled]="refetchingLoc()">
+            📍 {{ refetchingLoc() ? 'Detecting...' : 'Detect my location & retry' }}
+          </button>
         </ng-container>
 
         <!-- ===== STEP 2: PAYMENT ===== -->
@@ -517,10 +521,37 @@ declare global {
       font-weight: 600;
     }
     .loc-addr {
+      flex: 1;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .loc-change-btn {
+      flex-shrink: 0;
+      background: none;
+      border: 1px solid #2e7d32;
+      border-radius: 8px;
+      color: #2e7d32;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      cursor: pointer;
+    }
+    .loc-change-btn:disabled { opacity: 0.5; cursor: default; }
+    .loc-retry-btn {
+      display: block;
+      width: 100%;
+      margin: 8px 0 4px;
+      padding: 10px;
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .loc-retry-btn:disabled { opacity: 0.6; cursor: default; }
     .cart-items-list {
       display: flex;
       flex-direction: column;
@@ -690,6 +721,7 @@ export class CartPage implements OnInit, OnDestroy {
   readonly deliveryFee = signal(50);
   readonly deliveryFeeLabel = signal('₹50 (standard)');
   readonly fetchingFee = signal(false);
+  readonly refetchingLoc = signal(false);
   private destroy$ = new Subject<void>();
 
   private getErrorMessage(err: any, fallback: string): string {
@@ -725,6 +757,8 @@ export class CartPage implements OnInit, OnDestroy {
 
   ionViewWillEnter(): void {
     this.loadCart();
+    // Always refresh GPS on cart entry to avoid stale cached coordinates
+    this.locationService.detectCurrentLocation().catch(() => {});
   }
 
   ngOnDestroy(): void {
@@ -885,6 +919,20 @@ export class CartPage implements OnInit, OnDestroy {
 
   canCheckout() {
     return true;
+  }
+
+  detectAndRetry(): void {
+    this.refetchingLoc.set(true);
+    this.orderMsg = '';
+    this.locationService.detectCurrentLocation()
+      .then(() => {
+        this.refetchingLoc.set(false);
+        this.proceedToPayment();
+      })
+      .catch(() => {
+        this.refetchingLoc.set(false);
+        this.orderMsg = '❌ Could not detect location. Please allow location access and try again.';
+      });
   }
 
   checkout() {

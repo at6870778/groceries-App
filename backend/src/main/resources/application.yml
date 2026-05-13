@@ -53,6 +53,7 @@ app:
   store:
     latitude: ${STORE_LATITUDE:0.0}
     longitude: ${STORE_LONGITUDE:0.0}
+    max-delivery-km: ${STORE_MAX_DELIVERY_KM:15.0}
   google:
     maps:
       api-key: ${GOOGLE_MAPS_API_KEY:}

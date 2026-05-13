@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonBadge, IonToast, IonButtons, IonBackButton, IonSearchbar, IonRefresher, IonRefresherContent } from '@ionic/angular/standalone';
@@ -308,7 +308,7 @@ export class ProductsPage implements OnInit, OnDestroy {
   readonly toastOpen = signal(false);
   readonly toastMsg = signal('');
   readonly toastColor = signal('success');
-  readonly cartCount = signal(0);
+  readonly cartCount = computed(() => this.cartState.items().reduce((s, i) => s + Number(i.quantity || 0), 0));
   readonly categoryName = signal('');
   readonly loading = signal(false);
   readonly searchTerm = signal('');
@@ -372,7 +372,6 @@ export class ProductsPage implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((cart) => {
         this.cartState.setItems(cart?.items || []);
-        this.cartCount.set((cart?.items || []).reduce((s: number, i: any) => s + Number(i.quantity || 0), 0));
       });
   }
 
@@ -446,7 +445,6 @@ export class ProductsPage implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.adding.set(null);
-          this.cartCount.set(this.cartState.items().reduce((s, i) => s + Number(i.quantity || 0), 0));
           this.activityState.log('cart_add', `Added ${product.name} to cart`, { productId: product.id });
           if (currentQty === 0) {
             this.toastMsg.set('Added to cart!');
@@ -473,9 +471,7 @@ export class ProductsPage implements OnInit, OnDestroy {
       : this.api.post('/customer/cart/items', { productId: product.id, quantity: currentQty - 1 });
     request$.pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => {
-          this.cartCount.set(this.cartState.items().reduce((s, i) => s + Number(i.quantity || 0), 0));
-        },
+        next: () => {},
         error: () => { this.cartState.addOrIncrement(product); } // revert optimistic
       });
   }
@@ -487,7 +483,6 @@ export class ProductsPage implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.adding.set(null);
-          this.cartCount.set(this.cartCount() + 1);
           this.cartState.addOrIncrement(product);
           this.activityState.log('buy_now', `Started quick checkout for ${product.name}`, { productId: product.id });
           this.router.navigateByUrl('/cart');

@@ -11,6 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatTableModule } from '@angular/material/table';
 import { ApiService } from '../../core/services/api.service';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
 
@@ -28,6 +29,7 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
     MatIconModule,
     MatTooltipModule,
     MatSlideToggleModule,
+    MatTableModule,
   ],
   styles: [`
     /* ── shared ── */
@@ -55,47 +57,37 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
     .prod-footer-left mat-form-field { width: 240px; margin-bottom: 0; }
     .prod-footer-right { display: flex; align-items: center; gap: 8px; }
 
-    /* ── product grid ── */
-    .product-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 14px;
+    /* ── product table ── */
+    .products-table-wrap { overflow-x: auto; }
+    table.products-table { width: 100%; border-collapse: collapse; }
+    table.products-table th {
+      background: #f8f9fa; font-size: 12px; font-weight: 600; color: #555;
+      text-transform: uppercase; letter-spacing: .5px; white-space: nowrap;
     }
-    .product-card {
-      border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;
-      display: flex; flex-direction: column; background: #fff;
-      transition: box-shadow .2s, opacity .2s;
-    }
-    .product-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.1); }
-    .product-card.inactive { opacity: .55; }
-
-    .product-img-wrap { position: relative; height: 140px; background: #f5f5f5; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    .product-thumb { width: 100%; height: 100%; object-fit: cover; }
-    .no-img-icon { font-size: 52px !important; width: 52px !important; height: 52px !important; color: #ccc; }
-    .stock-badge {
-      position: absolute; top: 8px; right: 8px;
-      padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600;
-      background: #43a047; color: #fff; letter-spacing: .3px;
-    }
-    .stock-badge.out { background: #e53935; }
-    .stock-badge.low { background: #fb8c00; }
-
-    .product-info { padding: 10px 12px; flex: 1; }
-    .product-name { font-weight: 600; font-size: 14px; line-height: 1.35; margin-bottom: 5px; }
-    .product-meta { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 7px; }
-    .cat-tag { background: #e3f2fd; color: #1565c0; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
-    .sku-tag { background: #f3e5f5; color: #6a1b9a; font-size: 11px; padding: 2px 8px; border-radius: 20px; }
-    .price-row { display: flex; gap: 6px; align-items: baseline; margin-bottom: 8px; }
-    .sell-price { font-size: 15px; font-weight: 700; }
-    .mrp-price { font-size: 12px; color: #aaa; text-decoration: line-through; }
+    table.products-table td, table.products-table th { padding: 10px 12px; vertical-align: middle; }
+    table.products-table tr:hover td { background: #fafafa; }
+    table.products-table tr.inactive-row td { opacity: .5; }
+    .thumb { width: 46px; height: 46px; object-fit: cover; border-radius: 6px; border: 1px solid #e0e0e0; display: block; }
+    .thumb-placeholder { width: 46px; height: 46px; border-radius: 6px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; }
+    .thumb-placeholder mat-icon { font-size: 22px !important; width: 22px !important; height: 22px !important; color: #bbb; }
+    .prod-name { font-weight: 600; font-size: 13px; }
+    .prod-desc { font-size: 11px; color: #999; margin-top: 2px; }
+    .cat-tag { background: #e3f2fd; color: #1565c0; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+    .sku-tag { background: #f3e5f5; color: #6a1b9a; font-size: 11px; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+    .sell-price { font-size: 13px; font-weight: 700; }
+    .mrp-price { font-size: 11px; color: #aaa; text-decoration: line-through; display: block; }
     .disc-pct { font-size: 11px; color: #43a047; font-weight: 600; }
-    .visibility-row { display: flex; align-items: center; gap: 8px; padding-top: 4px; }
-    .vis-label { font-size: 12px; color: #666; }
-
-    .card-actions { display: flex; justify-content: flex-end; gap: 4px; padding: 6px 8px 8px; border-top: 1px solid #f0f0f0; }
+    .stock-chip {
+      display: inline-block; padding: 2px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; white-space: nowrap;
+      background: #e8f5e9; color: #2e7d32;
+    }
+    .stock-chip.low { background: #fff3e0; color: #e65100; }
+    .stock-chip.out { background: #fce4ec; color: #c62828; }
+    .row-actions { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
 
     /* ── pagination ── */
-    .pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 20px; }
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 16px; }
     .page-info { font-size: 14px; font-weight: 500; color: #555; }
 
     /* ── empty state ── */
@@ -239,54 +231,74 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
         <span style="font-size:13px;color:#888;">{{ products().length }} item(s) on this page</span>
       </div>
 
-      <div class="product-grid">
-        <div *ngFor="let p of products()" class="product-card" [class.inactive]="!p.active">
-
-          <!-- Image -->
-          <div class="product-img-wrap">
-            <img *ngIf="p.imageUrl" [src]="p.imageUrl" [alt]="p.name" class="product-thumb" />
-            <mat-icon *ngIf="!p.imageUrl" class="no-img-icon">image_not_supported</mat-icon>
-            <span class="stock-badge"
-              [class.out]="p.stockQty === 0"
-              [class.low]="p.stockQty > 0 && p.stockQty < 10">
-              {{ p.stockQty === 0 ? 'Out of Stock' : p.stockQty + ' left' }}
-            </span>
-          </div>
-
-          <!-- Info -->
-          <div class="product-info">
-            <div class="product-name">{{ p.name }}</div>
-            <div class="product-meta">
-              <span class="cat-tag">{{ p.categoryName }}</span>
-              <span class="sku-tag">{{ p.sku }}</span>
-            </div>
-            <div class="price-row">
-              <span class="sell-price">₹{{ p.sellingPrice }}</span>
-              <span *ngIf="p.mrp && p.mrp !== p.sellingPrice" class="mrp-price">₹{{ p.mrp }}</span>
-              <span *ngIf="p.mrp && p.mrp > p.sellingPrice" class="disc-pct">
-                {{ ((p.mrp - p.sellingPrice) / p.mrp * 100).toFixed(0) }}% off
-              </span>
-            </div>
-            <div class="visibility-row">
-              <mat-slide-toggle
-                [checked]="p.active"
-                (change)="toggleActive(p)"
-                color="primary">
-              </mat-slide-toggle>
-              <span class="vis-label">{{ p.active ? 'Visible in app' : 'Hidden from app' }}</span>
-            </div>
-          </div>
-
-          <!-- Actions -->
-          <div class="card-actions">
-            <button mat-icon-button color="primary" (click)="editProduct(p)" matTooltip="Edit">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button mat-icon-button color="warn" (click)="deleteProduct(p.id)" matTooltip="Delete">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </div>
-        </div>
+      <div class="products-table-wrap">
+        <table class="products-table" *ngIf="products().length > 0">
+          <thead>
+            <tr>
+              <th style="width:54px"></th>
+              <th>Product</th>
+              <th>Category</th>
+              <th>SKU</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th style="width:120px">Visibility</th>
+              <th style="width:100px">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of products()" [class.inactive-row]="!p.active">
+              <!-- Thumbnail -->
+              <td>
+                <img *ngIf="p.imageUrl" [src]="p.imageUrl" [alt]="p.name" class="thumb" />
+                <div *ngIf="!p.imageUrl" class="thumb-placeholder">
+                  <mat-icon>image_not_supported</mat-icon>
+                </div>
+              </td>
+              <!-- Name + desc -->
+              <td>
+                <div class="prod-name">{{ p.name }}</div>
+                <div *ngIf="p.description" class="prod-desc">{{ p.description }}</div>
+              </td>
+              <!-- Category -->
+              <td><span class="cat-tag">{{ p.categoryName }}</span></td>
+              <!-- SKU -->
+              <td><span class="sku-tag">{{ p.sku }}</span></td>
+              <!-- Price -->
+              <td>
+                <span class="sell-price">₹{{ p.sellingPrice }}</span>
+                <span *ngIf="p.mrp && p.mrp !== p.sellingPrice" class="mrp-price">₹{{ p.mrp }}</span>
+                <span *ngIf="p.mrp && p.mrp > p.sellingPrice" class="disc-pct">
+                  {{ ((p.mrp - p.sellingPrice) / p.mrp * 100).toFixed(0) }}% off
+                </span>
+              </td>
+              <!-- Stock -->
+              <td>
+                <span class="stock-chip"
+                  [class.out]="p.stockQty === 0"
+                  [class.low]="p.stockQty > 0 && p.stockQty < 10">
+                  {{ p.stockQty === 0 ? 'Out of Stock' : p.stockQty }}
+                </span>
+              </td>
+              <!-- Visibility toggle -->
+              <td>
+                <mat-slide-toggle [checked]="p.active" (change)="toggleActive(p)" color="primary">
+                  <span style="font-size:12px;color:#555">{{ p.active ? 'Live' : 'Off' }}</span>
+                </mat-slide-toggle>
+              </td>
+              <!-- Actions -->
+              <td>
+                <div class="row-actions">
+                  <button mat-flat-button color="primary" style="min-width:0;padding:0 10px;height:32px;font-size:12px" (click)="editProduct(p)" matTooltip="Edit product">
+                    <mat-icon style="font-size:15px;height:15px;width:15px">edit</mat-icon>
+                  </button>
+                  <button mat-flat-button color="warn" style="min-width:0;padding:0 10px;height:32px;font-size:12px" (click)="deleteProduct(p.id)" matTooltip="Delete product">
+                    <mat-icon style="font-size:15px;height:15px;width:15px">delete</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <div *ngIf="products().length === 0" class="empty-state">

@@ -77,6 +77,13 @@ import { App } from '@capacitor/app';
       <div class="admin-announce-strip"
            *ngIf="announcementBanner()?.active && !bannerDismissed()"
            [style.background]="announcementBanner()?.bgColor || '#667eea'">
+        <!-- sprinkle particles -->
+        <span class="spk spk1">✨</span>
+        <span class="spk spk2">★</span>
+        <span class="spk spk3">◆</span>
+        <span class="spk spk4">✨</span>
+        <span class="spk spk5">•</span>
+        <span class="spk spk6">★</span>
         <span class="announce-msg">{{ announcementBanner()?.message }}</span>
         <button class="announce-close" (click)="dismissBanner()" aria-label="Dismiss">✕</button>
       </div>
@@ -446,15 +453,56 @@ import { App } from '@capacitor/app';
       border-left: 3px solid #c62828;
     }
     .admin-announce-strip {
+      position: relative; overflow: hidden;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 16px;
-      color: #fff; font-size: 0.88rem; font-weight: 600;
-      letter-spacing: 0.2px;
+      padding: 11px 16px;
+      color: #fff; font-size: 0.88rem; font-weight: 700;
+      letter-spacing: 0.3px;
+      animation: announce-slide-in 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
     }
-    .announce-msg { flex: 1; text-align: center; }
+    @keyframes announce-slide-in {
+      from { transform: translateY(-110%); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    /* shimmer sweep on the text */
+    .announce-msg {
+      flex: 1; text-align: center; position: relative; z-index: 1;
+      background: linear-gradient(90deg,
+        rgba(255,255,255,0.55) 0%,
+        rgba(255,255,255,1)    35%,
+        rgba(255,255,255,0.55) 70%,
+        rgba(255,255,255,1)    100%);
+      background-size: 250% 100%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer-sweep 2.8s linear infinite;
+    }
+    @keyframes shimmer-sweep {
+      0%   { background-position: 200% center; }
+      100% { background-position: -200% center; }
+    }
+    /* floating sprinkle particles */
+    .spk {
+      position: absolute; pointer-events: none; z-index: 0;
+      font-size: 10px; opacity: 0;
+      animation: spk-float 3s ease-in-out infinite;
+    }
+    .spk1 { left:  6%; animation-delay: 0s;    animation-duration: 2.8s; font-size: 9px; }
+    .spk2 { left: 18%; animation-delay: 0.5s;  animation-duration: 3.2s; font-size: 7px; }
+    .spk3 { left: 38%; animation-delay: 1.0s;  animation-duration: 2.6s; font-size: 8px; }
+    .spk4 { left: 58%; animation-delay: 1.6s;  animation-duration: 3.0s; font-size: 9px; }
+    .spk5 { left: 76%; animation-delay: 0.8s;  animation-duration: 2.5s; font-size: 7px; }
+    .spk6 { left: 90%; animation-delay: 1.3s;  animation-duration: 3.4s; font-size: 8px; }
+    @keyframes spk-float {
+      0%   { transform: translateY(14px) scale(0.5); opacity: 0; }
+      30%  { opacity: 0.9; }
+      70%  { opacity: 0.7; }
+      100% { transform: translateY(-18px) scale(1.2) rotate(30deg); opacity: 0; }
+    }
     .announce-close {
       background: none; border: none; color: rgba(255,255,255,0.85);
-      font-size: 1rem; padding: 2px 6px; cursor: pointer; flex-shrink: 0;
+      font-size: 1rem; padding: 2px 6px; cursor: pointer; flex-shrink: 0; z-index: 1;
     }
     /* ── fireworks burst ── */
     .fw-wrap {

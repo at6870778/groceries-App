@@ -107,6 +107,7 @@ import { SyncService } from '../../core/services/sync.service';
           <div class="otp-header-text">
             <h2>Verify OTP</h2>
             <p>Sent to +91 {{ phone }}</p>
+            <button class="change-number-btn" (click)="changeNumber()">✏️ Wrong number? Change</button>
           </div>
         </div>
 
@@ -612,6 +613,19 @@ import { SyncService } from '../../core/services/sync.service';
       cursor: default;
     }
 
+    .change-number-btn {
+      background: none;
+      border: none;
+      color: #667eea;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 0 0;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      display: inline-block;
+    }
+
     /* === ERROR === */
     .error-banner {
       margin: 0 20px 16px;
@@ -711,6 +725,17 @@ export class DeliveryLoginPage implements OnInit, OnDestroy {
     input.value = clean;
     this.phone = clean;
     this.error = '';
+  }
+
+  changeNumber(): void {
+    this._otpSent = false;
+    this.otpDigits = Array(6).fill('');
+    this.error = '';
+    this.resendSecondsRemaining = 0;
+    if (this.resendTimerId !== null) {
+      clearInterval(this.resendTimerId);
+      this.resendTimerId = null;
+    }
   }
 
   sendOtp(): void {

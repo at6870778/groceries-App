@@ -73,6 +73,14 @@ import { App } from '@capacitor/app';
 
       <div class="error-banner-top" *ngIf="errorMsg()">{{ errorMsg() }}</div>
 
+      <!-- ══ ADMIN ANNOUNCEMENT BANNER ══ -->
+      <div class="admin-announce-strip"
+           *ngIf="announcementBanner()?.active && !bannerDismissed()"
+           [style.background]="announcementBanner()?.bgColor || '#667eea'">
+        <span class="announce-msg">{{ announcementBanner()?.message }}</span>
+        <button class="announce-close" (click)="bannerDismissed.set(true)" aria-label="Dismiss">✕</button>
+      </div>
+
       <!-- ═══════════════════════════════════════
            SEARCH RESULTS MODE
       ═══════════════════════════════════════ -->
@@ -436,6 +444,17 @@ import { App } from '@capacitor/app';
       background: #ffebee; color: #c62828;
       border-radius: 10px; font-size: 0.85rem;
       border-left: 3px solid #c62828;
+    }
+    .admin-announce-strip {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px;
+      color: #fff; font-size: 0.88rem; font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+    .announce-msg { flex: 1; text-align: center; }
+    .announce-close {
+      background: none; border: none; color: rgba(255,255,255,0.85);
+      font-size: 1rem; padding: 2px 6px; cursor: pointer; flex-shrink: 0;
     }
     /* ── fireworks burst ── */
     .fw-wrap {
@@ -874,6 +893,8 @@ export class HomePage implements OnInit, OnDestroy {
   readonly restaurantMenuItems = signal<any[]>([]);
   readonly isFoodMode = computed(() => this.selectedCategorySlug() === 'food');
   // food carousel
+  readonly announcementBanner = signal<any>(null);
+  readonly bannerDismissed = signal(false);
 
   private destroy$ = new Subject<void>();
   private backButtonListener: any;
@@ -945,6 +966,11 @@ export class HomePage implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.backButtonListener = App.addListener('backButton', () => App.exitApp());
+
+    this.api.get<any>('/public/announcement')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: (res) => this.announcementBanner.set(res) });
+
     this.api.get<any[]>('/customer/profile/addresses')
       .pipe(takeUntil(this.destroy$))
       .subscribe({ next: (res) => this.savedAddresses.set(res || []) });

@@ -39,8 +39,6 @@ public class FcmService {
                                     .setSound("default")
                                     .setDefaultVibrateTimings(true)
                                     .setDefaultLightSettings(true)
-                                    .setNotificationPriority(AndroidNotification.Priority.MAX)
-                                    .setVisibility(AndroidNotification.Visibility.PUBLIC)
                                     .build())
                             .build())
                     .build();

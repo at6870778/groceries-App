@@ -32,6 +32,15 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('ionic-app/android/gradle/wrapper/gradle-wrapper.properties', 'ionic-app/android/**/*.gradle*') }}
+          restore-keys: gradle-
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 

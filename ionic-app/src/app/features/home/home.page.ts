@@ -78,7 +78,7 @@ import { App } from '@capacitor/app';
            *ngIf="announcementBanner()?.active && !bannerDismissed()"
            [style.background]="announcementBanner()?.bgColor || '#667eea'">
         <span class="announce-msg">{{ announcementBanner()?.message }}</span>
-        <button class="announce-close" (click)="bannerDismissed.set(true)" aria-label="Dismiss">✕</button>
+        <button class="announce-close" (click)="dismissBanner()" aria-label="Dismiss">✕</button>
       </div>
 
       <!-- ═══════════════════════════════════════
@@ -894,6 +894,8 @@ export class HomePage implements OnInit, OnDestroy {
   readonly isFoodMode = computed(() => this.selectedCategorySlug() === 'food');
   // food carousel
   readonly announcementBanner = signal<any>(null);
+  /** Stores the last message text the user dismissed — new messages bypass this */
+  private dismissedMessage = localStorage.getItem('dismissed_announcement') || '';
   readonly bannerDismissed = signal(false);
 
   private destroy$ = new Subject<void>();
@@ -969,7 +971,17 @@ export class HomePage implements OnInit, OnDestroy {
 
     this.api.get<any>('/public/announcement')
       .pipe(takeUntil(this.destroy$))
-      .subscribe({ next: (res) => this.announcementBanner.set(res) });
+      .subscribe({
+        next: (res) => {
+          this.announcementBanner.set(res);
+          // If the message changed since last dismiss, show it again
+          if (res?.message && res.message !== this.dismissedMessage) {
+            this.bannerDismissed.set(false);
+          } else if (res?.message && res.message === this.dismissedMessage) {
+            this.bannerDismissed.set(true);
+          }
+        }
+      });
 
     this.api.get<any[]>('/customer/profile/addresses')
       .pipe(takeUntil(this.destroy$))
@@ -1007,6 +1019,13 @@ export class HomePage implements OnInit, OnDestroy {
     this.backButtonListener?.then((h: any) => h.remove());
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  dismissBanner(): void {
+    const msg = this.announcementBanner()?.message || '';
+    this.dismissedMessage = msg;
+    localStorage.setItem('dismissed_announcement', msg);
+    this.bannerDismissed.set(true);
   }
 
   goToProfile(): void {

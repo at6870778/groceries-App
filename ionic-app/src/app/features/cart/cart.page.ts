@@ -116,6 +116,14 @@ declare global {
             </div>
           </div>
 
+          <!-- Free delivery nudge / congratulation -->
+          <div class="free-del-congrats" *ngIf="cartState.subtotal() >= 299">
+            🎉 Woohoo! <strong>FREE delivery</strong> unlocked on this order!
+          </div>
+          <div class="free-del-nudge" *ngIf="cartState.subtotal() < 299 && cartState.subtotal() > 0">
+            🛒 Add <strong>₹{{ amountToFreeDelivery() }} more</strong> to get <strong>FREE delivery!</strong>
+          </div>
+
           <!-- Bill Summary -->
           <div class="bill-box">
             <div class="bill-title">Bill Summary</div>
@@ -130,12 +138,12 @@ declare global {
             </div>
             <div class="bill-row">
               <span>Delivery Fee</span>
-              <span>₹50</span>
+              <span [style.color]="deliveryFee() === 0 ? '#2e7d32' : 'inherit'" [style.fontWeight]="deliveryFee() === 0 ? '700' : 'normal'">{{ deliveryFeeLabel() }}</span>
             </div>
             <div class="bill-divider"></div>
             <div class="bill-row total-row">
               <span>Total</span>
-              <span>₹{{ cartState.subtotal() + 50 }}</span>
+              <span>₹{{ cartState.subtotal() + deliveryFee() }}</span>
             </div>
           </div>
 
@@ -149,7 +157,17 @@ declare global {
           <!-- order summary chip -->
           <div class="order-chip">
             <span>🛒 {{ cartState.items().length }} item{{ cartState.items().length > 1 ? 's' : '' }}</span>
-            <span class="chip-total">₹{{ cartState.subtotal() + deliveryFee() }} <span style="font-size:0.75rem;opacity:0.7">(incl. ₹{{ deliveryFee() }} delivery)</span></span>
+            <span class="chip-total" *ngIf="deliveryFee() === 0">
+              ₹{{ cartState.subtotal() }} <span style="font-size:0.75rem;color:#2e7d32;font-weight:700">🎉 FREE delivery!</span>
+            </span>
+            <span class="chip-total" *ngIf="deliveryFee() > 0">
+              ₹{{ cartState.subtotal() + deliveryFee() }} <span style="font-size:0.75rem;opacity:0.7">(incl. ₹20 delivery)</span>
+            </span>
+          </div>
+
+          <!-- Free delivery celebration banner on payment step -->
+          <div class="free-del-congrats" *ngIf="deliveryFee() === 0">
+            🎉 Great choice! Your order qualifies for <strong>FREE delivery!</strong>
           </div>
 
           <!-- Location + delivery fee breakdown -->
@@ -165,7 +183,7 @@ declare global {
               </div>
               <div class="detail-row">
                 <span class="label">Delivery Charge</span>
-                <span class="value" style="color:#2e7d32;font-weight:700;">{{ deliveryFeeLabel() }}</span>
+                <span class="value" [style.color]="deliveryFee() === 0 ? '#2e7d32' : '#2e7d32'" style="font-weight:700;">{{ deliveryFeeLabel() }}</span>
               </div>
             </div>
           </div>
@@ -229,8 +247,8 @@ declare global {
     <!-- Sticky footer: always above system nav bar -->
     <ion-footer *ngIf="!checkoutSuccess() && cartState.items().length > 0">
       <ion-toolbar class="footer-toolbar">
-        <ion-button *ngIf="checkoutStep() === 'cart'" expand="block" class="proceed-btn" (click)="proceedToPayment()" [disabled]="fetchingFee()">
-          {{ fetchingFee() ? 'Calculating delivery fee...' : 'Proceed to Payment →' }}
+        <ion-button *ngIf="checkoutStep() === 'cart'" expand="block" class="proceed-btn" (click)="proceedToPayment()">
+          Proceed to Payment →
         </ion-button>
         <ion-button *ngIf="checkoutStep() === 'payment'" expand="block" class="checkout-btn" (click)="checkout()" [disabled]="checking || !canCheckout() || confirmingCod()">
           {{ checking ? 'Placing Order...' : paymentMode() === 'UPI' ? 'Confirm UPI Payment & Place Order' : 'Confirm COD Order' }}
@@ -743,6 +761,31 @@ declare global {
       color: #16a34a;
       font-size: 1rem;
     }
+    .free-del-congrats {
+      background: linear-gradient(135deg, #e8f5e9, #f1fff4);
+      border: 1.5px solid #66bb6a;
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      font-size: 0.92rem;
+      color: #1b5e20;
+      text-align: center;
+      animation: pop-in 0.35s cubic-bezier(.175,.885,.32,1.275);
+    }
+    .free-del-nudge {
+      background: linear-gradient(135deg, #fff8e1, #fffdf0);
+      border: 1.5px solid #ffd54f;
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      font-size: 0.92rem;
+      color: #6d4c00;
+      text-align: center;
+    }
+    @keyframes pop-in {
+      0% { transform: scale(0.88); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
     /* ===== ADDRESS PICKER ===== */
     .addr-picker-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 900;
@@ -794,9 +837,9 @@ export class CartPage implements OnInit, OnDestroy {
   readonly checkoutSuccess = signal(false);
   readonly lastPlacedAmount = signal(0);
   readonly lastPlacedOrderId = signal<number | null>(null);
-  readonly deliveryFee = signal(50);
-  readonly deliveryFeeLabel = signal('₹50 (standard)');
-  readonly fetchingFee = signal(false);
+  readonly deliveryFee = computed(() => this.cartState.subtotal() >= 299 ? 0 : 20);
+  readonly deliveryFeeLabel = computed(() => this.cartState.subtotal() >= 299 ? 'FREE 🎉' : '₹20');
+  readonly amountToFreeDelivery = computed(() => Math.max(0, 299 - this.cartState.subtotal()));
   readonly refetchingLoc = signal(false);
   readonly savedAddresses = signal<any[]>([]);
   readonly selectedAddressId = signal<any>('gps'); // 'gps' | address.id
@@ -848,7 +891,6 @@ export class CartPage implements OnInit, OnDestroy {
   ionViewWillEnter(): void {
     this.loadCart();
     this.loadSavedAddresses();
-    // Only detect GPS if no location is set yet — don't override user-selected address
     if (!this.locationService.currentLocation()) {
       this.locationService.detectCurrentLocation().catch(() => {});
     }
@@ -1029,56 +1071,17 @@ export class CartPage implements OnInit, OnDestroy {
 
   proceedToPayment() {
     const saved = this.selectedAddress();
-    if (saved) {
-      // User picked a saved address
-      if (saved.latitude && saved.longitude) {
-        this.fetchDeliveryFee(saved.latitude, saved.longitude);
+    const loc = this.locationService.currentLocation();
+    if (!saved && !loc) {
+      if (this.savedAddresses().length > 0) {
+        this.orderMsg = '📍 Please select a delivery address.';
+        this.showAddressPicker.set(true);
       } else {
-        // Saved address has no coordinates — proceed with standard fee
-        this.deliveryFee.set(50);
-        this.deliveryFeeLabel.set('₹50 (standard)');
-        this.checkoutStep.set('payment');
+        this.orderMsg = '📍 Please add an address in your Profile or enable GPS.';
       }
       return;
     }
-    // GPS mode
-    const loc = this.locationService.currentLocation();
-    if (loc) {
-      this.fetchDeliveryFee(loc.latitude, loc.longitude);
-      return;
-    }
-    // Nothing available — ask user to pick an address
-    if (this.savedAddresses().length > 0) {
-      this.orderMsg = '📍 Please select a delivery address.';
-      this.showAddressPicker.set(true);
-    } else {
-      this.orderMsg = '📍 Please add an address in your Profile or enable GPS.';
-    }
-  }
-
-  private fetchDeliveryFee(lat: number, lng: number) {
-    this.fetchingFee.set(true);
-    this.api.get<any>(`/customer/orders/delivery-fee?lat=${lat}&lng=${lng}`)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (res) => {
-          this.deliveryFee.set(Number(res.fee) || 50);
-          this.deliveryFeeLabel.set(res.feeLabel || `₹${res.fee}`);
-          this.fetchingFee.set(false);
-          this.checkoutStep.set('payment');
-        },
-        error: (err) => {
-          this.fetchingFee.set(false);
-          const msg = err?.error?.message || '';
-          if (msg.includes('beyond') || msg.includes('km')) {
-            this.orderMsg = '❌ ' + msg;
-          } else {
-            this.deliveryFee.set(50);
-            this.deliveryFeeLabel.set('₹50 (standard)');
-            this.checkoutStep.set('payment');
-          }
-        }
-      });
+    this.checkoutStep.set('payment');
   }
 
   canCheckout() {

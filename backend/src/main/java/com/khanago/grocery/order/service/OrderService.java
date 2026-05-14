@@ -66,12 +66,7 @@ public class OrderService {
                 .map(i -> i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal deliveryFee;
-        if (request.customerLat() != null && request.customerLng() != null) {
-            deliveryFee = deliveryFeeService.calculateFee(request.customerLat(), request.customerLng());
-        } else {
-            deliveryFee = new BigDecimal("50.00");
-        }
+        BigDecimal deliveryFee = deliveryFeeService.calculateFeeByAmount(subtotal);
 
         Order order = new Order();
         order.setCustomer(customer);

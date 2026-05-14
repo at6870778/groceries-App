@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonContent, IonHeader, IonToolbar, IonButtons, IonButton, IonSearchbar } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonButton } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
 import { Router, RouterLink } from '@angular/router';
 import { CartState } from '../../core/state/cart.state';
@@ -12,36 +12,79 @@ import { takeUntil } from 'rxjs/operators';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, IonContent, IonHeader, IonToolbar, IonButtons, IonButton, IonSearchbar, BottomNavComponent],
+  imports: [CommonModule, RouterLink, IonContent, IonHeader, IonButton, BottomNavComponent],
   template: `
-    <ion-header translucent>
-      <ion-toolbar color="primary">
-        <div slot="start" class="deliver-to-wrap" (click)="goToProfile()">
-          <div class="deliver-label">📍 Delivering to</div>
-          <div class="deliver-addr">
-            <span class="deliver-addr-text">{{ deliveryLabel() }}</span>
-            <span class="deliver-chevron">▾</span>
+    <ion-header>
+      <div class="app-header">
+
+        <!-- ── ROW 1: Hamburger | Brand | Bell ── -->
+        <div class="hdr-row1">
+          <button class="hdr-icon-btn" (click)="showMenu.set(!showMenu())" aria-label="Menu">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round">
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="17" y2="12"/>
+              <line x1="3" y1="18" x2="13" y2="18"/>
+            </svg>
+          </button>
+
+          <div class="hdr-brand">
+            <div class="hdr-brand-row">
+              <span class="hdr-leaf">&#127807;</span>
+              <span class="hdr-logo"><span class="logo-order">Order</span><span class="logo-kro">Kro</span></span>
+            </div>
+            <div class="hdr-tagline">Fresh &bull; Local &bull; Fast</div>
+          </div>
+
+          <button class="hdr-icon-btn hdr-bell" aria-label="Notifications">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span class="bell-badge">2</span>
+          </button>
+        </div>
+
+        <!-- ── ROW 2: Delivery location pill ── -->
+        <div class="hdr-row2">
+          <div class="deliver-pill" (click)="goToProfile()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#16a34a" style="flex-shrink:0">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+            <div class="pill-body">
+              <span class="pill-label">Deliver to</span>
+              <span class="pill-addr">{{ shortDeliveryLabel() }}</span>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#888" style="flex-shrink:0"><path d="M7 10l5 5 5-5z"/></svg>
           </div>
         </div>
-        <ion-buttons slot="end">
-          <ion-button routerLink="/cart">
-            <span class="cart-icon-wrap">
-              <svg style="width:24px;height:24px;fill:white" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.9 18 9 18h12v-2H9.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0 0 23.25 8H5.21l-.94-2H1zm16 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
-              <span class="cart-badge" *ngIf="totalCartItems() > 0">{{ totalCartItems() }}</span>
-            </span>
-          </ion-button>
-        </ion-buttons>
-      </ion-toolbar>
-      <ion-toolbar class="sticky-search-toolbar">
-        <ion-searchbar
-          class="header-search"
-          placeholder="Search groceries, vegetables..."
-          [value]="searchTerm()"
-          (ionInput)="searchTerm.set($any($event).detail.value || '')"
-          (ionChange)="submitSearch($any($event).detail.value || '')"
-          (keyup.enter)="submitSearch(searchTerm())">
-        </ion-searchbar>
-      </ion-toolbar>
+
+        <!-- ── ROW 3: Search bar ── -->
+        <div class="hdr-row3">
+          <div class="search-pill">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.2" stroke-linecap="round" style="flex-shrink:0">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              class="search-input"
+              type="text"
+              placeholder="Search groceries, vegetables, fruits, snacks…"
+              [value]="searchTerm()"
+              (input)="searchTerm.set($any($event).target.value || '')"
+              (keyup.enter)="submitSearch(searchTerm())"
+            />
+            <button class="mic-btn" aria-label="Voice search">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+      </div>
     </ion-header>
 
     <ion-content [scrollEvents]="true" [fullscreen]="false" class="home-content" style="--padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px))">
@@ -213,83 +256,181 @@ import { takeUntil } from 'rxjs/operators';
     <app-bottom-nav></app-bottom-nav>
   `,
   styles: [`
+    /* ────────── APP HEADER ────────── */
     ion-header {
-      --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      --color: white;
+      --background: transparent;
+      box-shadow: none;
     }
-    .cart-icon-wrap {
+    .app-header {
+      background: #fff;
+      padding: 12px 16px 10px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
       position: relative;
-      display: inline-flex;
+    }
+    /* ROW 1 */
+    .hdr-row1 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .hdr-icon-btn {
+      background: #f5f6fa;
+      border: none;
+      border-radius: 12px;
+      width: 42px;
+      height: 42px;
+      display: flex;
       align-items: center;
       justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s;
     }
-    .cart-badge {
+    .hdr-icon-btn:active { background: #eaeef8; }
+    .hdr-brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      padding: 0 8px;
+    }
+    .hdr-brand-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .hdr-leaf {
+      font-size: 1rem;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+    .hdr-logo {
+      font-size: 1.65rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+    .logo-order {
+      color: #1a1a1a;
+    }
+    .logo-kro {
+      color: #16a34a;
+    }
+    .hdr-tagline {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #888;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+    /* Bell */
+    .hdr-bell {
+      position: relative;
+    }
+    .bell-badge {
       position: absolute;
-      top: -6px;
-      right: -8px;
-      background: #ff3b30;
+      top: 6px;
+      right: 6px;
+      background: #ef4444;
       color: #fff;
-      font-size: 0.6rem;
+      font-size: 0.52rem;
       font-weight: 800;
-      min-width: 16px;
-      height: 16px;
-      border-radius: 8px;
+      min-width: 14px;
+      height: 14px;
+      border-radius: 7px;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 0 3px;
-      pointer-events: none;
       line-height: 1;
-      z-index: 10;
+      pointer-events: none;
+      border: 1.5px solid #fff;
     }
-    .sticky-search-toolbar {
-      --background: rgba(255,255,255,0.96);
-      --min-height: 56px;
-      padding: 0 8px;
+    /* ROW 2: Delivery pill */
+    .hdr-row2 {
+      margin-bottom: 10px;
     }
-    .header-search {
-      --background: #fff;
-      --color: #333;
-      --icon-color: #667eea;
-      margin: 6px 0;
+    .deliver-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f0faf5;
+      border: 1.5px solid #bbf7d0;
+      border-radius: 50px;
+      padding: 7px 12px;
+      cursor: pointer;
+      max-width: 100%;
+      box-shadow: 0 2px 8px rgba(22,163,74,0.08);
+      transition: box-shadow 0.18s;
     }
-    .home-content {
-      --background: #f5f6fa;
-    }
-    /* ── Delivering to ── */
-    .deliver-to-wrap {
+    .deliver-pill:active { box-shadow: 0 1px 3px rgba(22,163,74,0.1); }
+    .pill-body {
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      padding: 6px 12px 6px 8px;
-      cursor: pointer;
       min-width: 0;
-      max-width: calc(100vw - 100px);
+      flex: 1;
     }
-    .deliver-label {
-      font-size: 0.72rem;
-      font-weight: 600;
-      opacity: 0.85;
-      letter-spacing: 0.3px;
-      color: #fff;
+    .pill-label {
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: #16a34a;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
       line-height: 1.2;
     }
-    .deliver-addr {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      color: #fff;
-    }
-    .deliver-addr-text {
-      font-size: 0.95rem;
+    .pill-addr {
+      font-size: 0.82rem;
       font-weight: 700;
+      color: #1a1a1a;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: calc(100vw - 120px);
+      max-width: calc(100vw - 100px);
       line-height: 1.3;
     }
-    .deliver-chevron { font-size: 1rem; opacity: 0.85; flex-shrink: 0; }
+    /* ROW 3: Search */
+    .hdr-row3 {}
+    .search-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #f5f6fa;
+      border: 1.5px solid #e8ecf4;
+      border-radius: 16px;
+      padding: 10px 14px;
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+    .search-pill:focus-within {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102,126,234,0.12);
+      background: #fff;
+    }
+    .search-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 0.88rem;
+      color: #1a1a1a;
+      font-weight: 500;
+      min-width: 0;
+    }
+    .search-input::placeholder { color: #aaa; font-weight: 400; }
+    .mic-btn {
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    /* content background */
+    .home-content {
+      --background: #f5f6fa;
+    }
     /* ── Error banner ── */
     .error-banner-top {
       margin: 10px 14px 0;
@@ -623,15 +764,19 @@ export class HomePage implements OnInit, OnDestroy {
   readonly categories = signal<any[]>([]);
   readonly products = signal<any[]>([]);
   readonly adding = signal<number | null>(null);
-  // 'added' signal removed — stepper driven by cartState.items() directly
   readonly errorMsg = signal('');
   readonly quickSearches = ['Milk', 'Banana', 'Rice', 'Bread', 'Chips', 'Juice'];
-  /** Currently selected category id — null means "All" */
   readonly selectedCategoryId = signal<number | null>(null);
+  readonly showMenu = signal(false);
   private destroy$ = new Subject<void>();
 
   /** Saved addresses loaded from API */
   readonly savedAddresses = signal<any[]>([]);
+
+  readonly shortDeliveryLabel = computed(() => {
+    const full = this.deliveryLabel();
+    return full.length > 28 ? full.slice(0, 26) + '…' : full;
+  });
 
   /** Computed label for the "Delivering to" bar */
   readonly deliveryLabel = computed(() => {

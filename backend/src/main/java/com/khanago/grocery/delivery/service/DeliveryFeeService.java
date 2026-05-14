@@ -155,4 +155,13 @@ public class DeliveryFeeService {
     }
 
     public record DeliveryFeeResult(BigDecimal fee, double distanceKm, String method) {}
+
+    /**
+     * Simple amount-based fee: FREE (₹0) for orders ≥ ₹299, else ₹20 flat.
+     */
+    public BigDecimal calculateFeeByAmount(BigDecimal subtotal) {
+        return subtotal.compareTo(new BigDecimal("299")) >= 0
+                ? BigDecimal.ZERO
+                : new BigDecimal("20");
+    }
 }

@@ -3,17 +3,15 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { IonContent, IonHeader, IonToolbar } from '@ionic/angular/standalone';
 import { NotificationStateService, AppNotification } from '../../core/services/notification-state.service';
+import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, IonContent, IonHeader, IonToolbar],
+  imports: [CommonModule, IonContent, IonHeader, IonToolbar, BottomNavComponent],
   template: `
     <ion-header>
       <ion-toolbar class="notif-toolbar">
         <div class="notif-header">
-          <button class="back-btn" (click)="goBack()">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          </button>
           <div class="header-title-group">
             <h1 class="header-title">Notifications</h1>
             <span class="header-sub" *ngIf="state.unreadCount() > 0">{{ state.unreadCount() }} new</span>
@@ -64,6 +62,8 @@ import { NotificationStateService, AppNotification } from '../../core/services/n
       </div>
 
     </ion-content>
+
+    <app-bottom-nav></app-bottom-nav>
   `,
   styles: [`
     :host { display: block; }
@@ -79,16 +79,6 @@ import { NotificationStateService, AppNotification } from '../../core/services/n
       align-items: center;
       gap: 12px;
       padding: 12px 16px;
-    }
-    .back-btn {
-      background: #f0f0ff;
-      border: none;
-      border-radius: 50%;
-      width: 38px; height: 38px;
-      display: flex; align-items: center; justify-content: center;
-      color: #667eea;
-      cursor: pointer;
-      flex-shrink: 0;
     }
     .header-title-group { flex: 1; }
     .header-title {
@@ -237,10 +227,6 @@ export class NotificationsPage implements OnInit {
 
   ngOnInit(): void {
     this.state.load();
-  }
-
-  goBack(): void {
-    this.router.navigate(['/home']);
   }
 
   clearAll(): void {

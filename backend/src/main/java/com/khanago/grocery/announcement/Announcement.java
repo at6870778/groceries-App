@@ -15,7 +15,7 @@ public class Announcement {
     @Id
     private Long id = 1L;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 1000)
     private String message = "";
 
     @Column(nullable = false)

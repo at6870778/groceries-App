@@ -27,7 +27,7 @@ import { App } from '@capacitor/app';
             <span class="logo-leaf">🛵</span>
             <div class="logo-text-wrap">
               <span class="logo-text"><span class="logo-o">Order</span><span class="logo-k">Kro</span></span>
-              <span class="logo-tagline"><span class="tagline-zap">⚡</span> 10 min delivery</span>
+              <span class="logo-tagline"><span class="tagline-zap">⚡</span> 15 min delivery</span>
             </div>
           </div>
           <div class="hdr-right">
@@ -340,22 +340,25 @@ import { App } from '@capacitor/app';
       letter-spacing: -0.6px;
       line-height: 1.1;
     }
-    /* "Order" — clean dark, no distraction */
+    /* "Order" — sweeps dark→purple→dark */
     .logo-o {
+      display: inline-block;
       color: #111827;
+      animation: order-sweep 3.5s ease-in-out infinite;
     }
-    /* "Kro" — brand purple gradient with shimmer */
+    @keyframes order-sweep {
+      0%, 100% { color: #111827; }
+      50%       { color: #667eea; }
+    }
+    /* "Kro" — glowing purple pulse */
     .logo-k {
-      background: linear-gradient(135deg, #667eea 0%, #a78bfa 50%, #764ba2 100%);
-      background-size: 250% auto;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      animation: kro-sweep 2.8s ease-in-out infinite alternate;
+      display: inline-block;
+      color: #667eea;
+      animation: kro-glow 2.2s ease-in-out infinite alternate;
     }
-    @keyframes kro-sweep {
-      from { background-position: 0%   center; filter: brightness(1);    }
-      to   { background-position: 100% center; filter: brightness(1.22); }
+    @keyframes kro-glow {
+      from { color: #667eea; text-shadow: 0 0 4px rgba(108,71,255,0.2); transform: scale(1); }
+      to   { color: #9c6fff; text-shadow: 0 0 14px rgba(108,71,255,0.7), 0 0 28px rgba(108,71,255,0.3); transform: scale(1.06); }
     }
     /* Tagline */
     .logo-tagline {

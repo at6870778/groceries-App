@@ -21,6 +21,7 @@
     "@capacitor/app": "^7.0.0",
     "@capacitor/core": "^7.0.0",
     "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/push-notifications": "^7.0.6",
     "@capacitor/share": "^8.0.1",
     "@ionic/angular": "^8.4.0",
     "@msg91comm/sendotp-sdk": "^1.0.1",

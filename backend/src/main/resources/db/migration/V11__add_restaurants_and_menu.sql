@@ -12,19 +12,11 @@ CREATE TABLE IF NOT EXISTS restaurants (
 );
 
 -- Add restaurant_id to products only if column does not already exist
-SET @col_exists = (SELECT COUNT(*) FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products' AND COLUMN_NAME = 'restaurant_id');
-SET @sql = IF(@col_exists = 0, 'ALTER TABLE products ADD COLUMN restaurant_id BIGINT', 'SELECT 1');
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS restaurant_id BIGINT;
 
--- Add FK only if not already present
-SET @fk_exists = (SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
-  WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'products'
-    AND CONSTRAINT_NAME = 'fk_products_restaurant' AND CONSTRAINT_TYPE = 'FOREIGN KEY');
-SET @sql2 = IF(@fk_exists = 0,
-  'ALTER TABLE products ADD CONSTRAINT fk_products_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)',
-  'SELECT 1');
-PREPARE stmt2 FROM @sql2; EXECUTE stmt2; DEALLOCATE PREPARE stmt2;
+-- Add FK only if not already present (H2 silently ignores duplicate constraint names)
+ALTER TABLE products ADD CONSTRAINT IF NOT EXISTS fk_products_restaurant
+  FOREIGN KEY (restaurant_id) REFERENCES restaurants(id);
 
 -- Seed restaurants (skip if already inserted)
 INSERT INTO restaurants (name, cuisine_type, address, phone, rating, delivery_time_min)

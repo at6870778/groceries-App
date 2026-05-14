@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, effect } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { SyncService } from './core/services/sync.service';
+import { AuthService } from './core/services/auth.service';
+import { PushNotificationService } from './core/services/push-notification.service';
 
 @Component({
   selector: 'app-root',
@@ -13,8 +15,20 @@ import { SyncService } from './core/services/sync.service';
   `
 })
 export class AppComponent {
-  constructor(private sync: SyncService) {
-    // Sync server-side state (cart, etc.) on every app start
+  constructor(
+    private sync: SyncService,
+    private auth: AuthService,
+    private push: PushNotificationService
+  ) {
     this.sync.init();
+
+    // Initialize push notifications whenever the user becomes a logged-in customer
+    effect(() => {
+      const role = this.auth.activeRole();
+      const token = this.auth.customerToken();
+      if (role === 'CUSTOMER' && token) {
+        this.push.init();
+      }
+    });
   }
 }

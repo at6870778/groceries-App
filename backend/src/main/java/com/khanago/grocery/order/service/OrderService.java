@@ -6,6 +6,7 @@ import com.khanago.grocery.common.enums.OrderStatus;
 import com.khanago.grocery.common.enums.PaymentMode;
 import com.khanago.grocery.common.exception.ApiException;
 import com.khanago.grocery.common.service.AdminNotificationService;
+import com.khanago.grocery.common.service.FcmService;
 import com.khanago.grocery.delivery.DeliveryAssignment;
 import com.khanago.grocery.delivery.repository.DeliveryAssignmentRepository;
 import com.khanago.grocery.delivery.service.DeliveryFeeService;
@@ -44,6 +45,7 @@ public class OrderService {
     private final CartService cartService;
     private final DeliveryFeeService deliveryFeeService;
     private final AdminNotificationService adminNotificationService;
+    private final FcmService fcmService;
 
     @Transactional
     public OrderDto checkout(CheckoutRequestDto request) {
@@ -146,7 +148,25 @@ public class OrderService {
     public OrderDto updateOrderStatus(Long orderId, OrderStatus status) {
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new ApiException("Order not found"));
         order.setStatus(status);
-        return toDto(orderRepository.save(order));
+        OrderDto dto = toDto(orderRepository.save(order));
+        // Send push notification to customer
+        String fcmToken = order.getCustomer() != null ? order.getCustomer().getFcmToken() : null;
+        if (fcmToken != null) {
+            String msg = orderStatusMessage(status, orderId);
+            fcmService.sendToToken(fcmToken, "Order Update", msg, "OPEN_ORDERS");
+        }
+        return dto;
+    }
+
+    private String orderStatusMessage(OrderStatus status, Long orderId) {
+        return switch (status) {
+            case CONFIRMED       -> "Your order #" + orderId + " has been confirmed! We're preparing it.";
+            case PREPARING       -> "Your order #" + orderId + " is being prepared.";
+            case OUT_FOR_DELIVERY -> "Your order #" + orderId + " is on its way!";
+            case DELIVERED       -> "Your order #" + orderId + " has been delivered. Enjoy!";
+            case CANCELLED       -> "Your order #" + orderId + " has been cancelled.";
+            default              -> "Your order #" + orderId + " status updated to " + status.name() + ".";
+        };
     }
 
     private OrderDto toDto(Order order) {

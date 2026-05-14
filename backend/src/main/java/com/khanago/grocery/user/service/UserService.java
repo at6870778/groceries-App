@@ -1,6 +1,7 @@
 package com.khanago.grocery.user.service;
 
 import com.khanago.grocery.common.exception.ApiException;
+import com.khanago.grocery.common.service.FcmService;
 import com.khanago.grocery.security.SecurityUtils;
 import com.khanago.grocery.user.Address;
 import com.khanago.grocery.user.User;
@@ -12,6 +13,7 @@ import com.khanago.grocery.user.repository.AddressRepository;
 import com.khanago.grocery.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -21,6 +23,16 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final AddressRepository addressRepository;
+    private final FcmService fcmService;
+
+    @Transactional
+    public void registerFcmToken(String token) {
+        User user = currentUser();
+        user.setFcmToken(token);
+        userRepository.save(user);
+        // Subscribe to promotions topic so admin broadcast reaches all users
+        fcmService.subscribeToTopic(token, "promotions");
+    }
 
     public ProfileDto getProfile() {
         User user = currentUser();

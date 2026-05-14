@@ -35,12 +35,15 @@ services:
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-lYgIjNDWQzOPkk0gIK9SWbT7AE8}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      FIREBASE_SERVICE_ACCOUNT_PATH: ${FIREBASE_SERVICE_ACCOUNT_PATH:-/secrets/firebase-service-account.json}
       STORE_LATITUDE: ${STORE_LATITUDE:-26.7333}
       STORE_LONGITUDE: ${STORE_LONGITUDE:-83.8167}
       STORE_MAX_DELIVERY_KM: ${STORE_MAX_DELIVERY_KM:-50.0}
       RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+    volumes:
+      - ${FIREBASE_SERVICE_ACCOUNT_FILE:-/opt/orderkro/secrets/firebase-service-account.json}:/secrets/firebase-service-account.json:ro
     ports:
       - "8080:8080"
 

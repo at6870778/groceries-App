@@ -30,6 +30,9 @@ public class User extends BaseAuditEntity {
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 
+    @Column(name = "fcm_token", length = 512)
+    private String fcmToken;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",

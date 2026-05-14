@@ -1,5 +1,6 @@
 package com.khanago.grocery.announcement;
 
+import com.khanago.grocery.common.service.FcmService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,6 +11,7 @@ import java.util.Map;
 public class AnnouncementController {
 
     private final AnnouncementRepository repo;
+    private final FcmService fcmService;
 
     /** Public — called by the Ionic app on every home load */
     @GetMapping("/api/public/announcement")
@@ -22,9 +24,16 @@ public class AnnouncementController {
     public Announcement update(@RequestBody Map<String, Object> body) {
         Announcement a = repo.findById(1L).orElseGet(Announcement::new);
         a.setId(1L);
+        boolean wasActive = a.isActive();
         if (body.containsKey("message"))  a.setMessage((String) body.get("message"));
         if (body.containsKey("active"))   a.setActive((Boolean) body.get("active"));
         if (body.containsKey("bgColor"))  a.setBgColor((String) body.get("bgColor"));
-        return repo.save(a);
+        Announcement saved = repo.save(a);
+        // Broadcast push notification when announcement is newly activated
+        boolean isNowActive = saved.isActive();
+        if (!wasActive && isNowActive && saved.getMessage() != null && !saved.getMessage().isBlank()) {
+            fcmService.sendToTopic("promotions", "Khanago Offer", saved.getMessage());
+        }
+        return saved;
     }
 }

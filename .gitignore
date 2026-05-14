@@ -34,6 +34,10 @@ Thumbs.db
 .env
 **/.env
 
+# Firebase service account (never commit secrets)
+**/firebase-service-account*.json
+**/firebase-adminsdk*.json
+
 # Logs
 logs/
 *.log

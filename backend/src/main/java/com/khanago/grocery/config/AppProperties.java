@@ -94,4 +94,17 @@ public class AppProperties {
                     && chatId != null && !chatId.isBlank();
         }
     }
+
+    @Getter
+    @Setter
+    public static class Firebase {
+        /** Path to the service account JSON file (or classpath resource). */
+        private String serviceAccountPath;
+
+        public boolean isConfigured() {
+            return serviceAccountPath != null && !serviceAccountPath.isBlank();
+        }
+    }
+
+    private Firebase firebase = new Firebase();
 }

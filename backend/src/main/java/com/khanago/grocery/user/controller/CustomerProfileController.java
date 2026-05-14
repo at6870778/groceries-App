@@ -7,7 +7,10 @@ import com.khanago.grocery.user.dto.UpdateProfileDto;
 import com.khanago.grocery.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 import java.util.List;
 
@@ -46,5 +49,16 @@ public class CustomerProfileController {
     @DeleteMapping("/addresses/{id}")
     public void deleteAddress(@PathVariable Long id) {
         userService.deleteAddress(id);
+    }
+
+    /** Called by the Ionic app after getting the FCM device token. */
+    @PostMapping("/fcm-token")
+    public ResponseEntity<Void> registerFcmToken(@RequestBody Map<String, String> body) {
+        String token = body.get("token");
+        if (token == null || token.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        userService.registerFcmToken(token);
+        return ResponseEntity.ok().build();
     }
 }

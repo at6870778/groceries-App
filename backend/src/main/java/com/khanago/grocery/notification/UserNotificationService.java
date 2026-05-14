@@ -28,22 +28,23 @@ public class UserNotificationService {
         return repository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
-    public long countUnread(Long userId) {
-        return repository.countByUserIdAndReadFalse(userId);
+    public long countNew(Long userId) {
+        return repository.countByUserId(userId);
     }
 
+    /** Delete a single notification when user taps it. */
     @Transactional
-    public void markRead(Long notificationId, Long userId) {
+    public void deleteOne(Long notificationId, Long userId) {
         repository.findById(notificationId).ifPresent(n -> {
             if (n.getUser().getId().equals(userId)) {
-                n.setRead(true);
-                repository.save(n);
+                repository.delete(n);
             }
         });
     }
 
+    /** Delete all notifications for user (clear all). */
     @Transactional
-    public void markAllRead(Long userId) {
-        repository.markAllReadByUserId(userId);
+    public void deleteAll(Long userId) {
+        repository.deleteAllByUserId(userId);
     }
 }

@@ -22,21 +22,23 @@ public class UserNotificationController {
         return service.getForUser(userId).stream().map(this::toDto).toList();
     }
 
-    @GetMapping("/unread-count")
-    public Map<String, Long> unreadCount() {
+    @GetMapping("/count")
+    public Map<String, Long> count() {
         Long userId = SecurityUtils.getCurrentUserId();
-        return Map.of("count", service.countUnread(userId));
+        return Map.of("count", service.countNew(userId));
     }
 
-    @PatchMapping("/{id}/read")
-    public ResponseEntity<Void> markRead(@PathVariable Long id) {
-        service.markRead(id, SecurityUtils.getCurrentUserId());
+    /** Tap a notification → delete it immediately */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteOne(@PathVariable Long id) {
+        service.deleteOne(id, SecurityUtils.getCurrentUserId());
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/read-all")
-    public ResponseEntity<Void> markAllRead() {
-        service.markAllRead(SecurityUtils.getCurrentUserId());
+    /** Clear all notifications */
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAll() {
+        service.deleteAll(SecurityUtils.getCurrentUserId());
         return ResponseEntity.noContent().build();
     }
 
@@ -46,7 +48,6 @@ public class UserNotificationController {
                 n.getTitle(),
                 n.getBody(),
                 n.getType(),
-                n.isRead(),
                 n.getCreatedAt()
         );
     }
@@ -56,7 +57,6 @@ public class UserNotificationController {
             String title,
             String body,
             String type,
-            boolean read,
             LocalDateTime createdAt
     ) {}
 }

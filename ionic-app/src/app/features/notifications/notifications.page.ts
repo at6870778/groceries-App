@@ -16,10 +16,10 @@ import { NotificationStateService, AppNotification } from '../../core/services/n
           </button>
           <div class="header-title-group">
             <h1 class="header-title">Notifications</h1>
-            <span class="header-sub" *ngIf="state.unreadCount() > 0">{{ state.unreadCount() }} unread</span>
+            <span class="header-sub" *ngIf="state.unreadCount() > 0">{{ state.unreadCount() }} new</span>
           </div>
-          <button class="read-all-btn" *ngIf="state.unreadCount() > 0" (click)="markAllRead()">
-            Mark all read
+          <button class="read-all-btn" *ngIf="state.notifications().length > 0" (click)="clearAll()">
+            Clear all
           </button>
         </div>
       </ion-toolbar>
@@ -44,7 +44,6 @@ import { NotificationStateService, AppNotification } from '../../core/services/n
         <div
           *ngFor="let n of state.notifications(); trackBy: trackById"
           class="notif-card"
-          [class.unread]="!n.read"
           (click)="onTap(n)"
         >
           <!-- Icon orb -->
@@ -59,8 +58,8 @@ import { NotificationStateService, AppNotification } from '../../core/services/n
             <span class="notif-time">{{ timeAgo(n.createdAt) }}</span>
           </div>
 
-          <!-- Unread dot -->
-          <div class="unread-dot" *ngIf="!n.read"></div>
+          <!-- Unread dot (always shown — tapping deletes) -->
+          <div class="unread-dot"></div>
         </div>
       </div>
 
@@ -164,22 +163,18 @@ import { NotificationStateService, AppNotification } from '../../core/services/n
     .notif-card {
       background: #fff;
       border-radius: 16px;
-      padding: 14px 14px 14px 14px;
+      padding: 14px;
       display: flex;
       align-items: flex-start;
       gap: 12px;
       box-shadow: 0 2px 10px rgba(102,126,234,0.07);
-      border-left: 3px solid transparent;
+      border-left: 3px solid #667eea;
       position: relative;
       transition: transform 0.15s, box-shadow 0.15s;
       cursor: pointer;
     }
     .notif-card:active {
       transform: scale(0.98);
-    }
-    .notif-card.unread {
-      border-left-color: #667eea;
-      background: linear-gradient(135deg, #fafaff, #fff);
     }
 
     /* ── Orb ── */
@@ -248,12 +243,12 @@ export class NotificationsPage implements OnInit {
     this.router.navigate(['/home']);
   }
 
-  markAllRead(): void {
-    this.state.markAllRead();
+  clearAll(): void {
+    this.state.deleteAll();
   }
 
   onTap(n: AppNotification): void {
-    if (!n.read) this.state.markRead(n.id);
+    this.state.deleteOne(n.id);
     if (n.type === 'ORDER') this.router.navigate(['/orders']);
   }
 

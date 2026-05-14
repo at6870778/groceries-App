@@ -6,7 +6,6 @@ export interface AppNotification {
   title: string;
   body: string;
   type: string;
-  read: boolean;
   createdAt: string;
 }
 
@@ -21,27 +20,27 @@ export class NotificationStateService {
     this.api.get<AppNotification[]>('/customer/notifications').subscribe({
       next: (data) => {
         this.notifications.set(data);
-        this.unreadCount.set(data.filter(n => !n.read).length);
+        this.unreadCount.set(data.length);
       },
       error: () => {}
     });
   }
 
-  markRead(id: number): void {
-    this.api.patch<void>(`/customer/notifications/${id}/read`, {}).subscribe({
+  /** Delete on tap — removes from DB and local list immediately */
+  deleteOne(id: number): void {
+    this.api.delete<void>(`/customer/notifications/${id}`).subscribe({
       next: () => {
-        this.notifications.update(list =>
-          list.map(n => n.id === id ? { ...n, read: true } : n)
-        );
+        this.notifications.update(list => list.filter(n => n.id !== id));
         this.unreadCount.update(c => Math.max(0, c - 1));
       }
     });
   }
 
-  markAllRead(): void {
-    this.api.patch<void>('/customer/notifications/read-all', {}).subscribe({
+  /** Clear all */
+  deleteAll(): void {
+    this.api.delete<void>('/customer/notifications').subscribe({
       next: () => {
-        this.notifications.update(list => list.map(n => ({ ...n, read: true })));
+        this.notifications.set([]);
         this.unreadCount.set(0);
       }
     });

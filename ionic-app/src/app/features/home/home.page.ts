@@ -151,88 +151,11 @@ import { App } from '@capacitor/app';
         <!-- ── CATEGORY STRIP (pills) + ALL / FILTERED PRODUCTS ── -->
         <!-- Clear filter bar when chip is active -->
         <div class="chip-filter-bar" *ngIf="selectedCategorySlug()">
-          <ng-container *ngIf="isFoodMode()">
-            <ng-container *ngIf="selectedRestaurantId() !== null; else restListBar">
-              <button class="chip-back-btn" (click)="backToRestaurants()">← Back</button>
-              <span class="chip-filter-label"><strong>{{ selectedRestaurantName() }}</strong> Menu</span>
-            </ng-container>
-            <ng-template #restListBar>
-              <span class="chip-filter-label">🍽️ <strong>Nearby Restaurants</strong></span>
-            </ng-template>
-          </ng-container>
-          <ng-container *ngIf="!isFoodMode()">
-            <span class="chip-filter-label">Showing: <strong>{{ activeCategoryName() }}</strong></span>
-          </ng-container>
+          <span class="chip-filter-label">Showing: <strong>{{ activeCategoryName() }}</strong></span>
           <button class="chip-filter-clear" (click)="clearChipFilter()">✕ Clear</button>
         </div>
 
-        <!-- ── RESTAURANT LISTING — shown when Food chip active, no restaurant selected ── -->
-        <div class="browse-pad" *ngIf="isFoodMode() && selectedRestaurantId() === null">
-          <div class="section-row">
-            <h3 class="section-title">🍽️ Nearby Restaurants</h3>
-            <span class="item-count">{{ restaurants().length }} open</span>
-          </div>
-          <div class="restaurant-grid">
-            <div class="restaurant-card" *ngFor="let r of restaurants()" (click)="selectRestaurant(r)">
-              <div class="restaurant-card-img-wrap">
-                <img class="restaurant-card-img" [src]="restaurantImage(r)" [alt]="r.name" loading="eager">
-                <span class="restaurant-time-badge">⏱ {{ r.deliveryTimeMin }} min</span>
-              </div>
-              <div class="restaurant-card-body">
-                <div class="restaurant-card-name">{{ r.name }}</div>
-                <div class="restaurant-card-cuisine">{{ r.cuisineType }}</div>
-                <div class="restaurant-card-meta">
-                  <span class="restaurant-rating">⭐ {{ r.rating }}</span>
-                  <span class="restaurant-open-dot"></span>
-                  <span class="restaurant-open-label">Open</span>
-                  <span class="restaurant-dist" *ngIf="r.distanceKm != null">• {{ r.distanceKm }} km</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div *ngIf="restaurants().length === 0" class="empty-state">
-            <div class="empty-icon">🍽️</div>
-            <div class="empty-title">No restaurants within 5 km</div>
-            <div class="empty-sub">Enable location for accurate results</div>
-          </div>
-        </div>
-
-        <!-- ── RESTAURANT MENU — shown when a restaurant is selected ── -->
-        <div class="browse-pad" id="menu-section" *ngIf="isFoodMode() && selectedRestaurantId() !== null">
-          <div class="section-row">
-            <h3 class="section-title">Menu</h3>
-            <span class="item-count">{{ restaurantMenuItems().length }} items</span>
-          </div>
-          <div class="prod-grid" *ngIf="restaurantMenuItems().length > 0; else noMenuItems">
-            <div class="prod-card" *ngFor="let p of restaurantMenuItems(); let i = index" [style.animationDelay.ms]="i*20">
-              <div class="disc-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
-              <div class="prod-img-wrap" [style.background]="p.imageUrl ? '#fff8f0' : productBg(p)">
-                <img *ngIf="p.imageUrl" class="prod-img" [src]="p.imageUrl" [alt]="p.name">
-              </div>
-              <div class="prod-body">
-                <div class="prod-name">{{ p.name }}</div>
-                <div class="prod-unit">{{ p.unit }}</div>
-                <div class="prod-price-row">
-                  <span class="prod-mrp" *ngIf="getDiscount(p) > 0">₹{{ getOriginalPrice(p) }}</span>
-                  <span class="prod-price">₹{{ p.sellingPrice }}</span>
-                </div>
-                <div class="prod-actions" (click)="$event.stopPropagation()">
-                  <ng-container *ngIf="cartQty(p.id) === 0; else menuStep">
-                    <button class="add-btn-flat" (click)="addToCart(p)">+ Add</button>
-                  </ng-container>
-                  <ng-template #menuStep>
-                    <div class="stepper"><button class="step-btn" (click)="removeFromCart(p)">−</button><span class="step-qty">{{ cartQty(p.id) }}</span><button class="step-btn" (click)="addToCart(p)">+</button></div>
-                  </ng-template>
-                </div>
-              </div>
-            </div>
-          </div>
-          <ng-template #noMenuItems>
-            <div class="empty-state"><div class="empty-icon">🍽️</div><div class="empty-title">Menu coming soon</div></div>
-          </ng-template>
-        </div>
-
-        <div class="browse-pad" id="prod-section" *ngIf="!isFoodMode()">
+        <div class="browse-pad" id="prod-section">
           <div class="section-row">
             <h3 class="section-title" *ngIf="selectedCategoryId() === null">✨ All Products</h3>
             <h3 class="section-title" *ngIf="selectedCategoryId() !== null">{{ catEmoji(activeCategorySlug()) }} {{ activeCategoryName() }}</h3>
@@ -1245,7 +1168,7 @@ export class HomePage implements OnInit, OnDestroy {
     const map: Record<string, string> = {
       'fruits-vegetables': '🥦', 'dairy-bread': '🥛', 'snacks': '🍿',
       'beverages': '☕', 'groceries': '🛒', 'spices-masala': '🌶️',
-      'home-care': '🧹', 'pooja-spiritual': '🪔'
+      'home-care': '🧹', 'pooja-spiritual': '🪔', 'food': '🍽️'
     };
     return map[slug] || '🛍️';
   }

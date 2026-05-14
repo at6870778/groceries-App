@@ -99,7 +99,7 @@ declare global {
           <!-- Item list with images + stepper -->
           <div class="cart-items-list">
             <div class="cart-item" *ngFor="let item of cartState.items()">
-              <img class="cart-thumb" [src]="productImage(item)" [alt]="item.name">
+              <img *ngIf="item.imageUrl" class="cart-thumb" [src]="item.imageUrl" [alt]="item.name">
               <div class="cart-item-info">
                 <div class="cart-item-name">{{ item.name }}</div>
                 <div class="cart-item-unit">{{ scaledUnit(item.unit, item.quantity) }}</div>
@@ -989,37 +989,8 @@ export class CartPage implements OnInit, OnDestroy {
       });
   }
 
-  private readonly productPhotoByKeyword: Record<string, string> = {
-    banana: 'https://upload.wikimedia.org/wikipedia/commons/d/de/Bananavarieties.jpg',
-    tomato: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Tomato_je.jpg/960px-Tomato_je.jpg',
-    milk: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Dairy_Crest_Semi_Skimmed_Milk_Bottle.jpg/960px-Dairy_Crest_Semi_Skimmed_Milk_Bottle.jpg',
-    bread: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Korb_mit_Br%C3%B6tchen.JPG/960px-Korb_mit_Br%C3%B6tchen.JPG',
-    chips: 'https://upload.wikimedia.org/wikipedia/commons/8/83/French_Fries.JPG',
-    juice: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Oranges_-_whole-halved-segment.jpg/960px-Oranges_-_whole-halved-segment.jpg',
-    daal: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/3_types_of_lentil.png/960px-3_types_of_lentil.png',
-    dal: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/3_types_of_lentil.png/960px-3_types_of_lentil.png',
-    chini: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Sucre_blanc_cassonade_complet_rapadura.jpg/960px-Sucre_blanc_cassonade_complet_rapadura.jpg',
-    sugar: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Sucre_blanc_cassonade_complet_rapadura.jpg/960px-Sucre_blanc_cassonade_complet_rapadura.jpg',
-    atta: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/BESAN_CHAKKI_HOMEMADE_KOTA_003.jpg/960px-BESAN_CHAKKI_HOMEMADE_KOTA_003.jpg',
-    flour: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/BESAN_CHAKKI_HOMEMADE_KOTA_003.jpg/960px-BESAN_CHAKKI_HOMEMADE_KOTA_003.jpg',
-    rice: 'https://upload.wikimedia.org/wikipedia/commons/0/07/Khyma_and_Basmati_rice.jpg',
-    jeera: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Black_Cumin.jpg/960px-Black_Cumin.jpg',
-    cumin: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Black_Cumin.jpg/960px-Black_Cumin.jpg',
-    surf: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Diskflaskor.JPG/960px-Diskflaskor.JPG',
-    detergent: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Diskflaskor.JPG/960px-Diskflaskor.JPG',
-    dishwash: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Diskflaskor.JPG/960px-Diskflaskor.JPG',
-    agarbatti: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Incenselonghua.jpg',
-    incense: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Incenselonghua.jpg',
-    goolak: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/3_types_of_lentil.png/960px-3_types_of_lentil.png',
-  };
-
   productImage(item: any): string {
-    // Only trust imageUrl if it's a real HTTP URL (not a broken local asset path)
-    if (item?.imageUrl && String(item.imageUrl).startsWith('http')) return item.imageUrl;
-    const name = String(item?.name || '').toLowerCase();
-    const match = Object.keys(this.productPhotoByKeyword).find(k => name.includes(k));
-    return match ? this.productPhotoByKeyword[match]
-      : 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Oranges_-_whole-halved-segment.jpg/960px-Oranges_-_whole-halved-segment.jpg';
+    return (item?.imageUrl && String(item.imageUrl).startsWith('http')) ? item.imageUrl : '';
   }
 
   scaledUnit(unit: string, qty: number): string {

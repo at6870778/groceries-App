@@ -9,16 +9,7 @@ import { ActivityState } from '../../core/state/activity.state';
 import { LocationService } from '../../core/services/location.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-
-interface PopularDish {
-  id: string;
-  name: string;
-  subtitle: string;
-  tag: string;
-  emoji: string;
-  color: string;
-  searchTerm: string;
-}
+import { SpeechRecognition } from '@capacitor-community/speech-recognition';
 
 @Component({
   standalone: true,
@@ -32,7 +23,7 @@ interface PopularDish {
         <!-- Single row: Logo left | Deliver To + Bell right -->
         <div class="hdr-main-row">
           <div class="hdr-logo-wrap">
-            <span class="logo-leaf">🌿</span>
+            <span class="logo-leaf">🛵</span>
             <div class="logo-text-wrap">
               <span class="logo-text"><span class="logo-o">Order</span><span class="logo-k">Kro</span></span>
               <span class="logo-tagline">Sabse sasta, sabse tez</span>
@@ -47,7 +38,7 @@ interface PopularDish {
               </div>
               <svg width="10" height="10" viewBox="0 0 24 24" fill="#999"><path d="M7 10l5 5 5-5z"/></svg>
             </div>
-            <button class="hdr-bell-btn" routerLink="/notifications" aria-label="Notifications">
+            <button class="hdr-bell-btn" aria-label="Notifications">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -64,7 +55,7 @@ interface PopularDish {
             [value]="searchTerm()"
             (input)="searchTerm.set($any($event).target.value || '')"
             (keyup.enter)="submitSearch(searchTerm())"/>
-          <button class="mic-btn" aria-label="Voice" (click)="startVoiceSearch()" [class.mic-active]="isListening()">
+          <button *ngIf="speechSupported" class="mic-btn" aria-label="Voice" (click)="startVoiceSearch()" [class.mic-active]="isListening()">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
               <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
@@ -94,7 +85,7 @@ interface PopularDish {
             [style.animationDelay.ms]="i*30" [routerLink]="['/products']" [queryParams]="{ query: p.name }">
             <div class="disc-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
             <div class="prod-img-wrap" [style.background]="p.imageUrl ? '#f8f9f0' : productBg(p)">
-              <img class="prod-img" [src]="productImage(p)" [alt]="p.name">
+              <img *ngIf="p.imageUrl" class="prod-img" [src]="p.imageUrl" [alt]="p.name">
             </div>
             <div class="prod-body">
               <div class="prod-name">{{ p.name }}</div>
@@ -146,74 +137,20 @@ interface PopularDish {
 
         <!-- ── FEATURE STRIP ── -->
         <!-- CATEGORY CHIPS -->
+        <div class="cat-strip-sticky">
         <div class="cat-strip">
           <button class="cat-chip chip-fv" [class.active]="activeCategorySlug()==='fruits-vegetables'" (click)="selectChip('fruits-vegetables')">🥦 Fruits & Veg</button>
           <button class="cat-chip chip-gr" [class.active]="activeCategorySlug()==='groceries'" (click)="selectChip('groceries')">🛒 Groceries</button>
           <button class="cat-chip chip-sn" [class.active]="activeCategorySlug()==='snacks'" (click)="selectChip('snacks')">🍿 Snacks</button>
           <button class="cat-chip chip-fd" [class.active]="activeCategorySlug()==='food'" (click)="selectChip('food')">🍽️ Food</button>
         </div>
-
-        <!-- ══════════════════════════════════════════════════
-             POPULAR DISHES — hidden when chip filter active
-        ══════════════════════════════════════════════════ -->
-        <div class="section-pad" *ngIf="!selectedCategorySlug()">
-          <div class="section-row">
-            <div>
-              <h3 class="section-title">🍽️ Popular Dishes</h3>
-              <p class="section-sub">Quick bites &amp; local favourites</p>
-            </div>
-            <button class="see-all-btn" (click)="quickSearch('snacks')">See all</button>
-          </div>
-          <div class="dish-scroll">
-            <div class="dish-card" *ngFor="let dish of popularDishes" (click)="quickSearch(dish.name)">
-              <!-- gradient image area with big emoji -->
-              <div class="dish-img-wrap" [style.background]="dish.color">
-                <span class="dish-emoji">{{ dish.emoji }}</span>
-                <span class="dish-tag">{{ dish.tag }}</span>
-              </div>
-              <div class="dish-body">
-                <div class="dish-name">{{ dish.name }}</div>
-                <div class="dish-sub">{{ dish.subtitle }}</div>
-                <button class="dish-add-btn" (click)="$event.stopPropagation(); addDishToCart(dish)">+ ADD</button>
-              </div>
-            </div>
-          </div>
         </div>
 
 
 
-        <!-- ── HOT DEALS — hidden when chip filter active ── -->
-        <ng-container *ngIf="getHotDeals().length > 0 && !selectedCategorySlug()">
-          <div class="section-pad">
-            <div class="section-row">
-              <h3 class="section-title">🔥 Hot Deals</h3>
-              <button class="see-all-btn" (click)="selectCategory(null)">View all</button>
-            </div>
-            <div class="deals-row">
-              <div class="deal-chip" *ngFor="let p of getHotDeals()"
-                [routerLink]="['/products']" [queryParams]="{ query: p.name }">
-                <img class="deal-chip-img" [src]="productImage(p)" [alt]="p.name">
-                <div class="deal-chip-body">
-                  <div class="deal-chip-name">{{ p.name }}</div>
-                  <div class="deal-chip-unit">{{ p.unit }}</div>
-                  <div class="deal-chip-prices">
-                    <span class="deal-chip-mrp">₹{{ getOriginalPrice(p) }}</span>
-                    <span class="deal-chip-price">₹{{ p.sellingPrice }}</span>
-                  </div>
-                </div>
-                <div class="deal-chip-badge">{{ getDiscount(p) }}%<br>OFF</div>
-                <div class="deal-chip-action" (click)="$event.stopPropagation()">
-                  <ng-container *ngIf="cartQty(p.id) === 0; else dealStep">
-                    <button class="add-btn-flat" (click)="addToCart(p)">+ Add</button>
-                  </ng-container>
-                  <ng-template #dealStep>
-                    <div class="stepper stepper-xs"><button class="step-btn" (click)="removeFromCart(p)">−</button><span class="step-qty">{{ cartQty(p.id) }}</span><button class="step-btn" (click)="addToCart(p)">+</button></div>
-                  </ng-template>
-                </div>
-              </div>
-            </div>
-          </div>
-        </ng-container>
+
+
+
 
         <!-- ── CATEGORY STRIP (pills) + ALL / FILTERED PRODUCTS ── -->
         <!-- Clear filter bar when chip is active -->
@@ -274,7 +211,7 @@ interface PopularDish {
             <div class="prod-card" *ngFor="let p of restaurantMenuItems(); let i = index" [style.animationDelay.ms]="i*20">
               <div class="disc-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
               <div class="prod-img-wrap" [style.background]="p.imageUrl ? '#fff8f0' : productBg(p)">
-                <img class="prod-img" [src]="productImage(p)" [alt]="p.name">
+                <img *ngIf="p.imageUrl" class="prod-img" [src]="p.imageUrl" [alt]="p.name">
               </div>
               <div class="prod-body">
                 <div class="prod-name">{{ p.name }}</div>
@@ -299,35 +236,20 @@ interface PopularDish {
           </ng-template>
         </div>
 
-        <div class="cat-strip-wrap" *ngIf="!selectedCategorySlug()">
-          <div class="cat-strip">
-            <button class="cat-pill" [class.active]="selectedCategoryId() === null" (click)="selectCategory(null)">
-              <div class="cat-emoji">🛒</div>
-              <div class="cat-name">All</div>
-            </button>
-            <button class="cat-pill" *ngFor="let c of categories()"
-              [class.active]="selectedCategoryId() === c.id" (click)="selectChip(c.slug)">
-              <div class="cat-emoji">{{ catEmoji(c.slug) }}</div>
-              <div class="cat-name">{{ c.name }}</div>
-            </button>
-          </div>
-        </div>
-
-        <div class="browse-pad" id="prod-section" *ngIf="!isFoodMode()">
+        <div class="browse-pad" id="prod-section" *ngIf="!isFoodMode() && selectedCategoryId() !== null">
           <div class="section-row">
-            <h3 class="section-title" *ngIf="selectedCategoryId() === null">✨ All Products</h3>
-            <h3 class="section-title" *ngIf="selectedCategoryId() !== null">{{ catEmoji(activeCategorySlug()) }} {{ activeCategoryName() }}</h3>
-            <span class="item-count">{{ (selectedCategoryId() === null ? products() : categoryProducts()).length }} items</span>
+            <h3 class="section-title">{{ catEmoji(activeCategorySlug()) }} {{ activeCategoryName() }}</h3>
+            <span class="item-count">{{ categoryProducts().length }} items</span>
           </div>
 
-          <div class="prod-grid" *ngIf="(selectedCategoryId() === null ? products() : categoryProducts()).length > 0; else noItems">
+          <div class="prod-grid" *ngIf="categoryProducts().length > 0; else noItems">
             <div class="prod-card"
-              *ngFor="let p of (selectedCategoryId() === null ? products().slice(0,40) : categoryProducts()); let i = index"
+              *ngFor="let p of categoryProducts(); let i = index"
               [style.animationDelay.ms]="i*20"
               [routerLink]="['/products']" [queryParams]="{ query: p.name }">
               <div class="disc-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
               <div class="prod-img-wrap" [style.background]="p.imageUrl ? '#f8f9f0' : productBg(p)">
-                <img class="prod-img" [src]="productImage(p)" [alt]="p.name">
+                <img *ngIf="p.imageUrl" class="prod-img" [src]="p.imageUrl" [alt]="p.name">
               </div>
               <div class="prod-body">
                 <div class="prod-cat-tag">{{ p.categoryName }}</div>
@@ -400,17 +322,19 @@ interface PopularDish {
     }
     /* Bouncing leaf */
     .logo-leaf {
-      font-size: 1.2rem;
+      font-size: 1.3rem;
       line-height: 1;
       display: inline-block;
-      animation: leaf-bounce 2.4s ease-in-out infinite;
-      transform-origin: bottom center;
+      animation: scooter-ride 1.4s ease-in-out infinite;
+      transform-origin: center bottom;
     }
-    @keyframes leaf-bounce {
-      0%, 100% { transform: rotate(-8deg) scale(1); }
-      25%       { transform: rotate(8deg)  scale(1.15); }
-      50%       { transform: rotate(-4deg) scale(1.05); }
-      75%       { transform: rotate(6deg)  scale(1.1); }
+    @keyframes scooter-ride {
+      0%   { transform: translateY(0px) rotate(0deg); }
+      20%  { transform: translateY(-3px) rotate(-4deg); }
+      40%  { transform: translateY(0px) rotate(0deg); }
+      60%  { transform: translateY(-2px) rotate(-3deg); }
+      80%  { transform: translateY(0px) rotate(0deg); }
+      100% { transform: translateY(0px) rotate(0deg); }
     }
     /* "Order" — animated gradient sweep */
     .logo-text {
@@ -707,6 +631,13 @@ interface PopularDish {
     /* ══════════════════════════════════════
        CATEGORY CHIPS — animated
     ══════════════════════════════════════ */
+    .cat-strip-sticky {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      background: #f5f6fa;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
     .cat-strip {
       display: flex;
       gap: 8px;
@@ -1053,6 +984,7 @@ export class HomePage implements OnInit, OnDestroy {
   readonly selectedCategorySlug = signal<string | null>(null);
   readonly showMenu = signal(false);
   readonly isListening = signal(false);
+  readonly speechSupported = true;
   readonly restaurants = signal<any[]>([]);
   readonly selectedRestaurantId = signal<number | null>(null);
   readonly selectedRestaurantName = signal<string>('');
@@ -1060,19 +992,6 @@ export class HomePage implements OnInit, OnDestroy {
   readonly isFoodMode = computed(() => this.selectedCategorySlug() === 'food');
   // food carousel
 
-  // ── Popular Dishes (food cards section) ──
-  readonly popularDishes: PopularDish[] = [
-    { id: 'd1',  name: 'Chai Kulhad',   subtitle: 'Hot & Refreshing',   tag: 'Beverage',  emoji: '☕', color: 'linear-gradient(135deg,#78350f,#b45309)',  searchTerm: 'chai' },
-    { id: 'd2',  name: 'Samosa',        subtitle: 'Crispy Street Style', tag: 'Snack',     emoji: '🥟', color: 'linear-gradient(135deg,#92400e,#d97706)',  searchTerm: 'samosa' },
-    { id: 'd3',  name: 'Aloo Chaat',    subtitle: 'Tangy & Spicy',       tag: 'Chaat',     emoji: '🥗', color: 'linear-gradient(135deg,#065f46,#059669)',  searchTerm: 'chaat' },
-    { id: 'd4',  name: 'Idli Sambar',   subtitle: 'South Special',       tag: 'Breakfast', emoji: '🍽️', color: 'linear-gradient(135deg,#1e3a5f,#2563eb)',  searchTerm: 'idli' },
-    { id: 'd5',  name: 'Dhokla',        subtitle: 'Soft & Steamed',      tag: 'Gujarati',  emoji: '🟡', color: 'linear-gradient(135deg,#713f12,#ca8a04)',  searchTerm: 'dhokla' },
-    { id: 'd6',  name: 'Masala Dosa',   subtitle: 'Crispy Delight',      tag: 'Dosa',      emoji: '🫓', color: 'linear-gradient(135deg,#7c2d12,#ea580c)',  searchTerm: 'dosa' },
-    { id: 'd7',  name: 'Medu Vada',     subtitle: 'Fluffy & Crunchy',    tag: 'Vada',      emoji: '🍩', color: 'linear-gradient(135deg,#3b0764,#7c3aed)',  searchTerm: 'vada' },
-    { id: 'd8',  name: 'Paneer Chilli', subtitle: 'Indo-Chinese Fav',    tag: 'Spicy',     emoji: '🌶️', color: 'linear-gradient(135deg,#7f1d1d,#dc2626)',  searchTerm: 'paneer' },
-    { id: 'd9',  name: 'Tikiya',        subtitle: 'Classic Street Food', tag: 'Tikki',     emoji: '🫔', color: 'linear-gradient(135deg,#064e3b,#16a34a)',  searchTerm: 'tikiya' },
-    { id: 'd10', name: 'Spring Roll',   subtitle: 'Crispy Wrap',         tag: 'Snack',     emoji: '🌯', color: 'linear-gradient(135deg,#0c4a6e,#0284c7)',  searchTerm: 'spring roll' },
-  ];
   private destroy$ = new Subject<void>();
 
   // ── Feature strip data ──
@@ -1120,29 +1039,6 @@ export class HomePage implements OnInit, OnDestroy {
     if (this.locationService.isLocating() || this.locationService.currentLocation()) return 'Detecting location…';
     return 'Add your location →';
   });
-
-  private readonly productPhotoByKeyword: Record<string, string> = {
-    banana: 'https://upload.wikimedia.org/wikipedia/commons/d/de/Bananavarieties.jpg',
-    tomato: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Tomato_je.jpg/960px-Tomato_je.jpg',
-    milk: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Dairy_Crest_Semi_Skimmed_Milk_Bottle.jpg/960px-Dairy_Crest_Semi_Skimmed_Milk_Bottle.jpg',
-    bread: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Korb_mit_Br%C3%B6tchen.JPG/960px-Korb_mit_Br%C3%B6tchen.JPG',
-    chips: 'https://upload.wikimedia.org/wikipedia/commons/8/83/French_Fries.JPG',
-    juice: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Oranges_-_whole-halved-segment.jpg/960px-Oranges_-_whole-halved-segment.jpg',
-    daal: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/3_types_of_lentil.png/960px-3_types_of_lentil.png',
-    dal: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/3_types_of_lentil.png/960px-3_types_of_lentil.png',
-    chini: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Sucre_blanc_cassonade_complet_rapadura.jpg/960px-Sucre_blanc_cassonade_complet_rapadura.jpg',
-    sugar: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Sucre_blanc_cassonade_complet_rapadura.jpg/960px-Sucre_blanc_cassonade_complet_rapadura.jpg',
-    atta: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/BESAN_CHAKKI_HOMEMADE_KOTA_003.jpg/960px-BESAN_CHAKKI_HOMEMADE_KOTA_003.jpg',
-    flour: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/BESAN_CHAKKI_HOMEMADE_KOTA_003.jpg/960px-BESAN_CHAKKI_HOMEMADE_KOTA_003.jpg',
-    rice: 'https://upload.wikimedia.org/wikipedia/commons/0/07/Khyma_and_Basmati_rice.jpg',
-    jeera: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Black_Cumin.jpg/960px-Black_Cumin.jpg',
-    cumin: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Black_Cumin.jpg/960px-Black_Cumin.jpg',
-    surf: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Diskflaskor.JPG/960px-Diskflaskor.JPG',
-    detergent: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Diskflaskor.JPG/960px-Diskflaskor.JPG',
-    dishwash: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Diskflaskor.JPG/960px-Diskflaskor.JPG',
-    agarbatti: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Incenselonghua.jpg',
-    incense: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Incenselonghua.jpg'
-  };
 
   private readonly categoryPhotoBySlug: Record<string, string> = {
     'fruits-vegetables': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.JPG',
@@ -1205,30 +1101,29 @@ export class HomePage implements OnInit, OnDestroy {
     this.router.navigate(['/profile']);
   }
 
-  /** Navigate to search results for a popular dish card */
-  addDishToCart(dish: PopularDish): void {
-    this.quickSearch(dish.searchTerm);
-  }
-
-  startVoiceSearch(): void {    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert('Voice search is not supported on this browser.');
-      return;
-    }
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'en-IN';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    this.isListening.set(true);
-    recognition.onresult = (event: any) => {
-      const transcript: string = event.results[0][0].transcript;
-      this.searchTerm.set(transcript);
+  async startVoiceSearch(): Promise<void> {
+    try {
+      const { available } = await SpeechRecognition.available();
+      if (!available) {
+        alert('Voice search is not supported on this device.');
+        return;
+      }
+      await SpeechRecognition.requestPermissions();
+      this.isListening.set(true);
+      const result = await SpeechRecognition.start({
+        language: 'en-IN',
+        maxResults: 1,
+        prompt: 'Say what you want to search…',
+        partialResults: false,
+        popup: true,
+      });
+      const transcript = result?.matches?.[0] || '';
+      if (transcript) this.searchTerm.set(transcript);
+    } catch {
+      // user cancelled or permission denied — silent
+    } finally {
       this.isListening.set(false);
-    };
-    recognition.onerror = () => this.isListening.set(false);
-    recognition.onend = () => this.isListening.set(false);
-    recognition.start();
+    }
   }
 
   private normalizedSearchTerm() {
@@ -1400,13 +1295,6 @@ export class HomePage implements OnInit, OnDestroy {
     return this.filteredProducts().filter(p => p.categoryId === catId).length;
   }
 
-  getHotDeals() {
-    return this.products()
-      .filter(p => this.getDiscount(p) > 5)
-      .sort((a, b) => this.getDiscount(b) - this.getDiscount(a))
-      .slice(0, 6);
-  }
-
   getDiscount(product: any) {
     if (!product?.mrp || +product.mrp <= +product.sellingPrice) return 0;
     return Math.round(((+product.mrp - +product.sellingPrice) / +product.mrp) * 100);
@@ -1485,12 +1373,8 @@ export class HomePage implements OnInit, OnDestroy {
     return `${v} ${suffix}`;
   }
 
-  productImage(product: any) {
-    if (product?.imageUrl) return product.imageUrl;
-    const name = String(product?.name || '').toLowerCase();
-    const match = Object.keys(this.productPhotoByKeyword).find((k) => name.includes(k));
-    if (match) return this.productPhotoByKeyword[match];
-    return 'https://upload.wikimedia.org/wikipedia/commons/d/de/Bananavarieties.jpg';
+  productImage(product: any): string {
+    return product?.imageUrl || '';
   }
 
   productBg(product: any) {

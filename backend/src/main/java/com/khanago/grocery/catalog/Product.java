@@ -45,6 +45,9 @@ public class Product extends BaseAuditEntity {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(name = "restaurant_id")
+    private Long restaurantId;
+
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 }

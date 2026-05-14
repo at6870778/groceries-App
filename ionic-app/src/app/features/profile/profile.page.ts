@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component';
 import { LocationService } from '../../core/services/location.service';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonButtons, IonBackButton, IonList, IonItem, IonLabel, IonModal } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonList, IonItem, IonLabel, IonModal } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -13,13 +13,10 @@ import { ActivityState } from '../../core/state/activity.state';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonButtons, IonBackButton, IonList, IonItem, IonLabel, IonModal, BottomNavComponent],
+  imports: [CommonModule, FormsModule, IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonList, IonItem, IonLabel, IonModal, BottomNavComponent],
   template: `
     <ion-header>
       <ion-toolbar color="primary">
-        <ion-buttons slot="start">
-          <ion-back-button defaultHref="/home" text="Back"></ion-back-button>
-        </ion-buttons>
         <ion-title>My Profile</ion-title>
       </ion-toolbar>
     </ion-header>

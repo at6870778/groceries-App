@@ -14,7 +14,7 @@ const routerFeatures = [
 
 bootstrapApplication(AppComponent, {
   providers: [
-    provideIonicAngular(),
+    provideIonicAngular({ swipeBackEnabled: false }),
     provideRouter(appRoutes, ...routerFeatures),
     provideHttpClient(withInterceptors([authInterceptor]))
   ]

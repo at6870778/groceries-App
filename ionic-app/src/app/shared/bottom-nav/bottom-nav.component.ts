@@ -136,7 +136,7 @@ export class BottomNavComponent {
   private router = inject(Router);
 
   readonly cartCount = computed(() =>
-    this.cartState.items().reduce((sum, i) => sum + Number(i.quantity || 0), 0)
+    this.cartState.items().length
   );
 
   isActive(path: string): boolean {

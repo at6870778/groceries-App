@@ -7,8 +7,18 @@ import { CartState } from '../../core/state/cart.state';
 import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component';
 import { ActivityState } from '../../core/state/activity.state';
 import { LocationService } from '../../core/services/location.service';
-import { Subject, interval } from 'rxjs';
+import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+
+interface PopularDish {
+  id: string;
+  name: string;
+  subtitle: string;
+  tag: string;
+  emoji: string;
+  color: string;
+  searchTerm: string;
+}
 
 @Component({
   standalone: true,
@@ -19,38 +29,31 @@ import { takeUntil } from 'rxjs/operators';
     ═══════════════════════════════════════ -->
     <ion-header>
       <ion-toolbar class="hdr-toolbar">
-        <!-- LEFT: Logo + Delivery -->
-        <div class="hdr-left">
+        <!-- Single row: Logo left | Deliver To + Bell right -->
+        <div class="hdr-main-row">
           <div class="hdr-logo-wrap">
             <span class="logo-leaf">🌿</span>
-            <span class="logo-text"><span class="logo-o">Order</span><span class="logo-k">Kro</span></span>
+            <div class="logo-text-wrap">
+              <span class="logo-text"><span class="logo-o">Order</span><span class="logo-k">Kro</span></span>
+              <span class="logo-tagline">Sabse sasta, sabse tez</span>
+            </div>
           </div>
-          <div class="hdr-deliver" (click)="goToProfile()">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="#667eea"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-            <span class="hdr-deliver-text">{{ shortDeliveryLabel() }}</span>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="#999"><path d="M7 10l5 5 5-5z"/></svg>
+          <div class="hdr-right">
+            <div class="hdr-deliver" (click)="goToProfile()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="#667eea"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              <div class="hdr-deliver-inner">
+                <span class="hdr-deliver-label">Deliver To</span>
+                <span class="hdr-deliver-text">{{ shortDeliveryLabel() }}</span>
+              </div>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="#999"><path d="M7 10l5 5 5-5z"/></svg>
+            </div>
+            <button class="hdr-bell-btn" routerLink="/notifications" aria-label="Notifications">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+            </button>
           </div>
-        </div>
-        <!-- RIGHT: Bell + Cart + Menu -->
-        <div class="hdr-right">
-          <button class="hdr-btn" aria-label="Notifications">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
-            <span class="hdr-badge red">2</span>
-          </button>
-          <button class="hdr-btn" routerLink="/cart" aria-label="Cart">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="#333"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.9 18 9 18h12v-2H9.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0 0 23.25 8H5.21l-.94-2H1zm16 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
-            <span class="hdr-badge red" *ngIf="totalCartItems() > 0">{{ totalCartItems() }}</span>
-          </button>
-          <button class="hdr-btn" (click)="showMenu.set(!showMenu())" aria-label="Menu">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2.2" stroke-linecap="round">
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <line x1="3" y1="12" x2="17" y2="12"/>
-              <line x1="3" y1="18" x2="13" y2="18"/>
-            </svg>
-          </button>
         </div>
       </ion-toolbar>
       <!-- Search bar row -->
@@ -61,7 +64,7 @@ import { takeUntil } from 'rxjs/operators';
             [value]="searchTerm()"
             (input)="searchTerm.set($any($event).target.value || '')"
             (keyup.enter)="submitSearch(searchTerm())"/>
-          <button class="mic-btn" aria-label="Voice">
+          <button class="mic-btn" aria-label="Voice" (click)="startVoiceSearch()" [class.mic-active]="isListening()">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
               <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
@@ -121,86 +124,66 @@ import { takeUntil } from 'rxjs/operators';
       ═══════════════════════════════════════ -->
       <ng-container *ngIf="!hasSearchTerm()">
 
-        <!-- ── HERO BANNER ── -->
-        <div class="hero-banner">
-          <div class="hero-bg">
-            <!-- Floating grocery emoji items -->
-            <span class="hero-item hi1">🧅</span>
-            <span class="hero-item hi2">🍅</span>
-            <span class="hero-item hi3">🥛</span>
-            <span class="hero-item hi4">🍌</span>
-            <span class="hero-item hi5">🫙</span>
-            <span class="hero-item hi6">🌾</span>
-            <span class="hero-item hi7">🥬</span>
-            <span class="hero-item hi8">🍊</span>
+        <!-- ══════════════════════════════════════════════════
+             HERO BANNER — custom banner image
+        ══════════════════════════════════════════════════ -->
+        <div class="ok-hero">
+          <!-- full-bleed banner image -->
+          <img class="ok-hero-bg-img" src="assets/home-banner.png" alt="OrderKro Banner">
+          <!-- dark overlay so text stays readable -->
+          <div class="ok-hero-overlay"></div>
+          <!-- fireworks bursts -->
+          <div class="fw-wrap">
+            <div class="fw fw1"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+            <div class="fw fw2"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+            <div class="fw fw3"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
           </div>
-          <div class="hero-content">
-            <div class="hero-badge-row">
-              <span class="hero-badge">⚡ 15-30 Min Delivery</span>
-              <span class="hero-badge">✅ Fresh Quality</span>
-              <span class="hero-badge">📦 Safe Packing</span>
-            </div>
-            <h1 class="hero-title">Fresh Groceries,<br>Snacks &amp; Essentials</h1>
-            <p class="hero-sub">Daily delivery in your neighbourhood</p>
-            <div class="hero-cta-row">
-              <button class="hero-cta" (click)="navToCategory('fruits-vegetables')">🥦 Vegetables</button>
-              <button class="hero-cta" (click)="navToCategory('fruits-vegetables')">🍎 Fruits</button>
-              <button class="hero-cta" (click)="navToCategory('snacks')">🍿 Snacks</button>
-              <button class="hero-cta" (click)="navToCategory('beverages')">☕ Tea</button>
-            </div>
+          <!-- bottom badge only -->
+          <div class="ok-hero-text">
+            <div class="ok-hero-badge">⚡ 15–30 min delivery</div>
           </div>
         </div>
 
         <!-- ── FEATURE STRIP ── -->
-        <div class="feature-strip">
-          <div class="feat-card" *ngFor="let f of featureItems">
-            <span class="feat-icon">{{ f.icon }}</span>
-            <span class="feat-text">{{ f.label }}</span>
-          </div>
+        <!-- CATEGORY CHIPS -->
+        <div class="cat-strip">
+          <button class="cat-chip chip-fv" [class.active]="activeCategorySlug()==='fruits-vegetables'" (click)="selectChip('fruits-vegetables')">🥦 Fruits & Veg</button>
+          <button class="cat-chip chip-gr" [class.active]="activeCategorySlug()==='groceries'" (click)="selectChip('groceries')">🛒 Groceries</button>
+          <button class="cat-chip chip-sn" [class.active]="activeCategorySlug()==='snacks'" (click)="selectChip('snacks')">🍿 Snacks</button>
+          <button class="cat-chip chip-fd" [class.active]="activeCategorySlug()==='food'" (click)="selectChip('food')">🍽️ Food</button>
         </div>
 
-        <!-- ── TIME-BASED FOOD CAROUSEL ── -->
-        <div class="section-pad">
+        <!-- ══════════════════════════════════════════════════
+             POPULAR DISHES — hidden when chip filter active
+        ══════════════════════════════════════════════════ -->
+        <div class="section-pad" *ngIf="!selectedCategorySlug()">
           <div class="section-row">
             <div>
-              <h3 class="section-title">{{ timeGreeting() }} {{ timeEmoji() }}</h3>
-              <p class="section-sub">{{ timeSubtitle() }}</p>
+              <h3 class="section-title">🍽️ Popular Dishes</h3>
+              <p class="section-sub">Quick bites &amp; local favourites</p>
             </div>
-            <button class="see-all-btn" routerLink="/products">See all</button>
+            <button class="see-all-btn" (click)="quickSearch('snacks')">See all</button>
           </div>
-          <!-- Auto-scroll carousel track -->
-          <div class="food-carousel-outer">
-            <div class="food-carousel-track" [style.transform]="'translateX(-' + (foodSlide() * 140) + 'px)'">
-              <div class="food-card" *ngFor="let f of currentFoodItems()" (click)="quickSearch(f.name)">
-                <div class="food-card-img">{{ f.emoji }}</div>
-                <div class="food-card-name">{{ f.name }}</div>
-                <div class="food-card-tag">{{ f.tag }}</div>
+          <div class="dish-scroll">
+            <div class="dish-card" *ngFor="let dish of popularDishes" (click)="quickSearch(dish.name)">
+              <!-- gradient image area with big emoji -->
+              <div class="dish-img-wrap" [style.background]="dish.color">
+                <span class="dish-emoji">{{ dish.emoji }}</span>
+                <span class="dish-tag">{{ dish.tag }}</span>
+              </div>
+              <div class="dish-body">
+                <div class="dish-name">{{ dish.name }}</div>
+                <div class="dish-sub">{{ dish.subtitle }}</div>
+                <button class="dish-add-btn" (click)="$event.stopPropagation(); addDishToCart(dish)">+ ADD</button>
               </div>
             </div>
           </div>
-          <!-- Dots indicator -->
-          <div class="carousel-dots">
-            <span class="cdot" *ngFor="let d of foodDots(); let i = index"
-              [class.active]="foodSlide() === i" (click)="foodSlide.set(i)"></span>
-          </div>
         </div>
 
-        <!-- ── CATEGORY CARDS ── -->
-        <div class="section-pad">
-          <div class="section-row">
-            <h3 class="section-title">🛍️ Shop by Category</h3>
-          </div>
-          <div class="cat-cards-row">
-            <div class="cat-card" *ngFor="let c of categoryCards"
-              (click)="c.categorySlug ? navToCategory(c.categorySlug) : selectCategory(null)">
-              <div class="cat-card-img">{{ c.emoji }}</div>
-              <div class="cat-card-name">{{ c.name }}</div>
-            </div>
-          </div>
-        </div>
 
-        <!-- ── HOT DEALS ── -->
-        <ng-container *ngIf="getHotDeals().length > 0">
+
+        <!-- ── HOT DEALS — hidden when chip filter active ── -->
+        <ng-container *ngIf="getHotDeals().length > 0 && !selectedCategorySlug()">
           <div class="section-pad">
             <div class="section-row">
               <h3 class="section-title">🔥 Hot Deals</h3>
@@ -233,21 +216,104 @@ import { takeUntil } from 'rxjs/operators';
         </ng-container>
 
         <!-- ── CATEGORY STRIP (pills) + ALL / FILTERED PRODUCTS ── -->
-        <div class="cat-strip-wrap">
+        <!-- Clear filter bar when chip is active -->
+        <div class="chip-filter-bar" *ngIf="selectedCategorySlug()">
+          <ng-container *ngIf="isFoodMode()">
+            <ng-container *ngIf="selectedRestaurantId() !== null; else restListBar">
+              <button class="chip-back-btn" (click)="backToRestaurants()">← Back</button>
+              <span class="chip-filter-label"><strong>{{ selectedRestaurantName() }}</strong> Menu</span>
+            </ng-container>
+            <ng-template #restListBar>
+              <span class="chip-filter-label">🍽️ <strong>Nearby Restaurants</strong></span>
+            </ng-template>
+          </ng-container>
+          <ng-container *ngIf="!isFoodMode()">
+            <span class="chip-filter-label">Showing: <strong>{{ activeCategoryName() }}</strong></span>
+          </ng-container>
+          <button class="chip-filter-clear" (click)="clearChipFilter()">✕ Clear</button>
+        </div>
+
+        <!-- ── RESTAURANT LISTING — shown when Food chip active, no restaurant selected ── -->
+        <div class="browse-pad" *ngIf="isFoodMode() && selectedRestaurantId() === null">
+          <div class="section-row">
+            <h3 class="section-title">🍽️ Nearby Restaurants</h3>
+            <span class="item-count">{{ restaurants().length }} open</span>
+          </div>
+          <div class="restaurant-grid">
+            <div class="restaurant-card" *ngFor="let r of restaurants()" (click)="selectRestaurant(r)">
+              <div class="restaurant-card-img-wrap">
+                <img class="restaurant-card-img" [src]="restaurantImage(r)" [alt]="r.name" loading="eager">
+                <span class="restaurant-time-badge">⏱ {{ r.deliveryTimeMin }} min</span>
+              </div>
+              <div class="restaurant-card-body">
+                <div class="restaurant-card-name">{{ r.name }}</div>
+                <div class="restaurant-card-cuisine">{{ r.cuisineType }}</div>
+                <div class="restaurant-card-meta">
+                  <span class="restaurant-rating">⭐ {{ r.rating }}</span>
+                  <span class="restaurant-open-dot"></span>
+                  <span class="restaurant-open-label">Open</span>
+                  <span class="restaurant-dist" *ngIf="r.distanceKm != null">• {{ r.distanceKm }} km</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="restaurants().length === 0" class="empty-state">
+            <div class="empty-icon">🍽️</div>
+            <div class="empty-title">No restaurants within 5 km</div>
+            <div class="empty-sub">Enable location for accurate results</div>
+          </div>
+        </div>
+
+        <!-- ── RESTAURANT MENU — shown when a restaurant is selected ── -->
+        <div class="browse-pad" id="menu-section" *ngIf="isFoodMode() && selectedRestaurantId() !== null">
+          <div class="section-row">
+            <h3 class="section-title">Menu</h3>
+            <span class="item-count">{{ restaurantMenuItems().length }} items</span>
+          </div>
+          <div class="prod-grid" *ngIf="restaurantMenuItems().length > 0; else noMenuItems">
+            <div class="prod-card" *ngFor="let p of restaurantMenuItems(); let i = index" [style.animationDelay.ms]="i*20">
+              <div class="disc-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
+              <div class="prod-img-wrap" [style.background]="p.imageUrl ? '#fff8f0' : productBg(p)">
+                <img class="prod-img" [src]="productImage(p)" [alt]="p.name">
+              </div>
+              <div class="prod-body">
+                <div class="prod-name">{{ p.name }}</div>
+                <div class="prod-unit">{{ p.unit }}</div>
+                <div class="prod-price-row">
+                  <span class="prod-mrp" *ngIf="getDiscount(p) > 0">₹{{ getOriginalPrice(p) }}</span>
+                  <span class="prod-price">₹{{ p.sellingPrice }}</span>
+                </div>
+                <div class="prod-actions" (click)="$event.stopPropagation()">
+                  <ng-container *ngIf="cartQty(p.id) === 0; else menuStep">
+                    <button class="add-btn-flat" (click)="addToCart(p)">+ Add</button>
+                  </ng-container>
+                  <ng-template #menuStep>
+                    <div class="stepper"><button class="step-btn" (click)="removeFromCart(p)">−</button><span class="step-qty">{{ cartQty(p.id) }}</span><button class="step-btn" (click)="addToCart(p)">+</button></div>
+                  </ng-template>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ng-template #noMenuItems>
+            <div class="empty-state"><div class="empty-icon">🍽️</div><div class="empty-title">Menu coming soon</div></div>
+          </ng-template>
+        </div>
+
+        <div class="cat-strip-wrap" *ngIf="!selectedCategorySlug()">
           <div class="cat-strip">
             <button class="cat-pill" [class.active]="selectedCategoryId() === null" (click)="selectCategory(null)">
               <div class="cat-emoji">🛒</div>
               <div class="cat-name">All</div>
             </button>
             <button class="cat-pill" *ngFor="let c of categories()"
-              [class.active]="selectedCategoryId() === c.id" (click)="selectCategory(c.id)">
+              [class.active]="selectedCategoryId() === c.id" (click)="selectChip(c.slug)">
               <div class="cat-emoji">{{ catEmoji(c.slug) }}</div>
               <div class="cat-name">{{ c.name }}</div>
             </button>
           </div>
         </div>
 
-        <div class="browse-pad">
+        <div class="browse-pad" id="prod-section" *ngIf="!isFoodMode()">
           <div class="section-row">
             <h3 class="section-title" *ngIf="selectedCategoryId() === null">✨ All Products</h3>
             <h3 class="section-title" *ngIf="selectedCategoryId() !== null">{{ catEmoji(activeCategorySlug()) }} {{ activeCategoryName() }}</h3>
@@ -298,55 +364,143 @@ import { takeUntil } from 'rxjs/operators';
     ion-header { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
     .hdr-toolbar {
       --background: #fff;
-      --padding-start: 14px;
-      --padding-end: 14px;
-      --min-height: 56px;
-      display: flex;
-      align-items: center;
+      --padding-start: 0;
+      --padding-end: 0;
+      --min-height: 0;
     }
-    /* Override ion-toolbar default slot layout */
     .hdr-toolbar::part(native) {
+      display: block;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-left: 0;
+      padding-right: 0;
+      padding-bottom: 0;
+      min-height: 0;
+    }
+    /* Single main row */
+    .hdr-main-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 14px;
+      padding: 10px 14px 10px;
     }
-    .hdr-left {
+    .hdr-right {
       display: flex;
-      flex-direction: column;
-      gap: 2px;
-      flex: 1;
+      align-items: center;
+      gap: 8px;
     }
     .hdr-logo-wrap {
       display: flex;
       align-items: center;
-      gap: 3px;
+      gap: 4px;
     }
-    .logo-leaf { font-size: 1rem; line-height: 1; }
-    .logo-text { font-size: 1.45rem; font-weight: 900; letter-spacing: -0.5px; line-height: 1; }
-    .logo-o { color: #1a1a1a; }
-    .logo-k { color: #667eea; }
+    .logo-text-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    /* Bouncing leaf */
+    .logo-leaf {
+      font-size: 1.2rem;
+      line-height: 1;
+      display: inline-block;
+      animation: leaf-bounce 2.4s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+    @keyframes leaf-bounce {
+      0%, 100% { transform: rotate(-8deg) scale(1); }
+      25%       { transform: rotate(8deg)  scale(1.15); }
+      50%       { transform: rotate(-4deg) scale(1.05); }
+      75%       { transform: rotate(6deg)  scale(1.1); }
+    }
+    /* "Order" — animated gradient sweep */
+    .logo-text {
+      font-size: 1.45rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+    }
+    .logo-o {
+      background: linear-gradient(90deg, #1a1a1a 0%, #667eea 40%, #1a1a1a 80%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: logo-shimmer 3s linear infinite;
+    }
+    /* "Kro" — pulsing purple glow */
+    .logo-k {
+      color: #667eea;
+      display: inline-block;
+      animation: logo-glow 2s ease-in-out infinite alternate;
+      text-shadow: 0 0 8px rgba(102,126,234,0.5);
+    }
+    @keyframes logo-shimmer {
+      0%   { background-position: 200% center; }
+      100% { background-position: -200% center; }
+    }
+    @keyframes logo-glow {
+      from { text-shadow: 0 0 4px rgba(102,126,234,0.3); color: #667eea; }
+      to   { text-shadow: 0 0 14px rgba(102,126,234,0.9); color: #818cf8; }
+    }
+    /* Tagline — typewriter fade-in on load */
+    .logo-tagline {
+      font-size: 0.55rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      background: linear-gradient(90deg, #f59e0b, #ef4444, #667eea, #10b981);
+      background-size: 300% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: tagline-gradient 4s linear infinite;
+    }
+    @keyframes tagline-gradient {
+      0%   { background-position: 0% center; }
+      100% { background-position: 300% center; }
+    }
     .hdr-deliver {
       display: flex;
       align-items: center;
       gap: 3px;
       cursor: pointer;
-      padding: 2px 0;
+    }
+    .hdr-deliver-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .hdr-deliver-label {
+      font-size: 0.58rem;
+      font-weight: 500;
+      color: #aaa;
+      line-height: 1;
     }
     .hdr-deliver-text {
       font-size: 0.73rem;
-      font-weight: 600;
-      color: #555;
+      font-weight: 700;
+      color: #1a1a1a;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 160px;
+      max-width: 100px;
+      line-height: 1;
     }
-    .hdr-right {
+    .hdr-bell-btn {
+      position: relative;
+      background: #f5f6fa;
+      border: none;
+      border-radius: 10px;
+      width: 36px;
+      height: 36px;
       display: flex;
       align-items: center;
-      gap: 4px;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 0;
     }
+    .hdr-bell-btn:active { background: #eaeef8; }
     .hdr-btn {
       position: relative;
       background: #f5f6fa;
@@ -377,6 +531,9 @@ import { takeUntil } from 'rxjs/operators';
       border: 1.5px solid #fff;
     }
     .hdr-badge.red { background: #ef4444; color: #fff; }
+    .mic-btn { background: transparent; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; }
+    .mic-active svg { stroke: #ef4444; animation: pulse 0.8s infinite alternate; }
+    @keyframes pulse { from { opacity: 1; } to { opacity: 0.4; } }
     /* Search toolbar */
     .search-toolbar {
       --background: #fff;
@@ -416,121 +573,243 @@ import { takeUntil } from 'rxjs/operators';
       border-radius: 10px; font-size: 0.85rem;
       border-left: 3px solid #c62828;
     }
+    /* ── fireworks burst ── */
+    .fw-wrap {
+      position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden;
+    }
+    .fw {
+      position: absolute;
+      width: 0; height: 0;
+    }
+    .fw1 { top: 28%; left: 22%; animation-delay: 0s; }
+    .fw2 { top: 20%; left: 62%; animation-delay: 1.1s; }
+    .fw3 { top: 38%; left: 80%; animation-delay: 2.2s; }
+    .fw span {
+      position: absolute;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      animation: spark 1.8s ease-out infinite;
+      opacity: 0;
+    }
+    /* 8 sparks per burst — evenly spread 360° */
+    .fw span:nth-child(1) { background:#ff4d6d; animation-delay: inherit; transform-origin: 0 0; --dx:0px;   --dy:-38px; }
+    .fw span:nth-child(2) { background:#ffd60a; animation-delay: inherit; --dx:27px;  --dy:-27px; }
+    .fw span:nth-child(3) { background:#06d6a0; animation-delay: inherit; --dx:38px;  --dy:0px;   }
+    .fw span:nth-child(4) { background:#ff6b35; animation-delay: inherit; --dx:27px;  --dy:27px;  }
+    .fw span:nth-child(5) { background:#c77dff; animation-delay: inherit; --dx:0px;   --dy:38px;  }
+    .fw span:nth-child(6) { background:#4cc9f0; animation-delay: inherit; --dx:-27px; --dy:27px;  }
+    .fw span:nth-child(7) { background:#ff4d6d; animation-delay: inherit; --dx:-38px; --dy:0px;   }
+    .fw span:nth-child(8) { background:#ffd60a; animation-delay: inherit; --dx:-27px; --dy:-27px; }
+    @keyframes spark {
+      0%   { transform: translate(0,0) scale(1);   opacity: 1; }
+      60%  { opacity: 0.8; }
+      100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+    }
+    /* stagger each span slightly within the burst */
+    .fw span:nth-child(1) { animation-duration: 1.6s; }
+    .fw span:nth-child(2) { animation-duration: 1.9s; }
+    .fw span:nth-child(3) { animation-duration: 1.7s; }
+    .fw span:nth-child(4) { animation-duration: 2.0s; }
+    .fw span:nth-child(5) { animation-duration: 1.5s; }
+    .fw span:nth-child(6) { animation-duration: 1.8s; }
+    .fw span:nth-child(7) { animation-duration: 1.6s; }
+    .fw span:nth-child(8) { animation-duration: 1.9s; }
+    /* fw2 & fw3 burst at different times via parent delay trick */
+    .fw2 span { animation-delay: 1.1s !important; }
+    .fw3 span { animation-delay: 2.2s !important; }
+
     /* ══════════════════════════════════════
-       HERO BANNER
+       HERO BANNER — custom image with overlay text
     ══════════════════════════════════════ */
-    .hero-banner {
-      margin: 12px 14px;
-      border-radius: 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    .ok-hero {
+      margin: 12px 14px 8px;
+      border-radius: 24px;
       overflow: hidden;
       position: relative;
-      min-height: 200px;
+      min-height: 230px;
+      display: flex;
+      align-items: flex-end;
     }
-    .hero-bg {
+    /* full-bleed banner image */
+    .ok-hero-bg-img {
       position: absolute;
       inset: 0;
-      pointer-events: none;
-      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
     }
-    .hero-item {
+    /* gradient overlay — only bottom strip, image shows fully at top */
+    .ok-hero-overlay {
       position: absolute;
-      font-size: 2rem;
-      opacity: 0.18;
-      animation: floatItem 6s ease-in-out infinite;
+      inset: 0;
+      background: linear-gradient(
+        to top,
+        rgba(4,20,12,0.82) 0%,
+        rgba(4,20,12,0.35) 40%,
+        transparent 68%
+      );
     }
-    .hi1 { top: 8%; left: 5%;  animation-delay: 0s;   font-size: 1.8rem; }
-    .hi2 { top: 5%; left: 30%; animation-delay: 0.8s; }
-    .hi3 { top: 10%; right: 8%; animation-delay: 1.4s; font-size: 2.2rem; }
-    .hi4 { bottom: 15%; left: 8%; animation-delay: 2s; }
-    .hi5 { top: 40%; right: 5%; animation-delay: 0.4s; font-size: 1.6rem; }
-    .hi6 { bottom: 8%; right: 20%; animation-delay: 1.8s; font-size: 1.5rem; }
-    .hi7 { bottom: 5%; left: 35%; animation-delay: 1s;  font-size: 2rem; }
-    .hi8 { top: 25%; left: 55%; animation-delay: 2.4s; font-size: 1.7rem; }
-    @keyframes floatItem {
-      0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.18; }
-      50%       { transform: translateY(-10px) rotate(8deg); opacity: 0.28; }
-    }
-    .hero-content {
+    /* ── text col ── */
+    .ok-hero-text {
       position: relative;
       z-index: 2;
-      padding: 20px 18px 18px;
+      width: 100%;
+      padding: 14px 18px 10px;
     }
-    .hero-badge-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 12px;
-    }
-    .hero-badge {
-      background: rgba(255,255,255,0.2);
-      color: #fff;
-      font-size: 0.67rem;
-      font-weight: 700;
-      padding: 4px 8px;
-      border-radius: 20px;
-      border: 1px solid rgba(255,255,255,0.3);
-      letter-spacing: 0.2px;
-    }
-    .hero-title {
-      font-size: 1.45rem;
-      font-weight: 900;
-      color: #fff;
-      line-height: 1.25;
-      margin: 0 0 6px;
-      letter-spacing: -0.3px;
-    }
-    .hero-sub {
-      font-size: 0.82rem;
-      color: rgba(255,255,255,0.82);
-      margin: 0 0 14px;
-      font-weight: 500;
-    }
-    .hero-cta-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .hero-cta {
-      background: rgba(255,255,255,0.18);
-      border: 1.5px solid rgba(255,255,255,0.4);
-      color: #fff;
-      font-size: 0.78rem;
-      font-weight: 700;
-      padding: 6px 12px;
-      border-radius: 20px;
-      cursor: pointer;
-      transition: background 0.18s;
-      backdrop-filter: blur(4px);
-    }
-    .hero-cta:active { background: rgba(255,255,255,0.32); }
-    /* ══════════════════════════════════════
-       FEATURE STRIP (glassmorphism)
-    ══════════════════════════════════════ */
-    .feature-strip {
-      display: flex;
-      gap: 10px;
-      overflow-x: auto;
-      padding: 0 14px 4px;
-      scrollbar-width: none;
-    }
-    .feature-strip::-webkit-scrollbar { display: none; }
-    .feat-card {
-      flex-shrink: 0;
-      background: rgba(255,255,255,0.85);
-      backdrop-filter: blur(8px);
-      border: 1px solid #e8ecf4;
-      border-radius: 14px;
-      padding: 10px 14px;
-      display: flex;
-      flex-direction: column;
+    .ok-hero-badge {
+      display: inline-flex;
       align-items: center;
       gap: 4px;
-      min-width: 72px;
-      box-shadow: 0 2px 8px rgba(102,126,234,0.08);
+      background: rgba(52,211,153,0.22);
+      border: 1.5px solid rgba(52,211,153,0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 30px;
+      padding: 4px 12px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: #6ee7b7;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
     }
-    .feat-icon { font-size: 1.4rem; line-height: 1; }
-    .feat-text { font-size: 0.62rem; font-weight: 700; color: #444; text-align: center; line-height: 1.2; }
+    .ok-hero-tagline {
+      margin: 0;
+      font-size: 1.18rem;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.35;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+      letter-spacing: -0.01em;
+    }
+    .ok-tagline-accent {
+      color: #6ee7b7;
+      font-style: italic;
+    }
+    .ok-trust-row { display: flex; flex-wrap: wrap; gap: 10px; }
+    .ok-trust { font-size: 0.6rem; font-weight: 600; color: rgba(209,250,229,0.85);   padding: 2px 7px;
+      border-radius: 20px;
+      backdrop-filter: blur(4px);
+    }
+    .dish-body { padding: 9px 10px 11px; }
+    .dish-name { font-size: 0.82rem; font-weight: 800; color: #1a1a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+    .dish-sub  { font-size: 0.62rem; font-weight: 500; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 8px; }
+    .dish-add-btn {
+      width: 100%; padding: 6px 0;
+      border: 2px solid #16a34a; background: #f0fdf4;
+      color: #16a34a; font-size: 0.75rem; font-weight: 800;
+      border-radius: 10px; cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .dish-add-btn:active { background: #16a34a; color: #fff; }
+    /* ══════════════════════════════════════
+       CATEGORY CHIPS — animated
+    ══════════════════════════════════════ */
+    .cat-strip {
+      display: flex;
+      gap: 8px;
+      padding: 10px 14px 8px;
+    }
+    /* Base chip */
+    .cat-chip {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+      border: none;
+      border-radius: 30px;
+      padding: 9px 2px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      overflow: hidden;
+      text-align: center;
+      white-space: nowrap;
+      /* slide-in from bottom on load */
+      animation: chip-slide-in 0.5s cubic-bezier(0.34,1.56,0.64,1) both,
+                 chip-float 3s ease-in-out infinite 0.6s;
+      transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+    }
+    @keyframes chip-slide-in {
+      from { opacity: 0; transform: translateY(18px) scale(0.85); }
+      to   { opacity: 1; transform: translateY(0)    scale(1); }
+    }
+    @keyframes chip-float {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-3px); }
+    }
+    .cat-chip:active { transform: scale(0.93) !important; }
+    /* Staggered delays */
+    .chip-fv { animation-delay: 0s,    0.8s; }
+    .chip-gr { animation-delay: 0.08s, 1.1s; }
+    .chip-sn { animation-delay: 0.16s, 1.4s; }
+    .chip-fd { animation-delay: 0.24s, 1.7s; }
+    /* Individual colour themes */
+    .chip-fv {
+      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+      color: #065f46;
+      box-shadow: 0 3px 10px rgba(16,185,129,0.25);
+    }
+    .chip-fv::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+      background-size: 200% 100%;
+      animation: chip-sheen 2.8s linear infinite;
+      pointer-events: none;
+    }
+    .chip-gr {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      color: #92400e;
+      box-shadow: 0 3px 10px rgba(245,158,11,0.25);
+    }
+    .chip-gr::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+      background-size: 200% 100%;
+      animation: chip-sheen 2.8s linear infinite 0.7s;
+      pointer-events: none;
+    }
+    .chip-sn {
+      background: linear-gradient(135deg, #fee2e2, #fca5a5);
+      color: #991b1b;
+      box-shadow: 0 3px 10px rgba(239,68,68,0.22);
+    }
+    .chip-sn::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+      background-size: 200% 100%;
+      animation: chip-sheen 2.8s linear infinite 1.4s;
+      pointer-events: none;
+    }
+    .chip-fd {
+      background: linear-gradient(135deg, #ede9fe, #c4b5fd);
+      color: #4c1d95;
+      box-shadow: 0 3px 10px rgba(139,92,246,0.25);
+    }
+    .chip-fd::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+      background-size: 200% 100%;
+      animation: chip-sheen 2.8s linear infinite 2.1s;
+      pointer-events: none;
+    }
+    @keyframes chip-sheen {
+      0%   { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    /* Active states — solid + glow */
+    .chip-fv.active { background: linear-gradient(135deg,#059669,#10b981); color:#fff; box-shadow: 0 4px 15px rgba(16,185,129,0.5); filter: brightness(1.05); }
+    .chip-gr.active { background: linear-gradient(135deg,#d97706,#f59e0b); color:#fff; box-shadow: 0 4px 15px rgba(245,158,11,0.5); filter: brightness(1.05); }
+    .chip-sn.active { background: linear-gradient(135deg,#dc2626,#ef4444); color:#fff; box-shadow: 0 4px 15px rgba(239,68,68,0.5);  filter: brightness(1.05); }
+    .chip-fd.active { background: linear-gradient(135deg,#7c3aed,#8b5cf6); color:#fff; box-shadow: 0 4px 15px rgba(139,92,246,0.5); filter: brightness(1.05); }
+    /* kill old shimmer-underline on active */
+    .cat-chip.active::after { animation: chip-sheen 2.8s linear infinite; }
     /* ══════════════════════════════════════
        SECTION SHARED
     ══════════════════════════════════════ */
@@ -564,23 +843,45 @@ import { takeUntil } from 'rxjs/operators';
     }
     .food-card {
       flex-shrink: 0;
-      width: 130px;
+      width: 138px;
       background: #fff;
       border-radius: 16px;
       border: 1px solid #e8ecf4;
-      padding: 14px 10px 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
+      overflow: hidden;
       cursor: pointer;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
       transition: transform 0.18s, box-shadow 0.18s;
     }
-    .food-card:active { transform: scale(0.96); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-    .food-card-img { font-size: 2.6rem; line-height: 1; }
-    .food-card-name { font-size: 0.82rem; font-weight: 700; color: #1a1a1a; text-align: center; line-height: 1.2; }
-    .food-card-tag { font-size: 0.65rem; font-weight: 600; color: #667eea; background: #eef1ff; border-radius: 20px; padding: 2px 8px; }
+    .food-card:active { transform: scale(0.96); }
+    .food-card-img-wrap {
+      position: relative;
+      width: 100%;
+      height: 100px;
+      overflow: hidden;
+    }
+    .food-card-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .food-card-tag-pill {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: rgba(102,126,234,0.9);
+      color: #fff;
+      font-size: 0.58rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 20px;
+    }
+    .food-card-body {
+      padding: 8px 10px 10px;
+    }
+    .food-card-name { font-size: 0.82rem; font-weight: 700; color: #1a1a1a; line-height: 1.2; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .food-order-btn { width: 100%; padding: 5px 0; background: #667eea; border: none; border-radius: 8px; color: #fff; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
+    .food-order-btn:active { opacity: 0.85; }
     .carousel-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
     .cdot { width: 6px; height: 6px; border-radius: 3px; background: #ddd; cursor: pointer; transition: all 0.2s; }
     .cdot.active { background: #667eea; width: 18px; border-radius: 3px; }
@@ -596,18 +897,14 @@ import { takeUntil } from 'rxjs/operators';
       background: #fff;
       border: 1px solid #e8ecf4;
       border-radius: 14px;
-      padding: 12px 6px 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px;
+      overflow: hidden;
       cursor: pointer;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
       transition: transform 0.15s, box-shadow 0.15s;
     }
     .cat-card:active { transform: scale(0.95); }
-    .cat-card-img { font-size: 1.8rem; line-height: 1; }
-    .cat-card-name { font-size: 0.62rem; font-weight: 700; color: #444; text-align: center; line-height: 1.2; }
+    .cat-card-img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+    .cat-card-name { font-size: 0.62rem; font-weight: 700; color: #444; text-align: center; padding: 5px 4px 6px; line-height: 1.2; }
     /* ══════════════════════════════════════
        HOT DEALS
     ══════════════════════════════════════ */
@@ -631,6 +928,19 @@ import { takeUntil } from 'rxjs/operators';
     /* ══════════════════════════════════════
        CATEGORY STRIP PILLS
     ══════════════════════════════════════ */
+    .chip-filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px 6px;
+    }
+    .chip-filter-label { font-size: 0.82rem; color: #444; font-weight: 500; }
+    .chip-filter-label strong { color: #064e3b; font-weight: 800; }
+    .chip-filter-clear {
+      background: #fff0f0; border: 1px solid #fca5a5;
+      color: #dc2626; font-size: 0.75rem; font-weight: 700;
+      padding: 4px 12px; border-radius: 20px; cursor: pointer;
+    }
     .cat-strip-wrap { background: #fff; border-bottom: 1px solid #eee; padding: 10px 0 8px; position: sticky; top: 0; z-index: 100; margin-top: 14px; }
     .cat-strip { display: flex; gap: 8px; overflow-x: auto; padding: 0 14px; scrollbar-width: none; }
     .cat-strip::-webkit-scrollbar { display: none; }
@@ -667,19 +977,102 @@ import { takeUntil } from 'rxjs/operators';
     .empty-title { font-weight: 700; font-size: 1rem; color: #444; }
     .empty-sub { font-size: 0.83rem; color: #888; margin-top: 4px; }
     @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    /* ══════════════════════════════════════
+       RESTAURANT CARDS
+    ══════════════════════════════════════ */
+    .restaurant-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .restaurant-card {
+      background: #fff;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .restaurant-card:active { transform: scale(0.97); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .restaurant-card-img-wrap {
+      position: relative;
+      width: 100%;
+      padding-top: 62%;
+      overflow: hidden;
+      background: #f3f4f6;
+    }
+    .restaurant-card-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .restaurant-time-badge {
+      position: absolute;
+      bottom: 6px;
+      right: 7px;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 20px;
+      backdrop-filter: blur(4px);
+    }
+    .restaurant-card-body { padding: 8px 10px 10px; }
+    .restaurant-card-name { font-size: 0.82rem; font-weight: 800; color: #1a1a1a; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .restaurant-card-cuisine { font-size: 0.65rem; font-weight: 500; color: #888; margin-bottom: 5px; }
+    .restaurant-card-meta { display: flex; align-items: center; gap: 5px; }
+    .restaurant-rating { font-size: 0.65rem; font-weight: 700; color: #1a1a1a; }
+    .restaurant-open-dot { width: 6px; height: 6px; border-radius: 50%; background: #16a34a; flex-shrink: 0; }
+    .restaurant-open-label { font-size: 0.6rem; font-weight: 600; color: #16a34a; }
+    .restaurant-dist { font-size: 0.6rem; font-weight: 600; color: #888; }
+    /* chip-back-btn */
+    .chip-back-btn {
+      background: none;
+      border: none;
+      color: #667eea;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 0;
+      margin-right: 6px;
+      cursor: pointer;
+    }
   `]
 })
 export class HomePage implements OnInit, OnDestroy {
   readonly searchTerm = signal('');
   readonly categories = signal<any[]>([]);
   readonly products = signal<any[]>([]);
+  readonly allProducts = signal<any[]>([]); // master list, never mutated after load
   readonly adding = signal<number | null>(null);
   readonly errorMsg = signal('');
   readonly quickSearches = ['Milk', 'Banana', 'Rice', 'Bread', 'Chips', 'Juice'];
   readonly selectedCategoryId = signal<number | null>(null);
+  readonly selectedCategorySlug = signal<string | null>(null);
   readonly showMenu = signal(false);
+  readonly isListening = signal(false);
+  readonly restaurants = signal<any[]>([]);
+  readonly selectedRestaurantId = signal<number | null>(null);
+  readonly selectedRestaurantName = signal<string>('');
+  readonly restaurantMenuItems = signal<any[]>([]);
+  readonly isFoodMode = computed(() => this.selectedCategorySlug() === 'food');
   // food carousel
-  readonly foodSlide = signal(0);
+
+  // ── Popular Dishes (food cards section) ──
+  readonly popularDishes: PopularDish[] = [
+    { id: 'd1',  name: 'Chai Kulhad',   subtitle: 'Hot & Refreshing',   tag: 'Beverage',  emoji: '☕', color: 'linear-gradient(135deg,#78350f,#b45309)',  searchTerm: 'chai' },
+    { id: 'd2',  name: 'Samosa',        subtitle: 'Crispy Street Style', tag: 'Snack',     emoji: '🥟', color: 'linear-gradient(135deg,#92400e,#d97706)',  searchTerm: 'samosa' },
+    { id: 'd3',  name: 'Aloo Chaat',    subtitle: 'Tangy & Spicy',       tag: 'Chaat',     emoji: '🥗', color: 'linear-gradient(135deg,#065f46,#059669)',  searchTerm: 'chaat' },
+    { id: 'd4',  name: 'Idli Sambar',   subtitle: 'South Special',       tag: 'Breakfast', emoji: '🍽️', color: 'linear-gradient(135deg,#1e3a5f,#2563eb)',  searchTerm: 'idli' },
+    { id: 'd5',  name: 'Dhokla',        subtitle: 'Soft & Steamed',      tag: 'Gujarati',  emoji: '🟡', color: 'linear-gradient(135deg,#713f12,#ca8a04)',  searchTerm: 'dhokla' },
+    { id: 'd6',  name: 'Masala Dosa',   subtitle: 'Crispy Delight',      tag: 'Dosa',      emoji: '🫓', color: 'linear-gradient(135deg,#7c2d12,#ea580c)',  searchTerm: 'dosa' },
+    { id: 'd7',  name: 'Medu Vada',     subtitle: 'Fluffy & Crunchy',    tag: 'Vada',      emoji: '🍩', color: 'linear-gradient(135deg,#3b0764,#7c3aed)',  searchTerm: 'vada' },
+    { id: 'd8',  name: 'Paneer Chilli', subtitle: 'Indo-Chinese Fav',    tag: 'Spicy',     emoji: '🌶️', color: 'linear-gradient(135deg,#7f1d1d,#dc2626)',  searchTerm: 'paneer' },
+    { id: 'd9',  name: 'Tikiya',        subtitle: 'Classic Street Food', tag: 'Tikki',     emoji: '🫔', color: 'linear-gradient(135deg,#064e3b,#16a34a)',  searchTerm: 'tikiya' },
+    { id: 'd10', name: 'Spring Roll',   subtitle: 'Crispy Wrap',         tag: 'Snack',     emoji: '🌯', color: 'linear-gradient(135deg,#0c4a6e,#0284c7)',  searchTerm: 'spring roll' },
+  ];
   private destroy$ = new Subject<void>();
 
   // ── Feature strip data ──
@@ -693,92 +1086,15 @@ export class HomePage implements OnInit, OnDestroy {
 
   // ── Category quick cards ──
   readonly categoryCards = [
-    { name: 'Grocery',    emoji: '🛒', categorySlug: 'staples-pulses' },
-    { name: 'Vegetables', emoji: '🥦', categorySlug: 'fruits-vegetables' },
-    { name: 'Fruits',     emoji: '🍎', categorySlug: 'fruits-vegetables' },
-    { name: 'Dairy',      emoji: '🥛', categorySlug: 'dairy-bread' },
-    { name: 'Snacks',     emoji: '🍿', categorySlug: 'snacks' },
-    { name: 'Chaat',      emoji: '🥗', categorySlug: null },
-    { name: 'Tea',        emoji: '☕', categorySlug: 'beverages' },
-    { name: 'Fast Food',  emoji: '🍱', categorySlug: null },
+    { name: 'Grocery',    img: 'https://upload.wikimedia.org/wikipedia/commons/0/07/Khyma_and_Basmati_rice.jpg',                                                                                  categorySlug: 'groceries' },
+    { name: 'Vegetables', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Tomato_je.jpg/240px-Tomato_je.jpg',                                                                     categorySlug: 'fruits-vegetables' },
+    { name: 'Fruits',     img: 'https://upload.wikimedia.org/wikipedia/commons/d/de/Bananavarieties.jpg',                                                                                         categorySlug: 'fruits-vegetables' },
+    { name: 'Dairy',      img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Dairy_Crest_Semi_Skimmed_Milk_Bottle.jpg/240px-Dairy_Crest_Semi_Skimmed_Milk_Bottle.jpg',              categorySlug: 'dairy-bread' },
+    { name: 'Snacks',     img: 'https://upload.wikimedia.org/wikipedia/commons/8/83/French_Fries.JPG',                                                                                           categorySlug: 'snacks' },
+    { name: 'Spices',     img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Black_Cumin.jpg/240px-Black_Cumin.jpg',                                                                 categorySlug: 'spices-masala' },
+    { name: 'Beverages',  img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Oranges_-_whole-halved-segment.jpg/240px-Oranges_-_whole-halved-segment.jpg',                          categorySlug: 'beverages' },
+    { name: 'Atta & Dal', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/BESAN_CHAKKI_HOMEMADE_KOTA_003.jpg/240px-BESAN_CHAKKI_HOMEMADE_KOTA_003.jpg',                          categorySlug: 'groceries' },
   ];
-
-  // ── Time-based food carousel items ──
-  // dynamic time based rotating food carousel
-  private readonly morningFoods = [
-    { emoji: '☕', name: 'Masala Chai',     tag: 'Morning ☀️' },
-    { emoji: '🥟', name: 'Samosa',          tag: 'Hot & Fresh' },
-    { emoji: '🥞', name: 'Poha',            tag: 'Breakfast' },
-    { emoji: '🫓', name: 'Bread Pakoda',    tag: 'Street Style' },
-    { emoji: '🧆', name: 'Idlee',           tag: 'South Special' },
-    { emoji: '🥣', name: 'Dhokla',          tag: 'Gujarati' },
-  ];
-
-  private readonly afternoonFoods = [
-    // afternoon meals
-    { emoji: '🍛', name: 'Paneer Fried Rice', tag: 'Lunch Special' },
-    { emoji: '🌶️', name: 'Chilli Paneer',     tag: 'Indo-Chinese' },
-    { emoji: '🍗', name: 'Chicken Curry',      tag: 'Non-Veg' },
-    { emoji: '🍱', name: 'Thali',              tag: 'Full Meal' },
-    { emoji: '🥘', name: 'Dal Tadka',          tag: 'Comfort Food' },
-    { emoji: '🫔', name: 'Wrap',               tag: 'Quick Bite' },
-  ];
-
-  private readonly eveningFoods = [
-    // evening snacks
-    { emoji: '🥗', name: 'Tikkiya Chaat',  tag: 'Evening 🌆' },
-    { emoji: '🥟', name: 'Samosa Chaat',   tag: 'Street Food' },
-    { emoji: '☕', name: 'Cutting Chai',   tag: 'Tea Time' },
-    { emoji: '🧆', name: 'Aloo Tikki',     tag: 'Popular' },
-    { emoji: '🫕', name: 'Chana Masala',   tag: 'Desi Taste' },
-    { emoji: '🍩', name: 'Kachori',        tag: 'Crispy' },
-  ];
-
-  private readonly nightFoods = [
-    // dinner quick bites
-    { emoji: '🥛', name: 'Cold Milk',        tag: 'Night 🌙' },
-    { emoji: '🍪', name: 'Biscuits',          tag: 'Light Snack' },
-    { emoji: '🍜', name: 'Maggi',             tag: '2-Min Noodles' },
-    { emoji: '🧀', name: 'Bread & Butter',   tag: 'Simple' },
-    { emoji: '🫐', name: 'Dry Fruits',        tag: 'Healthy' },
-    { emoji: '🍦', name: 'Ice Cream',         tag: 'Dessert' },
-  ];
-
-  readonly currentFoodItems = computed(() => {
-    const h = new Date().getHours();
-    if (h >= 5 && h < 11)  return this.morningFoods;
-    if (h >= 11 && h < 16) return this.afternoonFoods;
-    if (h >= 16 && h < 21) return this.eveningFoods;
-    return this.nightFoods;
-  });
-
-  readonly foodDots = computed(() =>
-    Array.from({ length: Math.max(0, this.currentFoodItems().length - 2) })
-  );
-
-  readonly timeGreeting = computed(() => {
-    const h = new Date().getHours();
-    if (h >= 5 && h < 11)  return 'Good Morning!';
-    if (h >= 11 && h < 16) return 'Lunch Time!';
-    if (h >= 16 && h < 21) return 'Evening Cravings?';
-    return 'Night Munchies?';
-  });
-
-  readonly timeEmoji = computed(() => {
-    const h = new Date().getHours();
-    if (h >= 5 && h < 11)  return '☀️';
-    if (h >= 11 && h < 16) return '🍱';
-    if (h >= 16 && h < 21) return '🌆';
-    return '🌙';
-  });
-
-  readonly timeSubtitle = computed(() => {
-    const h = new Date().getHours();
-    if (h >= 5 && h < 11)  return 'Chai aur Garma-Garam Samosa';
-    if (h >= 11 && h < 16) return 'Fried Rice, Paneer & more';
-    if (h >= 16 && h < 21) return 'Chaat, Tikkiya & Evening Bites';
-    return 'Light bites delivered fast';
-  });
 
   /** Saved addresses loaded from API */
   readonly savedAddresses = signal<any[]>([]);
@@ -833,7 +1149,7 @@ export class HomePage implements OnInit, OnDestroy {
     'dairy-bread': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Korb_mit_Br%C3%B6tchen.JPG/960px-Korb_mit_Br%C3%B6tchen.JPG',
     snacks: 'https://upload.wikimedia.org/wikipedia/commons/8/83/French_Fries.JPG',
     beverages: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Oranges_-_whole-halved-segment.jpg/960px-Oranges_-_whole-halved-segment.jpg',
-    'staples-pulses': 'https://upload.wikimedia.org/wikipedia/commons/0/07/Khyma_and_Basmati_rice.jpg',
+    'groceries': 'https://upload.wikimedia.org/wikipedia/commons/0/07/Khyma_and_Basmati_rice.jpg',
     'spices-masala': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Black_Cumin.jpg/960px-Black_Cumin.jpg',
     'home-care': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Diskflaskor.JPG/960px-Diskflaskor.JPG',
     'pooja-spiritual': 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Incenselonghua.jpg'
@@ -856,27 +1172,28 @@ export class HomePage implements OnInit, OnDestroy {
       this.locationService.detectCurrentLocation().catch(() => {});
     }
 
-    this.api.get<any>('/catalog/categories')
+    this.api.get<any[]>('/catalog/categories')
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (res) => this.categories.set(res?.content || []),
+        next: (res) => this.categories.set(Array.isArray(res) ? res : (res as any)?.content || []),
         error: () => this.errorMsg.set('Could not load categories')
       });
+
+    this.api.get<any[]>('/catalog/restaurants')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: (res) => this.restaurants.set(Array.isArray(res) ? res : []) });
 
     this.api.get<any>('/catalog/products', { page: 0, size: 100 })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (res) => this.products.set(res?.content || []),
+        next: (res) => {
+          const items = res?.content || [];
+          this.allProducts.set(items);
+          this.products.set(items);
+        },
         error: () => this.errorMsg.set('Could not load products')
       });
 
-    // Auto-advance food carousel every 2.5s
-    interval(2500)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        const max = Math.max(0, this.currentFoodItems().length - 2);
-        this.foodSlide.update(s => s >= max ? 0 : s + 1);
-      });
   }
 
   ngOnDestroy(): void {
@@ -886,6 +1203,32 @@ export class HomePage implements OnInit, OnDestroy {
 
   goToProfile(): void {
     this.router.navigate(['/profile']);
+  }
+
+  /** Navigate to search results for a popular dish card */
+  addDishToCart(dish: PopularDish): void {
+    this.quickSearch(dish.searchTerm);
+  }
+
+  startVoiceSearch(): void {    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Voice search is not supported on this browser.');
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    this.isListening.set(true);
+    recognition.onresult = (event: any) => {
+      const transcript: string = event.results[0][0].transcript;
+      this.searchTerm.set(transcript);
+      this.isListening.set(false);
+    };
+    recognition.onerror = () => this.isListening.set(false);
+    recognition.onend = () => this.isListening.set(false);
+    recognition.start();
   }
 
   private normalizedSearchTerm() {
@@ -928,8 +1271,98 @@ export class HomePage implements OnInit, OnDestroy {
     else this.selectCategory(null);
   }
 
+  clearChipFilter(): void {
+    this.selectedCategorySlug.set(null);
+    this.selectedCategoryId.set(null);
+    this.selectedRestaurantId.set(null);
+    this.selectedRestaurantName.set('');
+    this.restaurantMenuItems.set([]);
+    this.products.set(this.allProducts());
+  }
+
+  selectRestaurant(r: any): void {
+    this.selectedRestaurantId.set(r.id);
+    this.selectedRestaurantName.set(r.name);
+    this.restaurantMenuItems.set([]);
+    this.api.get<any>('/catalog/products', { restaurantId: r.id, page: 0, size: 50 })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: (res) => this.restaurantMenuItems.set(res?.content || []) });
+    setTimeout(() => {
+      document.getElementById('menu-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
+  }
+
+  backToRestaurants(): void {
+    this.selectedRestaurantId.set(null);
+    this.selectedRestaurantName.set('');
+    this.restaurantMenuItems.set([]);
+  }
+
+  loadNearbyRestaurants(): void {
+    const loc = this.locationService.currentLocation();
+    const params: any = { radiusKm: 5 };
+    if (loc) {
+      params['lat'] = loc.latitude;
+      params['lng'] = loc.longitude;
+    }
+    this.api.get<any[]>('/catalog/restaurants', params)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: (res) => this.restaurants.set(Array.isArray(res) ? res : []) });
+  }
+
+  restaurantImage(r: any): string {
+    if (r.imageUrl) return r.imageUrl;
+    const cuisine = (r.cuisineType || '').toLowerCase();
+    if (cuisine.includes('south')) return 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Idli_Sambar.jpg/640px-Idli_Sambar.jpg';
+    if (cuisine.includes('chinese')) return 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Fried_rice_by_Shin_CJ.jpg/640px-Fried_rice_by_Shin_CJ.jpg';
+    if (cuisine.includes('chaat') || cuisine.includes('snack')) return 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Samosa_-_Bengali_style.jpg/640px-Samosa_-_Bengali_style.jpg';
+    if (cuisine.includes('fast') || cuisine.includes('pizza')) return 'https://upload.wikimedia.org/wikipedia/commons/8/83/French_Fries.JPG';
+    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Dal_makhani.jpg/640px-Dal_makhani.jpg';
+  }
+
+  selectChip(slug: string): void {
+    if (slug === 'food') {
+      this.selectedCategorySlug.set('food');
+      this.selectedCategoryId.set(-1);
+      this.selectedRestaurantId.set(null);
+      this.restaurantMenuItems.set([]);
+      this.products.set([]);
+      // Fetch nearby restaurants using current GPS location
+      this.loadNearbyRestaurants();
+      return;
+    }
+    // clear food state when switching to a non-food chip
+    this.selectedRestaurantId.set(null);
+    this.restaurantMenuItems.set([]);
+    this.selectedCategorySlug.set(slug);
+    // find category by exact slug, then partial match fallback
+    let cat = this.categories().find(c => c.slug === slug);
+    if (!cat) {
+      cat = this.categories().find(c =>
+        c.slug?.toLowerCase().includes(slug.split('-')[0]) ||
+        c.name?.toLowerCase().includes(slug.split('-')[0])
+      );
+    }
+    if (cat) {
+      this.selectedCategoryId.set(cat.id);
+      // filter from already-loaded allProducts — no extra API call needed
+      this.products.set(this.allProducts().filter(p => p.categoryId === cat!.id));
+    } else {
+      // slug not in categories yet — show nothing so user sees the filter is active
+      this.selectedCategoryId.set(-1);
+      this.products.set([]);
+    }
+    setTimeout(() => {
+      document.getElementById('prod-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+
   selectCategory(id: number | null): void {
     this.selectedCategoryId.set(id);
+    if (id === null) {
+      this.selectedCategorySlug.set(null);
+      this.products.set(this.allProducts());
+    }
   }
 
   readonly categoryProducts = computed(() => {
@@ -938,14 +1371,11 @@ export class HomePage implements OnInit, OnDestroy {
     return this.products().filter(p => p.categoryId === id);
   });
 
+  readonly activeCategorySlug = computed(() => this.selectedCategorySlug() ?? '');
+
   activeCategoryName(): string {
     const id = this.selectedCategoryId();
     return this.categories().find(c => c.id === id)?.name || 'Products';
-  }
-
-  activeCategorySlug(): string {
-    const id = this.selectedCategoryId();
-    return this.categories().find(c => c.id === id)?.slug || '';
   }
 
   maxDiscount(): number {
@@ -956,7 +1386,7 @@ export class HomePage implements OnInit, OnDestroy {
   catEmoji(slug: string): string {
     const map: Record<string, string> = {
       'fruits-vegetables': '🥦', 'dairy-bread': '🥛', 'snacks': '🍿',
-      'beverages': '☕', 'staples-pulses': '🌾', 'spices-masala': '🌶️',
+      'beverages': '☕', 'groceries': '🛒', 'spices-masala': '🌶️',
       'home-care': '🧹', 'pooja-spiritual': '🪔'
     };
     return map[slug] || '🛍️';

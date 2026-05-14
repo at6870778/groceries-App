@@ -6,6 +6,7 @@ public record ProductDto(
         Long id,
         Long categoryId,
         String categoryName,
+        Long restaurantId,
         String name,
         String sku,
         String description,

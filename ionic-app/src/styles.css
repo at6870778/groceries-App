@@ -1,3 +1,8 @@
+/* Tailwind CSS — must come first so Ionic can override where needed */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Required Ionic core styles for proper component and router-outlet behavior */
 @import '@ionic/angular/css/core.css';
 @import '@ionic/angular/css/normalize.css';

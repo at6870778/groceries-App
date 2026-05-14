@@ -86,6 +86,18 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
     .stock-chip.out { background: #fce4ec; color: #c62828; }
     .row-actions { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
 
+    /* ── category table ── */
+    .cat-table-wrap { overflow-x: auto; margin-top: 12px; }
+    table.cat-table { width: 100%; border-collapse: collapse; }
+    table.cat-table th {
+      background: #f8f9fa; font-size: 12px; font-weight: 600; color: #555;
+      text-transform: uppercase; letter-spacing: .5px; white-space: nowrap;
+    }
+    table.cat-table td, table.cat-table th { padding: 10px 12px; vertical-align: middle; }
+    table.cat-table tr:hover td { background: #fafafa; }
+    table.cat-table tr.inactive-row td { opacity: .5; }
+    .slug-tag { background: #e8f5e9; color: #1b5e20; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+
     /* ── pagination ── */
     .pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 16px; }
     .page-info { font-size: 14px; font-weight: 500; color: #555; }
@@ -100,8 +112,8 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
 
     <!-- ══ Category form ══ -->
     <section class="metric-card" style="margin-bottom:16px;">
-      <p class="section-title">Create Category</p>
-      <form [formGroup]="categoryForm" (ngSubmit)="createCategory()">
+      <p class="section-title">{{ editingCategoryId() ? 'Update Category' : 'Create Category' }}</p>
+      <form [formGroup]="categoryForm" (ngSubmit)="saveCategory()">
         <div class="cat-fields">
           <mat-form-field appearance="outline">
             <mat-label>Name</mat-label>
@@ -133,12 +145,57 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
             <img *ngIf="categoryForm.get('imageUrl')?.value"
               [src]="categoryForm.get('imageUrl')?.value" alt="preview" class="img-preview" />
           </div>
-          <button mat-flat-button color="primary" type="submit" [disabled]="catSaving()">
-            <mat-icon>save</mat-icon>
-            {{ catSaving() ? 'Saving…' : 'Save Category' }}
-          </button>
+          <div style="display:flex;gap:8px;">
+            <button mat-stroked-button type="button" *ngIf="editingCategoryId()" (click)="cancelCategoryEdit()">
+              <mat-icon>close</mat-icon> Cancel
+            </button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="catSaving()">
+              <mat-icon>{{ editingCategoryId() ? 'save' : 'add_circle' }}</mat-icon>
+              {{ catSaving() ? 'Saving…' : (editingCategoryId() ? 'Update Category' : 'Save Category') }}
+            </button>
+          </div>
         </div>
       </form>
+
+      <!-- Category list -->
+      <div class="cat-table-wrap" *ngIf="categories().length > 0">
+        <table class="cat-table">
+          <thead>
+            <tr>
+              <th style="width:54px"></th>
+              <th>Name</th>
+              <th>Slug</th>
+              <th style="width:120px">Visibility</th>
+              <th style="width:100px">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of categories()" [class.inactive-row]="!c.active">
+              <td>
+                <img *ngIf="c.imageUrl" [src]="c.imageUrl" [alt]="c.name" class="thumb" />
+                <div *ngIf="!c.imageUrl" class="thumb-placeholder"><mat-icon>category</mat-icon></div>
+              </td>
+              <td><strong style="font-size:13px">{{ c.name }}</strong></td>
+              <td><span class="slug-tag">{{ c.slug }}</span></td>
+              <td>
+                <mat-slide-toggle [checked]="c.active" (change)="toggleCategoryActive(c)" color="primary">
+                  <span style="font-size:12px;color:#555">{{ c.active ? 'Live' : 'Off' }}</span>
+                </mat-slide-toggle>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button mat-flat-button color="primary" style="min-width:0;padding:0 10px;height:32px;font-size:12px" (click)="editCategory(c)" matTooltip="Edit category">
+                    <mat-icon style="font-size:15px;height:15px;width:15px">edit</mat-icon>
+                  </button>
+                  <button mat-flat-button color="warn" style="min-width:0;padding:0 10px;height:32px;font-size:12px" (click)="deleteCategory(c.id)" matTooltip="Delete category">
+                    <mat-icon style="font-size:15px;height:15px;width:15px">delete</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <!-- ══ Product form ══ -->
@@ -329,6 +386,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
   readonly catUploading = signal(false);
   readonly saving = signal(false);
   readonly catSaving = signal(false);
+  readonly editingCategoryId = signal<number | null>(null);
 
   @ViewChild('productFormSection') productFormSection!: ElementRef;
   private subs = new Subscription();
@@ -426,20 +484,61 @@ export class ProductsComponent implements OnInit, OnDestroy {
     this.api.get<any[]>('/admin/catalog/categories').subscribe((res) => this.categories.set(res || []));
   }
 
-  createCategory() {
+  saveCategory() {
     if (this.categoryForm.invalid) return;
+    const id = this.editingCategoryId();
     this.catSaving.set(true);
-    this.api.post('/admin/catalog/categories', this.categoryForm.getRawValue()).subscribe({
+    const req = id
+      ? this.api.put(`/admin/catalog/categories/${id}`, this.categoryForm.getRawValue())
+      : this.api.post('/admin/catalog/categories', this.categoryForm.getRawValue());
+    req.subscribe({
       next: () => {
         this.catSaving.set(false);
-        this.categoryForm.reset({ name: '', slug: '', imageUrl: '', active: true });
+        this.cancelCategoryEdit();
         this.loadCategories();
-        this.snack.open('Category created ✓', 'OK', { duration: 2500, panelClass: ['snack-success'] });
+        this.snack.open(id ? 'Category updated ✓' : 'Category created ✓', 'OK', { duration: 2500, panelClass: ['snack-success'] });
       },
       error: (err) => {
         this.catSaving.set(false);
-        this.snack.open(err?.error?.message || 'Failed to create category', 'OK', { duration: 3500, panelClass: ['snack-error'] });
+        this.snack.open(err?.error?.message || 'Failed to save category', 'OK', { duration: 3500, panelClass: ['snack-error'] });
       }
+    });
+  }
+
+  editCategory(cat: any) {
+    this.editingCategoryId.set(cat.id);
+    this.categoryForm.patchValue({ name: cat.name, slug: cat.slug, imageUrl: cat.imageUrl, active: cat.active });
+    // mark slug dirty so auto-fill doesn't overwrite
+    this.categoryForm.get('slug')!.markAsDirty();
+  }
+
+  cancelCategoryEdit() {
+    this.editingCategoryId.set(null);
+    this.categoryForm.reset({ name: '', slug: '', imageUrl: '', active: true });
+    this.categoryForm.get('slug')!.markAsPristine();
+  }
+
+  toggleCategoryActive(cat: any) {
+    const updated = { name: cat.name, slug: cat.slug, imageUrl: cat.imageUrl, active: !cat.active };
+    this.api.put(`/admin/catalog/categories/${cat.id}`, updated).subscribe({
+      next: () => {
+        this.categories.update(list => list.map(c => c.id === cat.id ? { ...c, active: !c.active } : c));
+        this.snack.open(updated.active ? 'Category visible in app ✓' : 'Category hidden from app', 'OK', { duration: 2500 });
+      },
+      error: (err) => this.snack.open(err?.error?.message || 'Failed to update', 'OK', { duration: 3000 })
+    });
+  }
+
+  deleteCategory(id: number) {
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      data: { title: 'Delete Category', message: 'All products in this category will lose their category assignment.' }
+    });
+    ref.afterClosed().subscribe((confirmed) => {
+      if (!confirmed) return;
+      this.api.delete(`/admin/catalog/categories/${id}`).subscribe({
+        next: () => { this.loadCategories(); this.snack.open('Category deleted', 'OK', { duration: 1800 }); },
+        error: (err) => this.snack.open(err?.error?.message || 'Delete failed', 'OK', { duration: 3000, panelClass: ['snack-error'] })
+      });
     });
   }
 

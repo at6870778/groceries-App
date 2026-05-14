@@ -13,7 +13,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> findByActiveTrue(Pageable pageable);
 
     @EntityGraph(attributePaths = {"category"})
+    Page<Product> findByActiveTrueAndRestaurantIdIsNull(Pageable pageable);
+
+    @EntityGraph(attributePaths = {"category"})
     Page<Product> findByCategoryIdAndActiveTrue(Long categoryId, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"category"})
+    Page<Product> findByRestaurantIdAndActiveTrue(Long restaurantId, Pageable pageable);
 
     @EntityGraph(attributePaths = {"category"})
     Page<Product> findByNameContainingIgnoreCaseAndActiveTrue(String query, Pageable pageable);

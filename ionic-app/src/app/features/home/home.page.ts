@@ -11,6 +11,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { SpeechRecognition } from '@capacitor-community/speech-recognition';
 import { App } from '@capacitor/app';
+import { NotificationStateService } from '../../core/services/notification-state.service';
 
 @Component({
   standalone: true,
@@ -39,11 +40,12 @@ import { App } from '@capacitor/app';
               </div>
               <svg width="10" height="10" viewBox="0 0 24 24" fill="#999"><path d="M7 10l5 5 5-5z"/></svg>
             </div>
-            <button class="hdr-bell-btn" aria-label="Notifications">
+            <button class="hdr-bell-btn" aria-label="Notifications" (click)="goToNotifications()">
               <svg class="bell-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
               </svg>
+              <span class="bell-badge" *ngIf="notifState.unreadCount() > 0">{{ notifState.unreadCount() > 9 ? '9+' : notifState.unreadCount() }}</span>
             </button>
           </div>
         </div>
@@ -361,6 +363,24 @@ import { App } from '@capacitor/app';
       animation: bell-ring 4s ease-in-out infinite;
     }
     .hdr-bell-btn:active { background: rgba(108,71,255,0.18); transform: scale(0.92); }
+    .bell-badge {
+      position: absolute;
+      top: -5px; right: -5px;
+      background: linear-gradient(135deg, #ff4757, #ff6b81);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      min-width: 16px; height: 16px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 3px;
+      border: 2px solid #fff;
+      animation: badge-pop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes badge-pop {
+      from { transform: scale(0); }
+      to   { transform: scale(1); }
+    }
     .bell-icon {
       animation: bell-shake 4s ease-in-out infinite;
       transform-origin: top center;
@@ -1011,11 +1031,13 @@ export class HomePage implements OnInit, OnDestroy {
     private router: Router,
     private cartState: CartState,
     private activityState: ActivityState,
-    public locationService: LocationService
+    public locationService: LocationService,
+    public notifState: NotificationStateService
   ) {}
 
   ngOnInit() {
     this.backButtonListener = App.addListener('backButton', () => App.exitApp());
+    this.notifState.load();
 
     this.api.get<any>('/public/announcement')
       .pipe(takeUntil(this.destroy$))
@@ -1078,6 +1100,10 @@ export class HomePage implements OnInit, OnDestroy {
 
   goToProfile(): void {
     this.router.navigate(['/profile']);
+  }
+
+  goToNotifications(): void {
+    this.router.navigate(['/notifications']);
   }
 
   async startVoiceSearch(): Promise<void> {

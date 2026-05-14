@@ -7,6 +7,7 @@ import com.khanago.grocery.common.enums.PaymentMode;
 import com.khanago.grocery.common.exception.ApiException;
 import com.khanago.grocery.common.service.AdminNotificationService;
 import com.khanago.grocery.common.service.FcmService;
+import com.khanago.grocery.notification.UserNotificationService;
 import com.khanago.grocery.delivery.DeliveryAssignment;
 import com.khanago.grocery.delivery.repository.DeliveryAssignmentRepository;
 import com.khanago.grocery.delivery.service.DeliveryFeeService;
@@ -46,6 +47,7 @@ public class OrderService {
     private final DeliveryFeeService deliveryFeeService;
     private final AdminNotificationService adminNotificationService;
     private final FcmService fcmService;
+    private final UserNotificationService userNotificationService;
 
     @Transactional
     public OrderDto checkout(CheckoutRequestDto request) {
@@ -151,11 +153,25 @@ public class OrderService {
         OrderDto dto = toDto(orderRepository.save(order));
         // Send push notification to customer
         String fcmToken = order.getCustomer() != null ? order.getCustomer().getFcmToken() : null;
+        String msg = orderStatusMessage(status, orderId);
+        String title = orderStatusTitle(status);
         if (fcmToken != null) {
-            String msg = orderStatusMessage(status, orderId);
-            fcmService.sendToToken(fcmToken, "Order Update", msg, "OPEN_ORDERS");
+            fcmService.sendToToken(fcmToken, title, msg, "OPEN_ORDERS");
         }
+        // Always persist notification in DB
+        userNotificationService.save(order.getCustomer(), title, msg, "ORDER");
         return dto;
+    }
+
+    private String orderStatusTitle(OrderStatus status) {
+        return switch (status) {
+            case CONFIRMED        -> "Order Confirmed 🎉";
+            case PREPARING        -> "Order Being Prepared 👨‍🍳";
+            case OUT_FOR_DELIVERY -> "Out for Delivery 🛵";
+            case DELIVERED        -> "Order Delivered ✅";
+            case CANCELLED        -> "Order Cancelled";
+            default               -> "Order Update";
+        };
     }
 
     private String orderStatusMessage(OrderStatus status, Long orderId) {

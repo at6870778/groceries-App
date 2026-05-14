@@ -1,6 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
 import { IonContent, IonHeader, IonToolbar } from '@ionic/angular/standalone';
 import { NotificationStateService, AppNotification } from '../../core/services/notification-state.service';
 import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component';
@@ -223,7 +222,6 @@ import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component
 })
 export class NotificationsPage implements OnInit {
   state = inject(NotificationStateService);
-  private router = inject(Router);
 
   ngOnInit(): void {
     this.state.load();
@@ -235,7 +233,6 @@ export class NotificationsPage implements OnInit {
 
   onTap(n: AppNotification): void {
     this.state.deleteOne(n.id);
-    if (n.type === 'ORDER') this.router.navigate(['/orders']);
   }
 
   trackById(_: number, n: AppNotification): number { return n.id; }

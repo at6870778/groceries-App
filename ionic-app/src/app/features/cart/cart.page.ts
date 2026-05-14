@@ -537,7 +537,7 @@ declare global {
     }
     .cod-yes-btn {
       flex: 1;
-      background: #16a34a;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: #fff;
       border: none;
       border-radius: 10px;
@@ -656,7 +656,7 @@ declare global {
     .cart-stepper {
       display: flex;
       align-items: center;
-      background: #16a34a;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border-radius: 10px;
       overflow: hidden;
       flex-shrink: 0;
@@ -716,7 +716,7 @@ declare global {
       box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
     }
     .proceed-btn {
-      --background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+      --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       --border-radius: 14px;
       font-weight: 700;
       font-size: 1rem;
@@ -818,7 +818,7 @@ declare global {
     }
     .addr-picker-close {
       display: block; width: 100%; margin-top: 14px;
-      padding: 12px; background: #16a34a; color: #fff;
+      padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff;
       border: none; border-radius: 14px; font-size: 1rem; font-weight: 700; cursor: pointer;
     }
   `]

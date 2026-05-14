@@ -269,10 +269,10 @@ import { takeUntil } from 'rxjs/operators';
     }
     .buy-btn {
       flex: 1;
-      --background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+      --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       --color: #ffffff;
       --border-radius: 10px;
-      --box-shadow: 0 6px 14px rgba(34, 197, 94, 0.26);
+      --box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26);
       font-weight: 700;
     }
     .discount-badge {

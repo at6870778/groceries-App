@@ -27,7 +27,7 @@ import { App } from '@capacitor/app';
             <span class="logo-leaf">🛵</span>
             <div class="logo-text-wrap">
               <span class="logo-text"><span class="logo-o">Order</span><span class="logo-k">Kro</span></span>
-              <span class="logo-tagline">Sabse sasta, sabse tez</span>
+              <span class="logo-tagline"><span class="tagline-zap">⚡</span> 10 min delivery</span>
             </div>
           </div>
           <div class="hdr-right">
@@ -322,68 +322,65 @@ import { App } from '@capacitor/app';
       flex-direction: column;
       gap: 1px;
     }
-    /* Bouncing leaf */
+    /* Scooter — forward lean on motion */
     .logo-leaf {
-      font-size: 1.3rem;
+      font-size: 1.35rem;
       line-height: 1;
       display: inline-block;
-      animation: scooter-ride 1.4s ease-in-out infinite;
+      animation: scooter-ride 1.8s cubic-bezier(0.4,0,0.6,1) infinite;
       transform-origin: center bottom;
     }
     @keyframes scooter-ride {
-      0%   { transform: translateY(0px) rotate(0deg); }
-      20%  { transform: translateY(-3px) rotate(-4deg); }
-      40%  { transform: translateY(0px) rotate(0deg); }
-      60%  { transform: translateY(-2px) rotate(-3deg); }
-      80%  { transform: translateY(0px) rotate(0deg); }
-      100% { transform: translateY(0px) rotate(0deg); }
+      0%   { transform: translateX(0px) rotate(0deg)   translateY(0px); }
+      18%  { transform: translateX(3px) rotate(-5deg)  translateY(-2px); }
+      36%  { transform: translateX(0px) rotate(0deg)   translateY(0px); }
+      54%  { transform: translateX(2px) rotate(-3deg)  translateY(-1px); }
+      72%  { transform: translateX(0px) rotate(0deg)   translateY(0px); }
+      100% { transform: translateX(0px) rotate(0deg)   translateY(0px); }
     }
-    /* "Order" — animated gradient sweep */
+    /* "OrderKro" text */
     .logo-text {
-      font-size: 1.45rem;
+      font-size: 1.5rem;
       font-weight: 900;
-      letter-spacing: -0.5px;
+      letter-spacing: -0.6px;
       line-height: 1.1;
     }
+    /* "Order" — clean dark, no distraction */
     .logo-o {
-      background: linear-gradient(90deg, #1a1a1a 0%, #667eea 40%, #1a1a1a 80%);
+      color: #111827;
+    }
+    /* "Kro" — vibrant green gradient (fresh + fast) */
+    .logo-k {
+      background: linear-gradient(135deg, #10b981 0%, #84cc16 60%, #22c55e 100%);
       background-size: 200% auto;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      animation: logo-shimmer 3s linear infinite;
+      animation: kro-sweep 3s ease-in-out infinite alternate;
     }
-    /* "Kro" — pulsing purple glow */
-    .logo-k {
-      color: #667eea;
-      display: inline-block;
-      animation: logo-glow 2s ease-in-out infinite alternate;
-      text-shadow: 0 0 8px rgba(102,126,234,0.5);
+    @keyframes kro-sweep {
+      from { background-position: 0%   center; filter: brightness(1);    }
+      to   { background-position: 100% center; filter: brightness(1.18); }
     }
-    @keyframes logo-shimmer {
-      0%   { background-position: 200% center; }
-      100% { background-position: -200% center; }
-    }
-    @keyframes logo-glow {
-      from { text-shadow: 0 0 4px rgba(102,126,234,0.3); color: #667eea; }
-      to   { text-shadow: 0 0 14px rgba(102,126,234,0.9); color: #818cf8; }
-    }
-    /* Tagline — typewriter fade-in on load */
+    /* Tagline */
     .logo-tagline {
-      font-size: 0.55rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
+      font-size: 0.56rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
       line-height: 1;
-      background: linear-gradient(90deg, #f59e0b, #ef4444, #667eea, #10b981);
-      background-size: 300% auto;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      animation: tagline-gradient 4s linear infinite;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      gap: 2px;
     }
-    @keyframes tagline-gradient {
-      0%   { background-position: 0% center; }
-      100% { background-position: 300% center; }
+    .tagline-zap {
+      font-size: 0.6rem;
+      animation: zap-flash 1.6s ease-in-out infinite;
+    }
+    @keyframes zap-flash {
+      0%, 100% { opacity: 1;   transform: scale(1);    }
+      45%      { opacity: 0.4; transform: scale(0.85); }
+      55%      { opacity: 1;   transform: scale(1.2);  }
     }
     .hdr-deliver {
       display: flex;
@@ -623,12 +620,12 @@ import { App } from '@capacitor/app';
     .dish-sub  { font-size: 0.62rem; font-weight: 500; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 8px; }
     .dish-add-btn {
       width: 100%; padding: 6px 0;
-      border: 2px solid #16a34a; background: #f0fdf4;
-      color: #16a34a; font-size: 0.75rem; font-weight: 800;
+      border: 2px solid #667eea; background: #f3f0ff;
+      color: #667eea; font-size: 0.75rem; font-weight: 800;
       border-radius: 10px; cursor: pointer;
       transition: background 0.15s, color 0.15s;
     }
-    .dish-add-btn:active { background: #16a34a; color: #fff; }
+    .dish-add-btn:active { background: #667eea; color: #fff; }
     /* ══════════════════════════════════════
        CATEGORY CHIPS — animated
     ══════════════════════════════════════ */

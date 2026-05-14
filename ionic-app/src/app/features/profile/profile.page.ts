@@ -295,7 +295,7 @@ import { ActivityState } from '../../core/state/activity.state';
       letter-spacing: 0.04em;
     }
     .default-badge {
-      background: #16a34a;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: #fff;
       border-radius: 10px;
       padding: 2px 8px;

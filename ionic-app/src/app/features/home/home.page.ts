@@ -40,7 +40,7 @@ import { App } from '@capacitor/app';
               <svg width="10" height="10" viewBox="0 0 24 24" fill="#999"><path d="M7 10l5 5 5-5z"/></svg>
             </div>
             <button class="hdr-bell-btn" aria-label="Notifications">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg class="bell-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
               </svg>
@@ -122,18 +122,13 @@ import { App } from '@capacitor/app';
         <div class="ok-hero">
           <!-- full-bleed banner image -->
           <img class="ok-hero-bg-img" src="assets/home-banner.png" alt="OrderKro Banner">
-          <!-- dark overlay so text stays readable -->
-          <div class="ok-hero-overlay"></div>
           <!-- fireworks bursts -->
           <div class="fw-wrap">
             <div class="fw fw1"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
             <div class="fw fw2"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
             <div class="fw fw3"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
           </div>
-          <!-- bottom badge only -->
-          <div class="ok-hero-text">
-            <div class="ok-hero-badge">⚡ 15–30 min delivery</div>
-          </div>
+
         </div>
 
         <!-- ── FEATURE STRIP ── -->
@@ -349,18 +344,18 @@ import { App } from '@capacitor/app';
     .logo-o {
       color: #111827;
     }
-    /* "Kro" — vibrant green gradient (fresh + fast) */
+    /* "Kro" — brand purple gradient with shimmer */
     .logo-k {
-      background: linear-gradient(135deg, #10b981 0%, #84cc16 60%, #22c55e 100%);
-      background-size: 200% auto;
+      background: linear-gradient(135deg, #667eea 0%, #a78bfa 50%, #764ba2 100%);
+      background-size: 250% auto;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      animation: kro-sweep 3s ease-in-out infinite alternate;
+      animation: kro-sweep 2.8s ease-in-out infinite alternate;
     }
     @keyframes kro-sweep {
       from { background-position: 0%   center; filter: brightness(1);    }
-      to   { background-position: 100% center; filter: brightness(1.18); }
+      to   { background-position: 100% center; filter: brightness(1.22); }
     }
     /* Tagline */
     .logo-tagline {
@@ -411,8 +406,8 @@ import { App } from '@capacitor/app';
     }
     .hdr-bell-btn {
       position: relative;
-      background: #f5f6fa;
-      border: none;
+      background: rgba(108,71,255,0.08);
+      border: 1.5px solid rgba(108,71,255,0.18);
       border-radius: 10px;
       width: 36px;
       height: 36px;
@@ -422,8 +417,28 @@ import { App } from '@capacitor/app';
       cursor: pointer;
       flex-shrink: 0;
       padding: 0;
+      animation: bell-ring 4s ease-in-out infinite;
     }
-    .hdr-bell-btn:active { background: #eaeef8; }
+    .hdr-bell-btn:active { background: rgba(108,71,255,0.18); transform: scale(0.92); }
+    .bell-icon {
+      animation: bell-shake 4s ease-in-out infinite;
+      transform-origin: top center;
+    }
+    @keyframes bell-shake {
+      0%, 75%, 100% { transform: rotate(0deg); }
+      78%           { transform: rotate(14deg); }
+      82%           { transform: rotate(-12deg); }
+      86%           { transform: rotate(10deg); }
+      90%           { transform: rotate(-8deg); }
+      94%           { transform: rotate(5deg); }
+      97%           { transform: rotate(-3deg); }
+    }
+    @keyframes bell-ring {
+      0%, 74%, 100% { box-shadow: none; }
+      77%           { box-shadow: 0 0 0 3px rgba(108,71,255,0.25); }
+      85%           { box-shadow: 0 0 0 6px rgba(108,71,255,0.08); }
+      95%           { box-shadow: none; }
+    }
     .hdr-btn {
       position: relative;
       background: #f5f6fa;
@@ -558,62 +573,6 @@ import { App } from '@capacitor/app';
       width: 100%;
       height: auto;
       object-fit: contain;
-    }
-    /* gradient overlay — bottom strip only */
-    .ok-hero-overlay {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(
-        to top,
-        rgba(4,20,12,0.75) 0%,
-        rgba(4,20,12,0.2) 35%,
-        transparent 60%
-      );
-      pointer-events: none;
-    }
-    /* ── text col ── */
-    .ok-hero-text {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 2;
-      padding: 14px 18px 12px;
-    }
-    .ok-hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      background: rgba(52,211,153,0.22);
-      border: 1.5px solid rgba(52,211,153,0.55);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border-radius: 30px;
-      padding: 4px 12px;
-      font-size: 0.65rem;
-      font-weight: 800;
-      color: #6ee7b7;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-    }
-    .ok-hero-tagline {
-      margin: 0;
-      font-size: 1.18rem;
-      font-weight: 900;
-      color: #fff;
-      line-height: 1.35;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.6);
-      letter-spacing: -0.01em;
-    }
-    .ok-tagline-accent {
-      color: #6ee7b7;
-      font-style: italic;
-    }
-    .ok-trust-row { display: flex; flex-wrap: wrap; gap: 10px; }
-    .ok-trust { font-size: 0.6rem; font-weight: 600; color: rgba(209,250,229,0.85);   padding: 2px 7px;
-      border-radius: 20px;
-      backdrop-filter: blur(4px);
     }
     .dish-body { padding: 9px 10px 11px; }
     .dish-name { font-size: 0.82rem; font-weight: 800; color: #1a1a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }

@@ -37,6 +37,10 @@ public class FcmService {
                             .setNotification(AndroidNotification.builder()
                                     .setChannelId("khanago_orders")
                                     .setSound("default")
+                                    .setDefaultVibrateTimings(true)
+                                    .setDefaultLightSettings(true)
+                                    .setNotificationPriority(AndroidNotification.Priority.MAX)
+                                    .setVisibility(AndroidNotification.Visibility.PUBLIC)
                                     .build())
                             .build())
                     .build();

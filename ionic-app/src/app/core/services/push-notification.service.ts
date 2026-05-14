@@ -29,6 +29,30 @@ export class PushNotificationService {
       return;
     }
 
+    // Create notification channels with IMPORTANCE_HIGH so screen wakes up
+    if (Capacitor.getPlatform() === 'android') {
+      await PushNotifications.createChannel({
+        id: 'khanago_orders',
+        name: 'Order Updates',
+        description: 'Order status notifications',
+        importance: 5,
+        visibility: 1,
+        sound: 'default',
+        vibration: true,
+        lights: true,
+        lightColor: '#FF5722'
+      });
+      await PushNotifications.createChannel({
+        id: 'khanago_promos',
+        name: 'Promotions',
+        description: 'Promotional offers and announcements',
+        importance: 4,
+        visibility: 1,
+        sound: 'default',
+        vibration: true
+      });
+    }
+
     await PushNotifications.register();
 
     // On token received — send to backend

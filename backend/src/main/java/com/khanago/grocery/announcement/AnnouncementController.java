@@ -32,7 +32,7 @@ public class AnnouncementController {
         // Broadcast push notification when announcement is newly activated
         boolean isNowActive = saved.isActive();
         if (!wasActive && isNowActive && saved.getMessage() != null && !saved.getMessage().isBlank()) {
-            fcmService.sendToTopic("promotions", "Khanago Offer", saved.getMessage());
+            fcmService.sendToTopic("promotions", "Order Kro Offer", saved.getMessage());
         }
         return saved;
     }

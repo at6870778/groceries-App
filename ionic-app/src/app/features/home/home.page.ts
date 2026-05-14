@@ -10,6 +10,7 @@ import { LocationService } from '../../core/services/location.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { SpeechRecognition } from '@capacitor-community/speech-recognition';
+import { App } from '@capacitor/app';
 
 @Component({
   standalone: true,
@@ -236,15 +237,16 @@ import { SpeechRecognition } from '@capacitor-community/speech-recognition';
           </ng-template>
         </div>
 
-        <div class="browse-pad" id="prod-section" *ngIf="!isFoodMode() && selectedCategoryId() !== null">
+        <div class="browse-pad" id="prod-section" *ngIf="!isFoodMode()">
           <div class="section-row">
-            <h3 class="section-title">{{ catEmoji(activeCategorySlug()) }} {{ activeCategoryName() }}</h3>
-            <span class="item-count">{{ categoryProducts().length }} items</span>
+            <h3 class="section-title" *ngIf="selectedCategoryId() === null">✨ All Products</h3>
+            <h3 class="section-title" *ngIf="selectedCategoryId() !== null">{{ catEmoji(activeCategorySlug()) }} {{ activeCategoryName() }}</h3>
+            <span class="item-count">{{ (selectedCategoryId() === null ? allProducts() : categoryProducts()).length }} items</span>
           </div>
 
-          <div class="prod-grid" *ngIf="categoryProducts().length > 0; else noItems">
+          <div class="prod-grid" *ngIf="(selectedCategoryId() === null ? allProducts() : categoryProducts()).length > 0; else noItems">
             <div class="prod-card"
-              *ngFor="let p of categoryProducts(); let i = index"
+              *ngFor="let p of (selectedCategoryId() === null ? allProducts().slice(0,40) : categoryProducts()); let i = index"
               [style.animationDelay.ms]="i*20"
               [routerLink]="['/products']" [queryParams]="{ query: p.name }">
               <div class="disc-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
@@ -550,37 +552,36 @@ import { SpeechRecognition } from '@capacitor-community/speech-recognition';
       border-radius: 24px;
       overflow: hidden;
       position: relative;
-      min-height: 230px;
       display: flex;
       align-items: flex-end;
     }
-    /* full-bleed banner image */
+    /* full-bleed banner image — natural height, no crop */
     .ok-hero-bg-img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center;
       display: block;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
     }
-    /* gradient overlay — only bottom strip, image shows fully at top */
+    /* gradient overlay — bottom strip only */
     .ok-hero-overlay {
       position: absolute;
       inset: 0;
       background: linear-gradient(
         to top,
-        rgba(4,20,12,0.82) 0%,
-        rgba(4,20,12,0.35) 40%,
-        transparent 68%
+        rgba(4,20,12,0.75) 0%,
+        rgba(4,20,12,0.2) 35%,
+        transparent 60%
       );
+      pointer-events: none;
     }
     /* ── text col ── */
     .ok-hero-text {
-      position: relative;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
       z-index: 2;
-      width: 100%;
-      padding: 14px 18px 10px;
+      padding: 14px 18px 12px;
     }
     .ok-hero-badge {
       display: inline-flex;
@@ -993,6 +994,7 @@ export class HomePage implements OnInit, OnDestroy {
   // food carousel
 
   private destroy$ = new Subject<void>();
+  private backButtonListener: any;
 
   // ── Feature strip data ──
   readonly featureItems = [
@@ -1060,6 +1062,7 @@ export class HomePage implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
+    this.backButtonListener = App.addListener('backButton', () => App.exitApp());
     this.api.get<any[]>('/customer/profile/addresses')
       .pipe(takeUntil(this.destroy$))
       .subscribe({ next: (res) => this.savedAddresses.set(res || []) });
@@ -1093,6 +1096,7 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.backButtonListener?.then((h: any) => h.remove());
     this.destroy$.next();
     this.destroy$.complete();
   }

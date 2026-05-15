@@ -151,11 +151,23 @@ import { NotificationStateService } from '../../core/services/notification-state
         <!-- ── FEATURE STRIP ── -->
         <!-- CATEGORY CHIPS -->
         <div class="cat-strip-sticky">
-        <div class="cat-strip">
-          <button class="cat-chip chip-fv" [class.active]="activeCategorySlug()==='fruits-vegetables'" (click)="selectChip('fruits-vegetables')">🥦 Fruits & Veg</button>
-          <button class="cat-chip chip-gr" [class.active]="activeCategorySlug()==='groceries'" (click)="selectChip('groceries')">🛒 Groceries</button>
-          <button class="cat-chip chip-sn" [class.active]="activeCategorySlug()==='snacks'" (click)="selectChip('snacks')">🍿 Snacks</button>
-          <button class="cat-chip chip-fd" [class.active]="activeCategorySlug()==='food'" (click)="selectChip('food')">🍽️ Food</button>
+        <div class="cat-strip" [class.has-selection]="selectedCategorySlug()">
+          <button class="cat-chip chip-fv" [class.active]="activeCategorySlug()==='fruits-vegetables'" (click)="selectChip('fruits-vegetables')">
+            <span class="chip-emoji">🥦</span>
+            <span class="chip-label">Fruits & Veg</span>
+          </button>
+          <button class="cat-chip chip-gr" [class.active]="activeCategorySlug()==='groceries'" (click)="selectChip('groceries')">
+            <span class="chip-emoji">🛒</span>
+            <span class="chip-label">Groceries</span>
+          </button>
+          <button class="cat-chip chip-sn" [class.active]="activeCategorySlug()==='snacks'" (click)="selectChip('snacks')">
+            <span class="chip-emoji">🍿</span>
+            <span class="chip-label">Snacks</span>
+          </button>
+          <button class="cat-chip chip-fd" [class.active]="activeCategorySlug()==='food'" (click)="selectChip('food')">
+            <span class="chip-emoji">🍽️</span>
+            <span class="chip-label">Food</span>
+          </button>
         </div>
         </div>
 
@@ -611,106 +623,129 @@ import { NotificationStateService } from '../../core/services/notification-state
     .cat-strip {
       display: flex;
       gap: 8px;
-      padding: 10px 14px 8px;
+      padding: 10px 14px 10px;
+      align-items: center;
     }
-    /* Base chip */
+
+    /* ── Base chip ── */
     .cat-chip {
       position: relative;
       flex: 1;
       min-width: 0;
-      border: none;
-      border-radius: 30px;
-      padding: 9px 2px;
-      font-size: 0.68rem;
+      border-radius: 18px;
+      padding: 8px 4px 10px;
       font-weight: 800;
       cursor: pointer;
       letter-spacing: 0.01em;
       overflow: hidden;
       text-align: center;
-      white-space: nowrap;
-      /* slide-in from bottom on load */
-      animation: chip-slide-in 0.5s cubic-bezier(0.34,1.56,0.64,1) both,
-                 chip-float 3s ease-in-out infinite 0.6s;
-      transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      /* Visible border so user knows it's tappable */
+      border: 2px solid rgba(0,0,0,0.10);
+      /* Smooth all changes */
+      transition:
+        transform 0.32s cubic-bezier(0.34,1.56,0.64,1),
+        flex 0.32s ease,
+        opacity 0.25s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease;
+      /* Slide-in on load */
+      animation: chip-slide-in 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .chip-emoji {
+      font-size: 1.3rem;
+      line-height: 1;
+      transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .chip-label {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      transition: font-size 0.32s cubic-bezier(0.34,1.56,0.64,1);
     }
     @keyframes chip-slide-in {
-      from { opacity: 0; transform: translateY(18px) scale(0.85); }
+      from { opacity: 0; transform: translateY(18px) scale(0.8); }
       to   { opacity: 1; transform: translateY(0)    scale(1); }
     }
-    @keyframes chip-float {
-      0%, 100% { transform: translateY(0); }
-      50%      { transform: translateY(-3px); }
-    }
-    .cat-chip:active { transform: scale(0.93) !important; }
-    /* Staggered delays */
-    .chip-fv { animation-delay: 0s,    0.8s; }
-    .chip-gr { animation-delay: 0.08s, 1.1s; }
-    .chip-sn { animation-delay: 0.16s, 1.4s; }
-    .chip-fd { animation-delay: 0.24s, 1.7s; }
-    /* Individual colour themes */
+    /* Tap feedback */
+    .cat-chip:active { transform: scale(0.9) !important; }
+
+    /* Staggered entry delays */
+    .chip-fv { animation-delay: 0s; }
+    .chip-gr { animation-delay: 0.07s; }
+    .chip-sn { animation-delay: 0.14s; }
+    .chip-fd { animation-delay: 0.21s; }
+
+    /* ── Colour themes (inactive pastel) ── */
     .chip-fv {
-      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+      background: linear-gradient(160deg, #d1fae5, #a7f3d0);
       color: #065f46;
-      box-shadow: 0 3px 10px rgba(16,185,129,0.25);
-    }
-    .chip-fv::after {
-      content: '';
-      position: absolute; bottom: 0; left: 0; right: 0; height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
-      background-size: 200% 100%;
-      animation: chip-sheen 2.8s linear infinite;
-      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(16,185,129,0.20);
+      border-color: rgba(16,185,129,0.35);
     }
     .chip-gr {
-      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      background: linear-gradient(160deg, #fef3c7, #fde68a);
       color: #92400e;
-      box-shadow: 0 3px 10px rgba(245,158,11,0.25);
-    }
-    .chip-gr::after {
-      content: '';
-      position: absolute; bottom: 0; left: 0; right: 0; height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
-      background-size: 200% 100%;
-      animation: chip-sheen 2.8s linear infinite 0.7s;
-      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(245,158,11,0.20);
+      border-color: rgba(245,158,11,0.4);
     }
     .chip-sn {
-      background: linear-gradient(135deg, #fee2e2, #fca5a5);
+      background: linear-gradient(160deg, #fee2e2, #fca5a5);
       color: #991b1b;
-      box-shadow: 0 3px 10px rgba(239,68,68,0.22);
-    }
-    .chip-sn::after {
-      content: '';
-      position: absolute; bottom: 0; left: 0; right: 0; height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
-      background-size: 200% 100%;
-      animation: chip-sheen 2.8s linear infinite 1.4s;
-      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(239,68,68,0.18);
+      border-color: rgba(239,68,68,0.35);
     }
     .chip-fd {
-      background: linear-gradient(135deg, #ede9fe, #c4b5fd);
+      background: linear-gradient(160deg, #ede9fe, #c4b5fd);
       color: #4c1d95;
-      box-shadow: 0 3px 10px rgba(139,92,246,0.25);
+      box-shadow: 0 2px 8px rgba(139,92,246,0.20);
+      border-color: rgba(139,92,246,0.35);
     }
-    .chip-fd::after {
+
+    /* Sheen shimmer on inactive */
+    .cat-chip::after {
       content: '';
-      position: absolute; bottom: 0; left: 0; right: 0; height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.45) 50%, transparent 80%);
       background-size: 200% 100%;
-      animation: chip-sheen 2.8s linear infinite 2.1s;
+      animation: chip-sheen 3s linear infinite;
       pointer-events: none;
     }
+    .chip-fv::after  { animation-delay: 0s; }
+    .chip-gr::after  { animation-delay: 0.75s; }
+    .chip-sn::after  { animation-delay: 1.5s; }
+    .chip-fd::after  { animation-delay: 2.25s; }
     @keyframes chip-sheen {
       0%   { background-position: -200% center; }
       100% { background-position: 200% center; }
     }
-    /* Active states — solid + glow */
-    .chip-fv.active { background: linear-gradient(135deg,#059669,#10b981); color:#fff; box-shadow: 0 4px 15px rgba(16,185,129,0.5); filter: brightness(1.05); }
-    .chip-gr.active { background: linear-gradient(135deg,#d97706,#f59e0b); color:#fff; box-shadow: 0 4px 15px rgba(245,158,11,0.5); filter: brightness(1.05); }
-    .chip-sn.active { background: linear-gradient(135deg,#dc2626,#ef4444); color:#fff; box-shadow: 0 4px 15px rgba(239,68,68,0.5);  filter: brightness(1.05); }
-    .chip-fd.active { background: linear-gradient(135deg,#7c3aed,#8b5cf6); color:#fff; box-shadow: 0 4px 15px rgba(139,92,246,0.5); filter: brightness(1.05); }
-    /* kill old shimmer-underline on active */
-    .cat-chip.active::after { animation: chip-sheen 2.8s linear infinite; }
+
+    /* ── ACTIVE chip — grows bigger, bolder ── */
+    .cat-chip.active {
+      flex: 1.55;
+      transform: scale(1.1);
+      border: 2.5px solid transparent;
+      z-index: 2;
+    }
+    .cat-chip.active .chip-emoji { transform: scale(1.18); }
+    .cat-chip.active .chip-label { font-size: 0.7rem; }
+    .cat-chip.active::after { animation: none; opacity: 0; }
+
+    /* Active colour fills */
+    .chip-fv.active { background: linear-gradient(135deg,#059669,#10b981); color:#fff; box-shadow: 0 6px 20px rgba(16,185,129,0.5); }
+    .chip-gr.active { background: linear-gradient(135deg,#d97706,#f59e0b); color:#fff; box-shadow: 0 6px 20px rgba(245,158,11,0.5); }
+    .chip-sn.active { background: linear-gradient(135deg,#dc2626,#ef4444); color:#fff; box-shadow: 0 6px 20px rgba(239,68,68,0.5);  }
+    .chip-fd.active { background: linear-gradient(135deg,#7c3aed,#8b5cf6); color:#fff; box-shadow: 0 6px 20px rgba(139,92,246,0.5); }
+
+    /* ── When a chip IS selected: dim & shrink the others ── */
+    .cat-strip.has-selection .cat-chip:not(.active) {
+      opacity: 0.55;
+      transform: scale(0.91);
+      flex: 0.82;
+    }
     /* ══════════════════════════════════════
        SECTION SHARED
     ══════════════════════════════════════ */

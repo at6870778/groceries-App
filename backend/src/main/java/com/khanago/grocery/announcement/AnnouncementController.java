@@ -1,9 +1,14 @@
 package com.khanago.grocery.announcement;
 
+import com.khanago.grocery.common.enums.RoleName;
 import com.khanago.grocery.common.service.FcmService;
+import com.khanago.grocery.notification.UserNotificationService;
+import com.khanago.grocery.user.User;
+import com.khanago.grocery.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -12,6 +17,8 @@ public class AnnouncementController {
 
     private final AnnouncementRepository repo;
     private final FcmService fcmService;
+    private final UserNotificationService userNotificationService;
+    private final UserRepository userRepository;
 
     /** Public — called by the Ionic app on every home load */
     @GetMapping("/api/public/announcement")
@@ -29,10 +36,11 @@ public class AnnouncementController {
         if (body.containsKey("active"))   a.setActive((Boolean) body.get("active"));
         if (body.containsKey("bgColor"))  a.setBgColor((String) body.get("bgColor"));
         Announcement saved = repo.save(a);
-        // Broadcast push notification when announcement is newly activated
+        // Broadcast push + in-app notification when announcement is newly activated
         boolean isNowActive = saved.isActive();
         if (!wasActive && isNowActive && saved.getMessage() != null && !saved.getMessage().isBlank()) {
             fcmService.sendToTopic("promotions", "Order Kro Offer", saved.getMessage());
+            broadcastInAppNotification("Order Kro Offer", saved.getMessage());
         }
         return saved;
     }
@@ -49,6 +57,15 @@ public class AnnouncementController {
             return Map.of("status", "skipped", "reason", "No announcement message set.");
         }
         fcmService.sendToTopic("promotions", "Order Kro Offer", msg);
+        broadcastInAppNotification("Order Kro Offer", msg);
         return Map.of("status", "sent");
+    }
+
+    /** Save a UserNotification row for every customer so the bell icon shows a count. */
+    private void broadcastInAppNotification(String title, String body) {
+        List<User> customers = userRepository.findByRoles_Name(RoleName.CUSTOMER);
+        for (User customer : customers) {
+            userNotificationService.save(customer, title, body, "PROMO");
+        }
     }
 }

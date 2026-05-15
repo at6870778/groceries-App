@@ -187,31 +187,37 @@ declare global {
 
           <div class="payment-card">
             <div class="payment-title">Choose payment method</div>
-            <div class="payment-subtitle">Select UPI to pay online or choose COD to pay on delivery.</div>
+            <div class="payment-subtitle">Pick how you'd like to pay for your order.</div>
             <div class="payment-actions">
-              <button class="mode-btn" [class.active]="paymentMode() === 'UPI'" (click)="selectPaymentMode('UPI')">
+              <button class="mode-btn mode-btn-upi" [class.active]="paymentMode() === 'UPI'" (click)="selectPaymentMode('UPI')">
                 <span class="mode-icon">📱</span>
                 <span>
-                  <strong>UPI</strong>
+                  <strong>UPI <span class="soon-badge">Soon</span></strong>
                   <small>PhonePe / GPay / Paytm</small>
                 </span>
               </button>
-              <button class="mode-btn" [class.active]="paymentMode() === 'COD'" (click)="selectPaymentMode('COD')">
+              <button class="mode-btn mode-btn-cod" [class.active]="paymentMode() === 'COD'" (click)="selectPaymentMode('COD')">
                 <span class="mode-icon">💵</span>
                 <span>
-                  <strong>COD</strong>
+                  <strong>Cash on Delivery</strong>
                   <small>Pay when delivered</small>
                 </span>
               </button>
             </div>
-            <div class="upi-panel" *ngIf="paymentMode() === 'UPI'">
-              <div class="upi-qr">QR</div>
-              <div>
-                <div class="upi-label">Pay to UPI ID</div>
-                <div class="upi-value">orderkro&#64;upi</div>
-                <div class="upi-note">Tap the button below to open Razorpay and complete UPI payment securely.</div>
+
+            <!-- UPI coming-soon notice -->
+            <div class="upi-coming-soon" *ngIf="paymentMode() === 'UPI'">
+              <div class="upi-coming-icon">🚀</div>
+              <div class="upi-coming-title">UPI payments coming very soon!</div>
+              <div class="upi-coming-msg">
+                We're working hard to bring you a seamless UPI experience with
+                PhonePe, Google Pay & Paytm. Stay tuned — it'll be worth the wait! 🎉
               </div>
+              <button class="upi-switch-btn" (click)="selectPaymentMode('COD')">
+                👉 Use Cash on Delivery for now
+              </button>
             </div>
+
             <div class="cod-note" *ngIf="paymentMode() === 'COD' && !confirmingCod()">
               You selected Cash on Delivery. Tap confirm to place the order.
             </div>
@@ -247,8 +253,8 @@ declare global {
         <ion-button *ngIf="checkoutStep() === 'cart'" expand="block" class="proceed-btn" (click)="proceedToPayment()">
           Proceed to Payment →
         </ion-button>
-        <ion-button *ngIf="checkoutStep() === 'payment'" expand="block" class="checkout-btn" (click)="checkout()" [disabled]="checking || !canCheckout() || confirmingCod()">
-          {{ checking ? 'Placing Order...' : paymentMode() === 'UPI' ? 'Confirm UPI Payment & Place Order' : 'Confirm COD Order' }}
+        <ion-button *ngIf="checkoutStep() === 'payment'" expand="block" class="checkout-btn" (click)="checkout()" [disabled]="checking || !canCheckout() || confirmingCod() || paymentMode() === 'UPI'">
+          {{ checking ? 'Placing Order...' : paymentMode() === 'UPI' ? '⚠️ UPI Not Available — Switch to COD' : 'Confirm COD Order' }}
         </ion-button>
       </ion-toolbar>
     </ion-footer>
@@ -387,7 +393,7 @@ declare global {
 
     .mode-btn {
       width: 100%;
-      border: 1px solid #d8e2ef;
+      border: 2px solid #d8e2ef;
       border-radius: 16px;
       background: #fff;
       padding: 12px;
@@ -397,12 +403,26 @@ declare global {
       text-align: left;
       box-shadow: 0 6px 16px rgba(18, 49, 90, 0.05);
       cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s, opacity 0.2s;
     }
 
-    .mode-btn.active {
-      border-color: #2d7ef7;
-      background: linear-gradient(135deg, #eef5ff 0%, #f8fbff 100%);
-      box-shadow: 0 10px 22px rgba(45, 126, 247, 0.12);
+    /* UPI button — visually subdued to signal unavailability */
+    .mode-btn-upi {
+      opacity: 0.65;
+      border-style: dashed;
+    }
+    .mode-btn-upi.active {
+      opacity: 1;
+      border-style: dashed;
+      border-color: #f59e0b;
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      box-shadow: 0 6px 18px rgba(245,158,11,0.15);
+    }
+
+    .mode-btn-cod.active {
+      border-color: #16a34a;
+      background: linear-gradient(135deg, #f0faf5 0%, #ecfdf5 100%);
+      box-shadow: 0 10px 22px rgba(22, 163, 74, 0.15);
     }
 
     .mode-btn span {
@@ -427,80 +447,57 @@ declare global {
       min-width: 1.5rem;
     }
 
-    .upi-panel {
+    /* "Soon" pill badge on UPI label */
+    .soon-badge {
+      display: inline-block;
+      font-size: 0.6rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f59e0b, #fbbf24);
+      color: #fff;
+      padding: 1px 6px;
+      border-radius: 20px;
+      vertical-align: middle;
+      margin-left: 4px;
+      letter-spacing: 0.04em;
+    }
+
+    /* UPI coming-soon panel */
+    .upi-coming-soon {
       margin-top: 14px;
-      border-radius: 16px;
-      background: linear-gradient(135deg, #f6fbff 0%, #edf6ff 100%);
-      border: 1px dashed #bcd2ee;
-      padding: 14px;
-      display: flex;
-      gap: 12px;
-      align-items: center;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #fffbeb 0%, #fef9ee 100%);
+      border: 1.5px dashed #fbbf24;
+      padding: 20px 16px;
+      text-align: center;
+      animation: fadeSlideIn 0.35s ease;
     }
-
-    .upi-qr {
-      width: 64px;
-      height: 64px;
-      border-radius: 14px;
-      background: repeating-linear-gradient(45deg, #d6e8ff, #d6e8ff 6px, #ffffff 6px, #ffffff 12px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 900;
-      color: #2d7ef7;
-      letter-spacing: 1px;
-      flex: 0 0 auto;
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
-
-    .upi-label {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #6f7f95;
-    }
-
-    .upi-value {
+    .upi-coming-icon { font-size: 2rem; line-height: 1; margin-bottom: 8px; }
+    .upi-coming-title {
       font-size: 1rem;
       font-weight: 800;
-      color: #14395f;
-      margin-top: 2px;
+      color: #92400e;
+      margin-bottom: 6px;
     }
-
-    .upi-note {
-      color: #6f7f95;
+    .upi-coming-msg {
+      font-size: 0.85rem;
+      color: #a16207;
+      line-height: 1.55;
+      margin-bottom: 14px;
+    }
+    .upi-switch-btn {
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      color: #fff;
+      border: none;
+      border-radius: 30px;
+      padding: 10px 22px;
       font-size: 0.88rem;
-      margin-top: 4px;
-      line-height: 1.35;
-    }
-
-    .upi-input {
-      width: 100%;
-      margin-top: 8px;
-      border: 1px solid #c8d9ef;
-      border-radius: 10px;
-      padding: 10px;
-      font-size: 0.9rem;
-      outline: none;
-      box-sizing: border-box;
-      background: #fff;
-    }
-
-    .upi-confirm-btn {
-      margin-top: 8px;
-      width: 100%;
-      border: 1px solid #c8d9ef;
-      border-radius: 10px;
-      padding: 10px;
-      background: #fff;
-      color: #24486e;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-    }
-
-    .upi-confirm-btn.active {
-      border-color: #22c55e;
-      background: #ebfff1;
-      color: #176b3c;
+      box-shadow: 0 4px 14px rgba(22,163,74,0.35);
     }
 
     .cod-note {
@@ -827,7 +824,7 @@ export class CartPage implements OnInit, OnDestroy {
   checking = false;
   orderMsg = '';
   readonly checkoutStep = signal<'cart' | 'payment'>('cart');
-  readonly paymentMode = signal<'UPI' | 'COD'>('UPI');
+  readonly paymentMode = signal<'UPI' | 'COD'>('COD');
   readonly confirmingCod = signal(false);
   readonly upiReference = signal('');
   readonly upiPaymentVerified = signal(false);

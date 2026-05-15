@@ -39,8 +39,8 @@ public class AnnouncementController {
         // Broadcast push + in-app notification when announcement is newly activated
         boolean isNowActive = saved.isActive();
         if (!wasActive && isNowActive && saved.getMessage() != null && !saved.getMessage().isBlank()) {
-            fcmService.sendToTopic("promotions", "Order Kro Offer", saved.getMessage());
-            broadcastInAppNotification("Order Kro Offer", saved.getMessage());
+            fcmService.sendToTopic("promotions", "🛍️ Order Kro", saved.getMessage());
+            broadcastInAppNotification("🛍️ Order Kro", saved.getMessage());
         }
         return saved;
     }
@@ -56,8 +56,8 @@ public class AnnouncementController {
         if (msg == null || msg.isBlank()) {
             return Map.of("status", "skipped", "reason", "No announcement message set.");
         }
-        fcmService.sendToTopic("promotions", "Order Kro Offer", msg);
-        broadcastInAppNotification("Order Kro Offer", msg);
+        fcmService.sendToTopic("promotions", "🛍️ Order Kro", msg);
+        broadcastInAppNotification("🛍️ Order Kro", msg);
         return Map.of("status", "sent");
     }
 

@@ -25,27 +25,31 @@ import { filter } from 'rxjs/operators';
     .exit-toast {
       position: fixed;
       bottom: 90px;
-      left: 50%;
-      transform: translateX(-50%) translateY(20px);
+      left: 16px;
+      right: 16px;
+      max-width: 320px;
+      margin: 0 auto;
+      transform: translateY(20px);
       background: rgba(20, 20, 20, 0.92);
       color: #fff;
-      padding: 10px 22px 10px 14px;
+      padding: 10px 18px 10px 12px;
       border-radius: 32px;
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 600;
       opacity: 0;
       transition: opacity 0.2s ease, transform 0.2s ease;
       pointer-events: none;
       z-index: 99999;
-      white-space: nowrap;
+      white-space: normal;
+      word-break: keep-all;
       box-shadow: 0 4px 20px rgba(0,0,0,0.35);
     }
     .exit-toast.visible {
       opacity: 1;
-      transform: translateX(-50%) translateY(0);
+      transform: translateY(0);
     }
     .exit-logo {
       width: 28px;
@@ -92,9 +96,10 @@ export class AppComponent implements OnInit, OnDestroy {
     // Listen to the native DOM event dispatched by MainActivity.java
     this.backHandler = () => {
       this.zone.run(() => {
-        const isRoot = this.ROOT_PAGES.some(
-          p => this.currentUrl === p || this.currentUrl.startsWith(p + '?')
-        );
+        // Use live router.url as fallback in case currentUrl wasn't updated yet
+        const url = this.currentUrl || this.router.url || '';
+        const cleanUrl = url.split('?')[0].split('#')[0];
+        const isRoot = this.ROOT_PAGES.includes(cleanUrl);
 
         if (!isRoot) {
           this.location.back();

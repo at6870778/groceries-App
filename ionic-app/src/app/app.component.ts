@@ -3,10 +3,10 @@ import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { Router, NavigationEnd } from '@angular/router';
 import { Location } from '@angular/common';
 import { App } from '@capacitor/app';
-import { filter } from 'rxjs/operators';
 import { SyncService } from './core/services/sync.service';
 import { AuthService } from './core/services/auth.service';
 import { PushNotificationService } from './core/services/push-notification.service';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -56,20 +56,21 @@ import { PushNotificationService } from './core/services/push-notification.servi
   `]
 })
 export class AppComponent implements OnInit, OnDestroy {
-  private backListener: any;
   private exitPressedOnce = false;
   private exitTimer: any;
   showExitToast = false;
   private currentUrl = '/home';
+  private backHandler!: (e: Event) => void;
+
   private readonly ROOT_PAGES = ['/home', '/', '/login', '/delivery/orders'];
 
   constructor(
     private sync: SyncService,
     private auth: AuthService,
     private push: PushNotificationService,
+    private router: Router,
     private location: Location,
-    private zone: NgZone,
-    private router: Router
+    private zone: NgZone
   ) {
     this.sync.init();
 
@@ -82,25 +83,24 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  async ngOnInit() {
-    // Track current URL — canGoBack is unreliable in Angular (history always has entries)
+  ngOnInit() {
     this.currentUrl = this.router.url;
     this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
       .subscribe((e: any) => { this.currentUrl = e.urlAfterRedirects; });
 
-    // Adding ANY listener prevents Capacitor's default app-exit behaviour
-    this.backListener = await App.addListener('backButton', () => {
+    // Listen to the native DOM event dispatched by MainActivity.java
+    this.backHandler = () => {
       this.zone.run(() => {
         const isRoot = this.ROOT_PAGES.some(
           p => this.currentUrl === p || this.currentUrl.startsWith(p + '?')
         );
+
         if (!isRoot) {
           this.location.back();
           return;
         }
 
-        // On root screen — double-press to exit
         if (this.exitPressedOnce) {
           clearTimeout(this.exitTimer);
           this.showExitToast = false;
@@ -115,11 +115,13 @@ export class AppComponent implements OnInit, OnDestroy {
           this.showExitToast = false;
         }, 2500);
       });
-    });
+    };
+
+    window.addEventListener('androidBackButton', this.backHandler);
   }
 
   ngOnDestroy() {
-    this.backListener?.remove();
+    window.removeEventListener('androidBackButton', this.backHandler);
     clearTimeout(this.exitTimer);
   }
 }

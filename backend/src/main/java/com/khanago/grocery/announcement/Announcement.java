@@ -24,6 +24,9 @@ public class Announcement {
     @Column(name = "bg_color", length = 20)
     private String bgColor = "#667eea";
 
+    @Column(name = "image_url", length = 512)
+    private String imageUrl;
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 

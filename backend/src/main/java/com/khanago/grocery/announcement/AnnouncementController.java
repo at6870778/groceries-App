@@ -35,11 +35,12 @@ public class AnnouncementController {
         if (body.containsKey("message"))  a.setMessage((String) body.get("message"));
         if (body.containsKey("active"))   a.setActive((Boolean) body.get("active"));
         if (body.containsKey("bgColor"))  a.setBgColor((String) body.get("bgColor"));
+        if (body.containsKey("imageUrl")) a.setImageUrl((String) body.get("imageUrl"));
         Announcement saved = repo.save(a);
         // Broadcast push + in-app notification when announcement is newly activated
         boolean isNowActive = saved.isActive();
         if (!wasActive && isNowActive && saved.getMessage() != null && !saved.getMessage().isBlank()) {
-            fcmService.sendToTopic("promotions", "🛍️ Order Kro", saved.getMessage());
+            fcmService.sendToTopic("promotions", "🛍️ Order Kro", saved.getMessage(), saved.getImageUrl());
             broadcastInAppNotification("🛍️ Order Kro", saved.getMessage());
         }
         return saved;
@@ -56,7 +57,7 @@ public class AnnouncementController {
         if (msg == null || msg.isBlank()) {
             return Map.of("status", "skipped", "reason", "No announcement message set.");
         }
-        fcmService.sendToTopic("promotions", "🛍️ Order Kro", msg);
+        fcmService.sendToTopic("promotions", "🛍️ Order Kro", msg, a.getImageUrl());
         broadcastInAppNotification("🛍️ Order Kro", msg);
         return Map.of("status", "sent");
     }

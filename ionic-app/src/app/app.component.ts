@@ -2,13 +2,11 @@ import { Component, effect, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { Router, NavigationEnd } from '@angular/router';
 import { Location } from '@angular/common';
-import { Platform } from '@ionic/angular';
 import { App } from '@capacitor/app';
+import { filter } from 'rxjs/operators';
 import { SyncService } from './core/services/sync.service';
 import { AuthService } from './core/services/auth.service';
 import { PushNotificationService } from './core/services/push-notification.service';
-import { filter } from 'rxjs/operators';
-import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -58,22 +56,20 @@ import { Subscription } from 'rxjs';
   `]
 })
 export class AppComponent implements OnInit, OnDestroy {
-  private currentUrl = '/home';
-  private backSub!: Subscription;
+  private backListener: any;
   private exitPressedOnce = false;
   private exitTimer: any;
   showExitToast = false;
-
+  private currentUrl = '/home';
   private readonly ROOT_PAGES = ['/home', '/', '/login', '/delivery/orders'];
 
   constructor(
     private sync: SyncService,
     private auth: AuthService,
     private push: PushNotificationService,
-    private router: Router,
     private location: Location,
-    private platform: Platform,
-    private zone: NgZone
+    private zone: NgZone,
+    private router: Router
   ) {
     this.sync.init();
 
@@ -86,23 +82,25 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnInit() {
+  async ngOnInit() {
+    // Track current URL — canGoBack is unreliable in Angular (history always has entries)
+    this.currentUrl = this.router.url;
     this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
       .subscribe((e: any) => { this.currentUrl = e.urlAfterRedirects; });
 
-    // Priority 9999 — overrides ALL Ionic default handlers including the app-exit one
-    this.backSub = this.platform.backButton.subscribeWithPriority(9999, () => {
+    // Adding ANY listener prevents Capacitor's default app-exit behaviour
+    this.backListener = await App.addListener('backButton', () => {
       this.zone.run(() => {
         const isRoot = this.ROOT_PAGES.some(
           p => this.currentUrl === p || this.currentUrl.startsWith(p + '?')
         );
-
         if (!isRoot) {
           this.location.back();
           return;
         }
 
+        // On root screen — double-press to exit
         if (this.exitPressedOnce) {
           clearTimeout(this.exitTimer);
           this.showExitToast = false;
@@ -121,7 +119,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.backSub?.unsubscribe();
+    this.backListener?.remove();
     clearTimeout(this.exitTimer);
   }
 }

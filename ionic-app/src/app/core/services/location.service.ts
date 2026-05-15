@@ -117,15 +117,17 @@ export class LocationService {
       if (village) parts.push(village);
       const suburb = address.suburb || address.neighbourhood || address.quarter;
       if (suburb && suburb !== village) parts.push(suburb);
-      const postOffice = address.postcode ? `Post: ${address.postcode}` : null;
+      // post_office is the actual post office name in Nominatim for India
+      const postOffice = address.post_office;
+      if (postOffice && postOffice !== village) parts.push(postOffice);
       const town = address.town;
-      if (town) parts.push(town);
+      if (town && town !== village && town !== postOffice) parts.push(town);
       const county = address.county; // district level
       if (county) parts.push(county);
       const city = address.city;
-      if (city && city !== town) parts.push(city);
+      if (city && city !== town && city !== county) parts.push(city);
       if (address.state) parts.push(address.state);
-      if (postOffice) parts.push(postOffice);
+      if (address.postcode) parts.push(address.postcode);
 
       return parts.join(', ') || data.display_name?.split(',').slice(0, 5).join(',').trim() || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
     } catch (error) {

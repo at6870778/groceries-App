@@ -1,8 +1,11 @@
-import { Component, effect } from '@angular/core';
+import { Component, effect, OnInit, OnDestroy } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
+import { Router, NavigationEnd } from '@angular/router';
+import { App } from '@capacitor/app';
 import { SyncService } from './core/services/sync.service';
 import { AuthService } from './core/services/auth.service';
 import { PushNotificationService } from './core/services/push-notification.service';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -14,11 +17,15 @@ import { PushNotificationService } from './core/services/push-notification.servi
     </ion-app>
   `
 })
-export class AppComponent {
+export class AppComponent implements OnInit, OnDestroy {
+  private currentUrl = '/home';
+  private backButtonListener: any;
+
   constructor(
     private sync: SyncService,
     private auth: AuthService,
-    private push: PushNotificationService
+    private push: PushNotificationService,
+    private router: Router
   ) {
     this.sync.init();
 
@@ -30,5 +37,26 @@ export class AppComponent {
         this.push.init();
       }
     });
+  }
+
+  ngOnInit() {
+    // Track current route
+    this.router.events
+      .pipe(filter(e => e instanceof NavigationEnd))
+      .subscribe((e: any) => { this.currentUrl = e.urlAfterRedirects; });
+
+    // Handle Android hardware back button
+    this.backButtonListener = App.addListener('backButton', () => {
+      const isHome = this.currentUrl === '/home' || this.currentUrl === '/';
+      if (isHome) {
+        // On home screen → minimize app (go to phone home screen, don't close)
+        App.minimizeApp();
+      }
+      // On any other screen → do nothing; Ionic/Angular handles navigation back naturally
+    });
+  }
+
+  ngOnDestroy() {
+    this.backButtonListener?.remove();
   }
 }

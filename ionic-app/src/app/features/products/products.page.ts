@@ -14,20 +14,19 @@ import { takeUntil } from 'rxjs/operators';
   imports: [CommonModule, RouterLink, IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonBadge, IonToast, IonButtons, IonSearchbar, IonRefresher, IonRefresherContent, BottomNavComponent],
   template: `
     <ion-header>
-      <ion-toolbar>
-        <ion-title>{{ categoryName() || 'Products' }}</ion-title>
-        <ion-buttons slot="end">
-          <ion-button routerLink="/cart">
-            🛒 Cart <ion-badge color="danger" *ngIf="cartCount() > 0">{{ cartCount() }}</ion-badge>
-          </ion-button>
-        </ion-buttons>
-      </ion-toolbar>
-      <ion-toolbar class="sticky-search-toolbar">
+      <ion-toolbar class="search-toolbar">
         <ion-searchbar
-          placeholder="Search in products"
+          class="header-searchbar"
+          [placeholder]="categoryName() || 'Search products'"
           [value]="searchTerm()"
+          showClearButton="focus"
           (ionInput)="onSearchInput($any($event).detail.value || '')">
         </ion-searchbar>
+        <ion-buttons slot="end">
+          <ion-button routerLink="/cart" class="cart-btn">
+            🛒<ion-badge color="danger" *ngIf="cartCount() > 0">{{ cartCount() }}</ion-badge>
+          </ion-button>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
     <ion-content [scrollEvents]="true" [fullscreen]="false" class="products-content ion-padding" style="--padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px))">
@@ -63,8 +62,7 @@ import { takeUntil } from 'rxjs/operators';
               <div class="stepper-wrap" (click)="$event.stopPropagation()">
                 <ng-container *ngIf="cartQty(p.id) === 0; else stepper">
                   <ion-button size="small" fill="outline" color="medium" (click)="addToCart(p)" [disabled]="adding() === p.id" class="add-btn">
-                    <span *ngIf="adding() !== p.id">➕ Add</span>
-                    <span *ngIf="adding() === p.id">Adding...</span>
+                    {{ adding() === p.id ? '...' : 'ADD' }}
                   </ion-button>
                 </ng-container>
                 <ng-template #stepper>
@@ -76,7 +74,7 @@ import { takeUntil } from 'rxjs/operators';
                 </ng-template>
               </div>
               <ion-button size="small" (click)="buyNow(p)" [disabled]="adding() === p.id" class="buy-btn">
-                <span class="buy-label">{{ adding() === p.id ? 'Adding' : 'Buy Now' }}</span>
+                {{ adding() === p.id ? '...' : 'BUY' }}
               </ion-button>
             </div>
           </div>
@@ -86,10 +84,25 @@ import { takeUntil } from 'rxjs/operators';
     <app-bottom-nav></app-bottom-nav>
   `,
   styles: [`
-    .sticky-search-toolbar {
-      --background: rgba(255, 255, 255, 0.96);
-      --min-height: 64px;
-      padding: 0 8px;
+    .search-toolbar {
+      --background: #ffffff;
+      --border-width: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .header-searchbar {
+      --background: #f2f3f7;
+      --border-radius: 12px;
+      --box-shadow: none;
+      --placeholder-color: #9aa0b2;
+      --color: #1a1a1a;
+      --icon-color: #9aa0b2;
+      --clear-button-color: #9aa0b2;
+      padding: 6px 0;
+      font-size: 0.95rem;
+    }
+    .cart-btn {
+      font-size: 1.2rem;
+      position: relative;
     }
     .products-content {
       --background: linear-gradient(180deg, #fffdf9 0%, #f7fbff 100%);
@@ -231,23 +244,24 @@ import { takeUntil } from 'rxjs/operators';
     }
     .action-row {
       display: flex;
-      align-items: center;
+      flex-direction: column;
+      align-items: stretch;
       gap: 6px;
       width: 100%;
-      min-width: 0;
     }
     .stepper-wrap {
-      flex: 0 0 auto;
-      min-width: 0;
+      width: 100%;
     }
     .stepper {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 0;
       background: #f0f0f0;
       border-radius: 20px;
       overflow: hidden;
       height: 32px;
+      width: 100%;
     }
     .add-btn {
       height: 32px;
@@ -255,6 +269,8 @@ import { takeUntil } from 'rxjs/operators';
       font-size: 0.8rem;
       font-weight: 700;
       white-space: nowrap;
+      width: 100%;
+      margin: 0;
     }
     .step-btn {
       background: none;
@@ -262,7 +278,7 @@ import { takeUntil } from 'rxjs/operators';
       font-size: 1.1rem;
       font-weight: 700;
       color: #667eea;
-      width: 32px;
+      flex: 1 1 0;
       height: 32px;
       cursor: pointer;
       display: flex;
@@ -270,27 +286,21 @@ import { takeUntil } from 'rxjs/operators';
       justify-content: center;
     }
     .step-qty {
-      min-width: 22px;
+      flex: 0 0 auto;
+      min-width: 24px;
       text-align: center;
       font-weight: 700;
       font-size: 0.95rem;
       color: #1a1a1a;
     }
     .buy-btn {
-      flex: 1 1 0;
-      min-width: 0;
+      width: 100%;
+      margin: 0;
       --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       --color: #ffffff;
       --border-radius: 10px;
       --box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26);
-      --padding-start: 6px;
-      --padding-end: 6px;
       font-weight: 700;
-    }
-    .buy-label {
-      font-size: 0.8rem;
-      font-weight: 700;
-      white-space: nowrap;
     }
     .discount-badge {
       position: absolute;
@@ -352,7 +362,7 @@ export class ProductsPage implements OnInit, OnDestroy {
         const query = qp.get('query') || '';
         this.lastQuery = query.trim();
         this.searchTerm.set(query);
-        this.categoryName.set(name || (query ? 'Search Results' : 'Products'));
+        this.categoryName.set(name || 'Products');
         this.loadProducts(categoryId, query);
       });
     this.api.get<any>('/customer/cart')

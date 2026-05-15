@@ -1,7 +1,8 @@
-import { Component, effect, OnInit, OnDestroy } from '@angular/core';
+import { Component, effect, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { Router, NavigationEnd } from '@angular/router';
-import { Platform, NavController } from '@ionic/angular';
+import { Location } from '@angular/common';
+import { Platform } from '@ionic/angular';
 import { App } from '@capacitor/app';
 import { SyncService } from './core/services/sync.service';
 import { AuthService } from './core/services/auth.service';
@@ -70,8 +71,9 @@ export class AppComponent implements OnInit, OnDestroy {
     private auth: AuthService,
     private push: PushNotificationService,
     private router: Router,
+    private location: Location,
     private platform: Platform,
-    private navCtrl: NavController
+    private zone: NgZone
   ) {
     this.sync.init();
 
@@ -89,29 +91,32 @@ export class AppComponent implements OnInit, OnDestroy {
       .pipe(filter(e => e instanceof NavigationEnd))
       .subscribe((e: any) => { this.currentUrl = e.urlAfterRedirects; });
 
-    this.backSub = this.platform.backButton.subscribeWithPriority(10, () => {
-      const isRoot = this.ROOT_PAGES.some(
-        p => this.currentUrl === p || this.currentUrl.startsWith(p + '?')
-      );
+    // Priority 9999 — overrides ALL Ionic default handlers including the app-exit one
+    this.backSub = this.platform.backButton.subscribeWithPriority(9999, () => {
+      this.zone.run(() => {
+        const isRoot = this.ROOT_PAGES.some(
+          p => this.currentUrl === p || this.currentUrl.startsWith(p + '?')
+        );
 
-      if (!isRoot) {
-        this.navCtrl.back();
-        return;
-      }
+        if (!isRoot) {
+          this.location.back();
+          return;
+        }
 
-      if (this.exitPressedOnce) {
-        clearTimeout(this.exitTimer);
-        this.showExitToast = false;
-        App.minimizeApp();
-        return;
-      }
+        if (this.exitPressedOnce) {
+          clearTimeout(this.exitTimer);
+          this.showExitToast = false;
+          App.minimizeApp();
+          return;
+        }
 
-      this.exitPressedOnce = true;
-      this.showExitToast = true;
-      this.exitTimer = setTimeout(() => {
-        this.exitPressedOnce = false;
-        this.showExitToast = false;
-      }, 2500);
+        this.exitPressedOnce = true;
+        this.showExitToast = true;
+        this.exitTimer = setTimeout(() => {
+          this.exitPressedOnce = false;
+          this.showExitToast = false;
+        }, 2500);
+      });
     });
   }
 

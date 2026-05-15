@@ -10,6 +10,7 @@ import { ApiService } from '../../core/services/api.service';
 import { CartState } from '../../core/state/cart.state';
 import { ActivityState } from '../../core/state/activity.state';
 import { LocationService } from '../../core/services/location.service';
+import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -21,14 +22,14 @@ declare global {
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, IonContent, IonFooter, IonHeader, IonTitle, IonToolbar, IonButton],
+  imports: [CommonModule, RouterLink, IonContent, IonFooter, IonHeader, IonTitle, IonToolbar, IonButton, BottomNavComponent],
   template: `
     <ion-header>
       <ion-toolbar>
         <ion-title>My Cart</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content [scrollEvents]="true" [fullscreen]="false" class="ion-padding" style="--padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px))">
+    <ion-content [scrollEvents]="true" [fullscreen]="false" class="ion-padding" style="--padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px))">
       <ng-container *ngIf="checkoutSuccess(); else cartOrEmpty">
         <div class="success-card">
           <div class="success-emoji">✅</div>
@@ -149,7 +150,6 @@ declare global {
 
         <!-- ===== STEP 2: PAYMENT ===== -->
         <ng-container *ngIf="checkoutStep() === 'payment'">
-          <button class="back-step-btn" (click)="checkoutStep.set('cart')">← Back to Cart</button>
 
           <!-- order summary chip -->
           <div class="order-chip">
@@ -258,6 +258,7 @@ declare global {
         </ion-button>
       </ion-toolbar>
     </ion-footer>
+    <app-bottom-nav></app-bottom-nav>
     <!-- Android system nav button safe area — dark strip consistent with home screen -->
     <div style="position:fixed;bottom:0;left:0;right:0;height:env(safe-area-inset-bottom,0px);background:#111;z-index:999;pointer-events:none;"></div>
   `,

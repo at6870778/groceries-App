@@ -247,17 +247,15 @@ declare global {
       </ng-template>
     </ion-content>
 
-    <!-- Sticky footer: always above system nav bar -->
-    <ion-footer *ngIf="!checkoutSuccess() && cartState.items().length > 0">
-      <ion-toolbar class="footer-toolbar">
-        <ion-button *ngIf="checkoutStep() === 'cart'" expand="block" class="proceed-btn" (click)="proceedToPayment()">
-          Proceed to Payment →
-        </ion-button>
-        <ion-button *ngIf="checkoutStep() === 'payment'" expand="block" class="checkout-btn" (click)="checkout()" [disabled]="checking || !canCheckout() || confirmingCod() || paymentMode() === 'UPI'">
-          {{ checking ? 'Placing Order...' : paymentMode() === 'UPI' ? '⚠️ UPI Not Available — Switch to COD' : 'Confirm COD Order' }}
-        </ion-button>
-      </ion-toolbar>
-    </ion-footer>
+    <!-- Action button — fixed above the bottom nav on BOTH cart and payment steps -->
+    <div class="action-footer" *ngIf="!checkoutSuccess() && cartState.items().length > 0">
+      <ion-button *ngIf="checkoutStep() === 'cart'" expand="block" class="proceed-btn" (click)="proceedToPayment()">
+        Proceed to Payment →
+      </ion-button>
+      <ion-button *ngIf="checkoutStep() === 'payment'" expand="block" class="checkout-btn" (click)="checkout()" [disabled]="checking || !canCheckout() || confirmingCod() || paymentMode() === 'UPI'">
+        {{ checking ? 'Placing Order...' : paymentMode() === 'UPI' ? '⚠️ UPI Not Available — Switch to COD' : 'Confirm COD Order' }}
+      </ion-button>
+    </div>
     <app-bottom-nav></app-bottom-nav>
     <!-- Android system nav button safe area — dark strip consistent with home screen -->
     <div style="position:fixed;bottom:0;left:0;right:0;height:env(safe-area-inset-bottom,0px);background:#111;z-index:999;pointer-events:none;"></div>
@@ -705,14 +703,18 @@ declare global {
       font-size: 1rem;
       color: #1a1a1a;
     }
-    .footer-toolbar {
-      --background: #fff;
-      --padding-start: 12px;
-      --padding-end: 12px;
-      --padding-top: 8px;
-      --padding-bottom: 8px;
+    /* Action footer — fixed above bottom nav (68px) on both steps */
+    .action-footer {
+      position: fixed;
+      left: 0; right: 0;
+      bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+      background: #fff;
+      padding: 8px 12px;
       box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+      z-index: 990;
     }
+    /* Remove the old ion-footer margin hack */
+    ion-footer { margin-bottom: 0; }
     .proceed-btn {
       --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       --border-radius: 14px;

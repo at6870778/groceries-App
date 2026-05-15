@@ -7,12 +7,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/services/api.service';
 
 @Component({
   standalone: true,
   imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule,
-            MatButtonModule, MatSlideToggleModule, MatSnackBarModule, MatCardModule],
+            MatButtonModule, MatSlideToggleModule, MatSnackBarModule, MatCardModule, MatTooltipModule],
   template: `
     <h2 class="page-title">📢 Announcement Banner</h2>
 
@@ -53,7 +54,16 @@ import { ApiService } from '../../core/services/api.service';
           <button mat-stroked-button color="warn" (click)="deactivate()" [disabled]="saving()">
             🔕 Hide Banner
           </button>
+          <button mat-stroked-button color="accent" (click)="sendPush()" [disabled]="saving() || !message.message?.trim()"
+                  matTooltip="Send current message as a push notification to all users now">
+            {{ pushing() ? 'Sending...' : '📱 Send Push Now' }}
+          </button>
         </div>
+
+        <p style="font-size:12px;color:#888;margin-top:12px;">
+          💡 <strong>Push notification</strong> is sent automatically when you activate the banner.
+          Use <em>"Send Push Now"</em> to re-send without changing banner state.
+        </p>
       </mat-card-content>
     </mat-card>
   `,
@@ -73,6 +83,7 @@ import { ApiService } from '../../core/services/api.service';
 export class AnnouncementComponent implements OnInit {
   message = { message: '', active: false, bgColor: '#667eea' };
   saving = signal(false);
+  pushing = signal(false);
 
   constructor(private api: ApiService, private snack: MatSnackBar) {}
 
@@ -107,5 +118,22 @@ export class AnnouncementComponent implements OnInit {
   deactivate() {
     this.message.active = false;
     this.save();
+  }
+
+  sendPush() {
+    this.pushing.set(true);
+    this.api.post<any>('/admin/announcement/push', {}).subscribe({
+      next: (res) => {
+        const msg = res?.status === 'skipped'
+          ? `⚠️ ${res.reason}`
+          : '📱 Push notification sent to all users!';
+        this.snack.open(msg, '', { duration: 3000 });
+        this.pushing.set(false);
+      },
+      error: () => {
+        this.snack.open('❌ Failed to send push notification', '', { duration: 3000 });
+        this.pushing.set(false);
+      }
+    });
   }
 }

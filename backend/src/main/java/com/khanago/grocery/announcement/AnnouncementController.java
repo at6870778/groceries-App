@@ -36,4 +36,19 @@ public class AnnouncementController {
         }
         return saved;
     }
+
+    /**
+     * Admin only — re-send the current announcement as a push notification to all users
+     * without touching the banner's active/inactive state.
+     */
+    @PostMapping("/api/admin/announcement/push")
+    public Map<String, String> sendPush() {
+        Announcement a = repo.findById(1L).orElseGet(Announcement::new);
+        String msg = a.getMessage();
+        if (msg == null || msg.isBlank()) {
+            return Map.of("status", "skipped", "reason", "No announcement message set.");
+        }
+        fcmService.sendToTopic("promotions", "Order Kro Offer", msg);
+        return Map.of("status", "sent");
+    }
 }

@@ -155,7 +155,13 @@ public class OrderService {
         String fcmToken = order.getCustomer() != null ? order.getCustomer().getFcmToken() : null;
         String msg = orderStatusMessage(status, orderId);
         String title = orderStatusTitle(status);
-        String imageUrl = orderStatusImageUrl(status);
+        // Use first ordered product's image so customer sees what they bought
+        List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
+        String imageUrl = items.stream()
+                .map(i -> i.getProduct() != null ? i.getProduct().getImageUrl() : null)
+                .filter(url -> url != null && !url.isBlank())
+                .findFirst()
+                .orElse(null);
         if (fcmToken != null) {
             fcmService.sendToToken(fcmToken, title, msg, "OPEN_ORDERS", imageUrl);
         }
@@ -174,17 +180,6 @@ public class OrderService {
         if (addr.getState() != null && !addr.getState().isBlank()) sb.append(", ").append(addr.getState());
         sb.append(" - ").append(addr.getPostalCode());
         return sb.toString();
-    }
-
-    private String orderStatusImageUrl(OrderStatus status) {
-        // Use a publicly hosted image per status — replace these URLs with your own CDN/Cloudinary images
-        return switch (status) {
-            case CONFIRMED        -> "https://res.cloudinary.com/demo/image/upload/v1/order_confirmed.png";
-            case PREPARING        -> "https://res.cloudinary.com/demo/image/upload/v1/order_preparing.png";
-            case OUT_FOR_DELIVERY -> "https://res.cloudinary.com/demo/image/upload/v1/order_delivery.png";
-            case DELIVERED        -> "https://res.cloudinary.com/demo/image/upload/v1/order_delivered.png";
-            default               -> null;
-        };
     }
 
     private String orderStatusTitle(OrderStatus status) {

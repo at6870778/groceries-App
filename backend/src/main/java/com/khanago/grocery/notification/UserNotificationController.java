@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -57,6 +57,6 @@ public class UserNotificationController {
             String title,
             String body,
             String type,
-            LocalDateTime createdAt
+            Instant createdAt
     ) {}
 }

@@ -258,7 +258,9 @@ export class NotificationsPage implements OnInit {
   }
 
   timeAgo(dateStr: string): string {
-    const diff = Date.now() - new Date(dateStr).getTime();
+    // Ensure Z suffix so JS treats it as UTC, not local time
+    const normalized = dateStr && !dateStr.endsWith('Z') ? dateStr + 'Z' : dateStr;
+    const diff = Date.now() - new Date(normalized).getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 1) return 'Just now';
     if (mins < 60) return `${mins}m ago`;

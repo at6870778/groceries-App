@@ -76,7 +76,7 @@ import { takeUntil } from 'rxjs/operators';
                 </ng-template>
               </div>
               <ion-button size="small" (click)="buyNow(p)" [disabled]="adding() === p.id" class="buy-btn">
-                <span class="buy-label">{{ adding() === p.id ? '...' : 'Buy Now' }}</span>
+                <span class="buy-label">{{ adding() === p.id ? 'Adding' : 'Buy Now' }}</span>
               </ion-button>
             </div>
           </div>
@@ -279,22 +279,18 @@ import { takeUntil } from 'rxjs/operators';
     .buy-btn {
       flex: 1 1 0;
       min-width: 0;
-      max-width: 100%;
       --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       --color: #ffffff;
       --border-radius: 10px;
       --box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26);
+      --padding-start: 6px;
+      --padding-end: 6px;
       font-weight: 700;
-      overflow: hidden;
     }
     .buy-label {
-      display: block;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
       font-size: 0.8rem;
       font-weight: 700;
+      white-space: nowrap;
     }
     .discount-badge {
       position: absolute;

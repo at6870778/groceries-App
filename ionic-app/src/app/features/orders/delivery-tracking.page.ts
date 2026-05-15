@@ -5,10 +5,11 @@ import { IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardContent, I
 import { ApiService } from '../../core/services/api.service';
 import { Subject, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonSpinner, IonButton],
+  imports: [CommonModule, IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonSpinner, IonButton, BottomNavComponent],
   template: `
     <ion-header>
       <ion-toolbar>
@@ -16,7 +17,7 @@ import { takeUntil } from 'rxjs/operators';
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="ion-padding" style="--padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px))">
+    <ion-content class="ion-padding" style="--padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px))">
 
       <!-- Error loading order -->
       <div *ngIf="orderError()" class="state-box error-box">
@@ -130,6 +131,7 @@ import { takeUntil } from 'rxjs/operators';
       </ng-container>
 
     </ion-content>
+    <app-bottom-nav></app-bottom-nav>
     <!-- Android system nav button safe area — same dark strip as home screen -->
     <div style="position:fixed;bottom:0;left:0;right:0;height:env(safe-area-inset-bottom,0px);background:#111;z-index:999;pointer-events:none;"></div>
   `,

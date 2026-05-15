@@ -1,12 +1,13 @@
 import { Component, effect, OnInit, OnDestroy } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { Router, NavigationEnd } from '@angular/router';
-import { Location } from '@angular/common';
+import { Platform, NavController } from '@ionic/angular';
 import { App } from '@capacitor/app';
 import { SyncService } from './core/services/sync.service';
 import { AuthService } from './core/services/auth.service';
 import { PushNotificationService } from './core/services/push-notification.service';
 import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -15,7 +16,6 @@ import { filter } from 'rxjs/operators';
   template: `
     <ion-app>
       <ion-router-outlet></ion-router-outlet>
-      <!-- Exit toast overlay -->
       <div class="exit-toast" [class.visible]="showExitToast">
         <img src="assets/orderkro-logo.png" class="exit-logo" alt="OrderKro">
         <span>Press again to exit</span>
@@ -37,7 +37,6 @@ import { filter } from 'rxjs/operators';
       gap: 10px;
       font-size: 0.95rem;
       font-weight: 600;
-      letter-spacing: 0.2px;
       opacity: 0;
       transition: opacity 0.2s ease, transform 0.2s ease;
       pointer-events: none;
@@ -59,12 +58,11 @@ import { filter } from 'rxjs/operators';
 })
 export class AppComponent implements OnInit, OnDestroy {
   private currentUrl = '/home';
-  private backButtonListener: any;
+  private backSub!: Subscription;
   private exitPressedOnce = false;
   private exitTimer: any;
   showExitToast = false;
 
-  // Pages that are "root" tabs — back should not pop navigation
   private readonly ROOT_PAGES = ['/home', '/', '/login', '/delivery/orders'];
 
   constructor(
@@ -72,7 +70,8 @@ export class AppComponent implements OnInit, OnDestroy {
     private auth: AuthService,
     private push: PushNotificationService,
     private router: Router,
-    private location: Location
+    private platform: Platform,
+    private navCtrl: NavController
   ) {
     this.sync.init();
 
@@ -90,24 +89,25 @@ export class AppComponent implements OnInit, OnDestroy {
       .pipe(filter(e => e instanceof NavigationEnd))
       .subscribe((e: any) => { this.currentUrl = e.urlAfterRedirects; });
 
-    this.backButtonListener = App.addListener('backButton', () => {
-      const isRoot = this.ROOT_PAGES.some(p => this.currentUrl === p || this.currentUrl.startsWith(p + '?'));
+    this.backSub = this.platform.backButton.subscribeWithPriority(10, () => {
+      const isRoot = this.ROOT_PAGES.some(
+        p => this.currentUrl === p || this.currentUrl.startsWith(p + '?')
+      );
 
       if (!isRoot) {
-        // Not on a root page — go back in navigation stack
-        this.location.back();
+        this.navCtrl.back();
         return;
       }
 
-      // On home/root page — show "Press again to exit" toast
       if (this.exitPressedOnce) {
+        clearTimeout(this.exitTimer);
+        this.showExitToast = false;
         App.minimizeApp();
         return;
       }
 
       this.exitPressedOnce = true;
       this.showExitToast = true;
-
       this.exitTimer = setTimeout(() => {
         this.exitPressedOnce = false;
         this.showExitToast = false;
@@ -116,7 +116,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.backButtonListener?.remove();
+    this.backSub?.unsubscribe();
     clearTimeout(this.exitTimer);
   }
 }

@@ -109,15 +109,25 @@ export class LocationService {
       const address = data.address || {};
       const parts: string[] = [];
 
+      const houseNo = address.house_number;
+      if (houseNo) parts.push(houseNo);
       const road = address.road || address.pedestrian || address.footway || address.path;
       if (road) parts.push(road);
+      const village = address.village || address.hamlet;
+      if (village) parts.push(village);
       const suburb = address.suburb || address.neighbourhood || address.quarter;
-      if (suburb) parts.push(suburb);
-      const city = address.city || address.town || address.village || address.hamlet || address.county;
-      if (city) parts.push(city);
+      if (suburb && suburb !== village) parts.push(suburb);
+      const postOffice = address.postcode ? `Post: ${address.postcode}` : null;
+      const town = address.town;
+      if (town) parts.push(town);
+      const county = address.county; // district level
+      if (county) parts.push(county);
+      const city = address.city;
+      if (city && city !== town) parts.push(city);
       if (address.state) parts.push(address.state);
+      if (postOffice) parts.push(postOffice);
 
-      return parts.join(', ') || address.display_name?.split(',').slice(0, 3).join(',').trim() || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      return parts.join(', ') || data.display_name?.split(',').slice(0, 5).join(',').trim() || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
     } catch (error) {
       console.warn('Could not reverse geocode location:', error);
       throw error;

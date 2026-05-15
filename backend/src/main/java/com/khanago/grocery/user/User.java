@@ -33,6 +33,9 @@ public class User extends BaseAuditEntity {
     @Column(name = "fcm_token", length = 512)
     private String fcmToken;
 
+    @Column(name = "telegram_chat_id", length = 64)
+    private String telegramChatId;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",

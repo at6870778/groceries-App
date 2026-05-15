@@ -163,6 +163,18 @@ public class OrderService {
         return dto;
     }
 
+    private String buildAddressString(Address addr) {
+        if (addr == null) return "N/A";
+        StringBuilder sb = new StringBuilder();
+        sb.append(addr.getLine1());
+        if (addr.getLine2() != null && !addr.getLine2().isBlank()) sb.append(", ").append(addr.getLine2());
+        if (addr.getLandmark() != null && !addr.getLandmark().isBlank()) sb.append(", Near: ").append(addr.getLandmark());
+        sb.append(", ").append(addr.getCity());
+        if (addr.getState() != null && !addr.getState().isBlank()) sb.append(", ").append(addr.getState());
+        sb.append(" - ").append(addr.getPostalCode());
+        return sb.toString();
+    }
+
     private String orderStatusTitle(OrderStatus status) {
         return switch (status) {
             case CONFIRMED        -> "Order Confirmed 🎉";
@@ -195,10 +207,7 @@ public class OrderService {
                 ? order.getCustomer().getFullName() : "Unknown";
         String customerPhone = (order.getCustomer() != null && order.getCustomer().getPhone() != null)
                 ? order.getCustomer().getPhone() : "N/A";
-        String address = order.getAddress() != null ?
-                order.getAddress().getLine1() +
-                (order.getAddress().getLine2() != null && !order.getAddress().getLine2().isBlank() ? ", " + order.getAddress().getLine2() : "") +
-                ", " + order.getAddress().getCity() + " - " + order.getAddress().getPostalCode() : "N/A";
+        String address = buildAddressString(order.getAddress());
         return new OrderDto(
                 order.getId(),
                 null,
@@ -236,11 +245,7 @@ public class OrderService {
             }
         }
 
-        String address = order.getAddress() != null ? 
-            order.getAddress().getLine1() + 
-            (order.getAddress().getLine2() != null ? ", " + order.getAddress().getLine2() : "") +
-            ", " + order.getAddress().getCity() + " - " + order.getAddress().getPostalCode() :
-            "N/A";
+        String address = buildAddressString(order.getAddress());
 
         String customerName = (order.getCustomer() != null && order.getCustomer().getFullName() != null)
                 ? order.getCustomer().getFullName()

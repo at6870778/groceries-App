@@ -75,9 +75,8 @@ import { takeUntil } from 'rxjs/operators';
                   </div>
                 </ng-template>
               </div>
-              <ion-button size="small" (click)="buyNow(p)" [disabled]="adding() === p.id" class="buy-btn" expand="block">
-                <span *ngIf="adding() !== p.id">Buy Now</span>
-                <span *ngIf="adding() === p.id">Opening...</span>
+              <ion-button size="small" (click)="buyNow(p)" [disabled]="adding() === p.id" class="buy-btn">
+                <span class="buy-label">{{ adding() === p.id ? '...' : 'Buy Now' }}</span>
               </ion-button>
             </div>
           </div>
@@ -232,11 +231,14 @@ import { takeUntil } from 'rxjs/operators';
     }
     .action-row {
       display: flex;
+      align-items: center;
       gap: 6px;
       width: 100%;
+      min-width: 0;
     }
     .stepper-wrap {
       flex: 0 0 auto;
+      min-width: 0;
     }
     .stepper {
       display: flex;
@@ -246,6 +248,13 @@ import { takeUntil } from 'rxjs/operators';
       border-radius: 20px;
       overflow: hidden;
       height: 32px;
+    }
+    .add-btn {
+      height: 32px;
+      --border-radius: 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      white-space: nowrap;
     }
     .step-btn {
       background: none;
@@ -268,11 +277,23 @@ import { takeUntil } from 'rxjs/operators';
       color: #1a1a1a;
     }
     .buy-btn {
-      flex: 1;
+      flex: 1 1 0;
+      min-width: 0;
+      max-width: 100%;
       --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       --color: #ffffff;
       --border-radius: 10px;
       --box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26);
+      font-weight: 700;
+      overflow: hidden;
+    }
+    .buy-label {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      font-size: 0.8rem;
       font-weight: 700;
     }
     .discount-badge {

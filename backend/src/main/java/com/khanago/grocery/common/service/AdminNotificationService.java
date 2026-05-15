@@ -50,6 +50,65 @@ public class AdminNotificationService {
         sendTelegram(tg.getBotToken(), tg.getChatId(), text);
     }
 
+    /**
+     * Sent to the delivery boy's personal Telegram chat when they are assigned an order.
+     * Uses a separate per-rider chatId stored on the User entity (telegramChatId).
+     */
+    @Async
+    public void notifyDeliveryBoyAssigned(OrderDto order, String deliveryBoyName, String deliveryBoyTelegramChatId) {
+        AppProperties.Telegram tg = appProperties.getTelegram();
+        if (!tg.isConfigured()) return;
+
+        // Always notify the admin group/chat as well
+        String adminText = "🛵 *Rider Assigned*\n\n" +
+                "📦 Order #" + order.id() + " assigned to *" + escape(deliveryBoyName) + "*\n" +
+                "👤 Customer: " + escape(order.customerName()) + "\n" +
+                "📞 Phone: " + escape(order.customerPhone()) + "\n" +
+                "📍 Address: " + escape(order.deliveryAddress()) + "\n" +
+                "💳 Payment: " + order.paymentMode() + "\n" +
+                "💰 Total: ₹" + order.totalAmount();
+        sendTelegram(tg.getBotToken(), tg.getChatId(), adminText);
+
+        // Notify the delivery boy if they have a personal Telegram chat ID configured
+        if (deliveryBoyTelegramChatId != null && !deliveryBoyTelegramChatId.isBlank()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("📦 *New Delivery Assigned to You!*\n\n");
+            sb.append("🆔 Order #").append(order.id()).append("\n");
+            sb.append("👤 Customer: ").append(escape(order.customerName())).append("\n");
+            sb.append("📞 Phone: ").append(escape(order.customerPhone())).append("\n");
+            sb.append("📍 Address: ").append(escape(order.deliveryAddress())).append("\n");
+            sb.append("💳 Payment: ").append(order.paymentMode()).append("\n");
+            sb.append("💰 Collect: ₹").append(order.totalAmount()).append("\n");
+            if (order.notes() != null && !order.notes().isBlank()) {
+                sb.append("📝 Note: ").append(escape(order.notes())).append("\n");
+            }
+            sb.append("\n✅ Please pick up and deliver at the earliest!");
+            sendTelegram(tg.getBotToken(), deliveryBoyTelegramChatId, sb.toString());
+        }
+    }
+
+    /**
+     * Fired when delivery boy marks the order as DELIVERED.
+     */
+    @Async
+    public void notifyOrderDelivered(OrderDto order, String deliveryBoyName) {
+        AppProperties.Telegram tg = appProperties.getTelegram();
+        if (!tg.isConfigured()) {
+            log.info("[NOTIFY] Order #{} delivered by {} (Telegram not configured, skipping)", order.id(), deliveryBoyName);
+            return;
+        }
+
+        String text = "✅ *Order Delivered!*\n\n" +
+                "📦 Order #" + order.id() + "\n" +
+                "👤 Customer: " + escape(order.customerName()) + "\n" +
+                "📞 Phone: " + escape(order.customerPhone()) + "\n" +
+                "🛵 Delivered by: " + escape(deliveryBoyName) + "\n" +
+                "💰 Amount: ₹" + order.totalAmount() + "\n" +
+                "💳 Payment: " + order.paymentMode() + "\n\n" +
+                "🎉 Order completed successfully!";
+        sendTelegram(tg.getBotToken(), tg.getChatId(), text);
+    }
+
     private String buildOrderMessage(OrderDto order) {
         StringBuilder sb = new StringBuilder();
         sb.append("🛒 *New Order Received!*\n\n");

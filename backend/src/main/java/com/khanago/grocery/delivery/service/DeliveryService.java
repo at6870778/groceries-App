@@ -3,6 +3,7 @@ package com.khanago.grocery.delivery.service;
 import com.khanago.grocery.common.enums.DeliveryAssignmentStatus;
 import com.khanago.grocery.common.enums.OrderStatus;
 import com.khanago.grocery.common.exception.ApiException;
+import com.khanago.grocery.common.service.AdminNotificationService;
 import com.khanago.grocery.delivery.DeliveryAssignment;
 import com.khanago.grocery.delivery.dto.AssignmentDto;
 import com.khanago.grocery.delivery.dto.DeliveryTrackingDto;
@@ -28,6 +29,7 @@ public class DeliveryService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final OrderService orderService;
+    private final AdminNotificationService adminNotificationService;
 
     @Transactional
     public AssignmentDto assignOrder(Long orderId, Long deliveryBoyId) {
@@ -41,6 +43,15 @@ public class DeliveryService {
         assignment = assignmentRepository.save(assignment);
 
         orderService.updateOrderStatus(orderId, OrderStatus.CONFIRMED);
+
+        // Notify admin group + delivery boy (async, won't delay response)
+        OrderDto orderDto = orderService.getOrderForDelivery(orderId);
+        adminNotificationService.notifyDeliveryBoyAssigned(
+                orderDto,
+                deliveryBoy.getFullName(),
+                deliveryBoy.getTelegramChatId()
+        );
+
         return new AssignmentDto(assignment.getId(), orderId, deliveryBoyId, assignment.getStatus().name());
     }
 
@@ -94,6 +105,9 @@ public class DeliveryService {
             orderService.updateOrderStatus(assignment.getOrder().getId(), OrderStatus.OUT_FOR_DELIVERY);
         } else if (status == DeliveryAssignmentStatus.DELIVERED) {
             orderService.updateOrderStatus(assignment.getOrder().getId(), OrderStatus.DELIVERED);
+            // Notify admin that delivery is completed
+            OrderDto orderDto = orderService.getOrderForDelivery(assignment.getOrder().getId());
+            adminNotificationService.notifyOrderDelivered(orderDto, assignment.getDeliveryBoy().getFullName());
         }
 
         return new AssignmentDto(assignment.getId(), assignment.getOrder().getId(), assignment.getDeliveryBoy().getId(), assignment.getStatus().name());

@@ -188,6 +188,8 @@ import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
     }
     .notif-msg {
       font-size: 13px;
@@ -198,6 +200,8 @@ import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
     }
     .notif-time {
       font-size: 11px;

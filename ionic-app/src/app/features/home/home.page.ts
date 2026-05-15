@@ -499,16 +499,23 @@ import { NotificationStateService } from '../../core/services/notification-state
     /* shimmer sweep on the text */
     .announce-msg {
       flex: 1; text-align: center; position: relative; z-index: 1;
+      /* Plain white so emojis keep their native color */
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
+    }
+    /* Shimmer overlay via pseudo-element so it doesn't clobber emoji colors */
+    .announce-msg::after {
+      content: '';
+      position: absolute; inset: 0;
       background: linear-gradient(90deg,
-        rgba(255,255,255,0.55) 0%,
-        rgba(255,255,255,1)    35%,
-        rgba(255,255,255,0.55) 70%,
-        rgba(255,255,255,1)    100%);
+        transparent          0%,
+        rgba(255,255,255,0.45) 40%,
+        transparent          80%);
       background-size: 250% 100%;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
       animation: shimmer-sweep 2.8s linear infinite;
+      pointer-events: none;
+      border-radius: 4px;
     }
     @keyframes shimmer-sweep {
       0%   { background-position: 200% center; }

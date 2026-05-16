@@ -1142,8 +1142,8 @@ export class HomePage implements OnInit, OnDestroy {
           this.categories.set(Array.isArray(res) ? res : (res as any)?.content || []);
           this.finishHomeDataRequest();
         },
-        error: () => {
-          this.errorMsg.set('Could not load categories');
+        error: (err) => {
+          this.errorMsg.set(this.getErrorMessage('Could not load categories', err));
           this.finishHomeDataRequest();
         }
       });
@@ -1161,8 +1161,8 @@ export class HomePage implements OnInit, OnDestroy {
           this.products.set(items);
           this.finishHomeDataRequest();
         },
-        error: () => {
-          this.errorMsg.set('Could not load products');
+        error: (err) => {
+          this.errorMsg.set(this.getErrorMessage('Could not load products', err));
           this.finishHomeDataRequest();
         }
       });
@@ -1520,6 +1520,20 @@ export class HomePage implements OnInit, OnDestroy {
 
   viewAllDeals() {
     this.router.navigate(['/products']);
+  }
+
+  private getErrorMessage(defaultMsg: string, err: any): string {
+    // Check if internet is offline
+    if (!navigator.onLine) {
+      return '📡 Check your internet connectivity';
+    }
+    
+    // Check for network errors (status 0 indicates network failure)
+    if (err?.status === 0) {
+      return '📡 Check your internet connectivity';
+    }
+    
+    return defaultMsg;
   }
 
 }

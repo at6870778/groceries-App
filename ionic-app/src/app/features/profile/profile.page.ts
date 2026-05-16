@@ -162,6 +162,18 @@ import { ActivityState } from '../../core/state/activity.state';
         <p class="muted-text">No activity yet.</p>
       </ng-template>
 
+      <!-- ===== HELP & SUPPORT ===== -->
+      <div class="section-header" style="margin-top:24px;">
+        <h3>Help & Support</h3>
+      </div>
+      <div class="support-card">
+        <p class="support-text">Facing an issue? Reach out to us and our team will assist you.</p>
+        <a class="support-link" [href]="'tel:' + supportContact().phoneNumber">{{ supportContact().phoneNumber }}</a>
+        <a class="support-link" [href]="'mailto:' + supportContact().supportEmail">{{ supportContact().supportEmail }}</a>
+        <a class="support-link" [href]="'mailto:' + supportContact().privacyEmail">{{ supportContact().privacyEmail }}</a>
+        <p class="support-meta">Address: {{ supportContact().addressLine }}</p>
+      </div>
+
       <ion-button expand="block" color="danger" style="margin-top:24px;" (click)="logout()">Logout</ion-button>
 
     </ion-content>
@@ -258,6 +270,37 @@ import { ActivityState } from '../../core/state/activity.state';
       font-size: 0.95rem;
       font-weight: 700;
       color: #1a1a1a;
+    }
+
+    /* Help & support */
+    .support-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 14px;
+      border: 1px solid #e8ecf5;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    }
+    .support-text {
+      margin: 0 0 10px;
+      color: #44526b;
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+    .support-link {
+      display: block;
+      text-decoration: none;
+      color: #4f46e5;
+      font-weight: 700;
+      margin-bottom: 6px;
+      word-break: break-word;
+    }
+    .support-link:last-of-type {
+      margin-bottom: 10px;
+    }
+    .support-meta {
+      margin: 0;
+      color: #6f7f95;
+      font-size: 0.82rem;
     }
     .add-addr-btn {
       background: #667eea;
@@ -447,6 +490,13 @@ import { ActivityState } from '../../core/state/activity.state';
   `]
 })
 export class ProfilePage implements OnInit, OnDestroy {
+  readonly defaultSupportContact = {
+    phoneNumber: '+919876543210',
+    supportEmail: 'support@orderkro.in',
+    privacyEmail: 'privacy@orderkro.in',
+    addressLine: 'Khanago, India'
+  };
+  readonly supportContact = signal({ ...this.defaultSupportContact });
   readonly profile = signal<any | null>(null);
   readonly addresses = signal<any[]>([]);
   readonly showForm = signal(false);
@@ -519,6 +569,7 @@ export class ProfilePage implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.loadSupportContact();
     this.api.get('/customer/profile')
       .pipe(takeUntil(this.destroy$))
       .subscribe((res) => this.profile.set(res));
@@ -532,6 +583,22 @@ export class ProfilePage implements OnInit, OnDestroy {
           this.autoDetectAndSaveAddress();
         }
       }, error: () => {} });
+  }
+
+  loadSupportContact() {
+    this.api.get<any>('/public/support-contact')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.supportContact.set({
+            phoneNumber: String(res?.phoneNumber ?? this.defaultSupportContact.phoneNumber).trim(),
+            supportEmail: String(res?.supportEmail ?? this.defaultSupportContact.supportEmail).trim(),
+            privacyEmail: String(res?.privacyEmail ?? this.defaultSupportContact.privacyEmail).trim(),
+            addressLine: String(res?.addressLine ?? this.defaultSupportContact.addressLine).trim()
+          });
+        },
+        error: () => this.supportContact.set({ ...this.defaultSupportContact })
+      });
   }
 
   ngOnDestroy(): void {

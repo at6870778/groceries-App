@@ -64,7 +64,12 @@ public class DeliveryService {
                 DeliveryAssignmentStatus.OUT_FOR_DELIVERY
         );
 
-        return assignmentRepository.findByDeliveryBoyIdAndStatusIn(deliveryBoyId, activeStatuses).stream()
+        boolean isAdmin = SecurityUtils.hasRole("ADMIN");
+        List<DeliveryAssignment> assignments = isAdmin
+            ? assignmentRepository.findByStatusIn(activeStatuses)
+            : assignmentRepository.findByDeliveryBoyIdAndStatusIn(deliveryBoyId, activeStatuses);
+
+        return assignments.stream()
                 .map(a -> {
                     OrderDto base = orderService.getOrderForDelivery(a.getOrder().getId());
                     return new OrderDto(
@@ -92,7 +97,8 @@ public class DeliveryService {
         DeliveryAssignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new ApiException("Assignment not found"));
 
-        if (!assignment.getDeliveryBoy().getId().equals(SecurityUtils.getCurrentUserId())) {
+        boolean isAdmin = SecurityUtils.hasRole("ADMIN");
+        if (!isAdmin && !assignment.getDeliveryBoy().getId().equals(SecurityUtils.getCurrentUserId())) {
             throw new ApiException("Assignment does not belong to current delivery boy.");
         }
 

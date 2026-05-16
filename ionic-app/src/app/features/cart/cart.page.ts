@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Capacitor } from '@capacitor/core';
@@ -22,7 +23,7 @@ declare global {
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, IonContent, IonFooter, IonHeader, IonTitle, IonToolbar, IonButton, BottomNavComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IonContent, IonFooter, IonHeader, IonTitle, IonToolbar, IonButton, BottomNavComponent],
   template: `
     <ion-header>
       <ion-toolbar>
@@ -95,6 +96,29 @@ declare global {
             </div>
 
             <button class="addr-picker-close" (click)="showAddressPicker.set(false)">Done</button>
+          </div>
+
+          <!-- Village + Landmark prompt before payment -->
+          <div class="addr-picker-overlay" *ngIf="showLocationDetailsPrompt()" (click)="cancelLocationDetailsPrompt()"></div>
+          <div class="addr-picker-sheet" *ngIf="showLocationDetailsPrompt()">
+            <div class="addr-picker-title">Delivery details required</div>
+            <p class="addr-meta-hint">Please add village and landmark so delivery partner can find you quickly.</p>
+
+            <div class="meta-field">
+              <label>Village / Area</label>
+              <input class="meta-input" type="text" maxlength="120" [(ngModel)]="checkoutVillage" placeholder="Enter village or area" />
+            </div>
+
+            <div class="meta-field">
+              <label>Landmark</label>
+              <input class="meta-input" type="text" maxlength="120" [(ngModel)]="checkoutLandmark" placeholder="Near temple, school, chowk..." />
+            </div>
+
+            <p class="addr-meta-error" *ngIf="locationDetailsError()">{{ locationDetailsError() }}</p>
+
+            <button class="addr-picker-close" (click)="saveLocationDetailsAndProceed()" [disabled]="savingLocationDetails()">
+              {{ savingLocationDetails() ? 'Saving...' : 'Save & Continue' }}
+            </button>
           </div>
 
           <!-- Item list with images + stepper -->
@@ -797,6 +821,40 @@ declare global {
     .addr-picker-title {
       font-weight: 800; font-size: 1rem; color: #1a1a1a; margin-bottom: 14px; text-align: center;
     }
+    .addr-meta-hint {
+      margin: -2px 0 12px;
+      color: #666;
+      font-size: 0.84rem;
+      text-align: center;
+    }
+    .meta-field { margin-bottom: 10px; }
+    .meta-field label {
+      display: block;
+      font-size: 0.78rem;
+      color: #6f7f95;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .meta-input {
+      width: 100%;
+      border: 1.5px solid #dbe4f0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      outline: none;
+      box-sizing: border-box;
+      background: #f8fbff;
+    }
+    .meta-input:focus {
+      border-color: #667eea;
+      background: #fff;
+    }
+    .addr-meta-error {
+      margin: 2px 0 8px;
+      color: #d32f2f;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
     .addr-picker-item {
       display: flex; align-items: center; gap: 12px;
       border: 1px solid #e8eef8; border-radius: 14px; padding: 12px 14px;
@@ -842,6 +900,12 @@ export class CartPage implements OnInit, OnDestroy {
   readonly selectedAddressId = signal<any>('gps'); // 'gps' | address.id
   readonly selectedAddress = signal<any | null>(null); // null = use GPS
   readonly showAddressPicker = signal(false);
+  readonly showLocationDetailsPrompt = signal(false);
+  readonly savingLocationDetails = signal(false);
+  readonly locationDetailsError = signal('');
+  private pendingProceedAfterDetails = false;
+  checkoutVillage = '';
+  checkoutLandmark = '';
 
   readonly selectedAddressLabel = computed(() => {
     const addr = this.selectedAddress();
@@ -947,6 +1011,98 @@ export class CartPage implements OnInit, OnDestroy {
     this.showAddressPicker.set(false);
   }
 
+  private gpsVillageKey = 'orderkro_gps_village';
+  private gpsLandmarkKey = 'orderkro_gps_landmark';
+
+  private getPersistedVillageAndLandmark(): { village: string; landmark: string } {
+    const saved = this.selectedAddress();
+    if (saved) {
+      return {
+        village: String(saved?.line2 || '').trim(),
+        landmark: String(saved?.landmark || '').trim()
+      };
+    }
+    return {
+      village: String(localStorage.getItem(this.gpsVillageKey) || '').trim(),
+      landmark: String(localStorage.getItem(this.gpsLandmarkKey) || '').trim()
+    };
+  }
+
+  private needsVillageAndLandmark(): boolean {
+    const meta = this.getPersistedVillageAndLandmark();
+    return !meta.village || !meta.landmark;
+  }
+
+  private openLocationDetailsPrompt() {
+    const meta = this.getPersistedVillageAndLandmark();
+    this.checkoutVillage = meta.village;
+    this.checkoutLandmark = meta.landmark;
+    this.locationDetailsError.set('');
+    this.showLocationDetailsPrompt.set(true);
+  }
+
+  cancelLocationDetailsPrompt() {
+    this.pendingProceedAfterDetails = false;
+    this.locationDetailsError.set('');
+    this.showLocationDetailsPrompt.set(false);
+  }
+
+  saveLocationDetailsAndProceed() {
+    const village = this.checkoutVillage.trim();
+    const landmark = this.checkoutLandmark.trim();
+    if (!village || !landmark) {
+      this.locationDetailsError.set('Please enter both village and landmark.');
+      return;
+    }
+
+    const selected = this.selectedAddress();
+    if (!selected?.id) {
+      localStorage.setItem(this.gpsVillageKey, village);
+      localStorage.setItem(this.gpsLandmarkKey, landmark);
+      this.showLocationDetailsPrompt.set(false);
+      if (this.pendingProceedAfterDetails) {
+        this.pendingProceedAfterDetails = false;
+        this.checkoutStep.set('payment');
+      }
+      return;
+    }
+
+    this.savingLocationDetails.set(true);
+    this.locationDetailsError.set('');
+    const payload = {
+      label: selected.label || 'Home',
+      line1: selected.line1 || selected.addressLine1 || '',
+      line2: village,
+      city: selected.city || '',
+      state: selected.state || '',
+      postalCode: selected.postalCode || '',
+      landmark,
+      latitude: selected.latitude ?? null,
+      longitude: selected.longitude ?? null,
+      isDefault: !!selected.isDefault
+    };
+
+    this.api.put<any>(`/customer/profile/addresses/${selected.id}`, payload)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (updated) => {
+          this.savingLocationDetails.set(false);
+          this.showLocationDetailsPrompt.set(false);
+          const merged = { ...selected, ...updated, line2: village, landmark };
+          this.selectedAddress.set(merged);
+          this.savedAddresses.set(this.savedAddresses().map((a: any) => a.id === selected.id ? merged : a));
+          if (this.pendingProceedAfterDetails) {
+            this.pendingProceedAfterDetails = false;
+            this.checkoutStep.set('payment');
+          }
+        },
+        error: (err) => {
+          this.savingLocationDetails.set(false);
+          this.locationDetailsError.set(this.getErrorMessage(err, 'Could not save village/landmark. Please try again.'));
+        }
+      });
+  }
+
   detectGpsFromPicker() {
     this.locationService.detectCurrentLocation()
       .then(() => {
@@ -1049,6 +1205,13 @@ export class CartPage implements OnInit, OnDestroy {
       }
       return;
     }
+
+    if (this.needsVillageAndLandmark()) {
+      this.pendingProceedAfterDetails = true;
+      this.openLocationDetailsPrompt();
+      return;
+    }
+
     this.checkoutStep.set('payment');
   }
 
@@ -1097,7 +1260,7 @@ export class CartPage implements OnInit, OnDestroy {
       // Build checkout request with location
       const checkoutData: any = {
         paymentMode: this.paymentMode(),
-        notes: 'Deliver fast'
+        notes: this.buildCheckoutNotes()
       };
 
       if (this.paymentMode() === 'UPI') {
@@ -1168,6 +1331,14 @@ export class CartPage implements OnInit, OnDestroy {
       });
     };
     placeOrder();
+  }
+
+  private buildCheckoutNotes(): string {
+    const meta = this.getPersistedVillageAndLandmark();
+    const parts = ['Deliver fast'];
+    if (meta.village) parts.push(`Village/Area: ${meta.village}`);
+    if (meta.landmark) parts.push(`Landmark: ${meta.landmark}`);
+    return parts.join(' | ');
   }
 
   private startRazorpayUpiCheckout() {

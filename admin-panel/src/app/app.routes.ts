@@ -17,7 +17,8 @@ export const appRoutes: Routes = [
       { path: 'orders', loadComponent: () => import('./features/orders/orders.component').then(m => m.OrdersComponent) },
       { path: 'customers', loadComponent: () => import('./features/users/customers.component').then(m => m.CustomersComponent) },
       { path: 'delivery-boys', loadComponent: () => import('./features/users/delivery-boys.component').then(m => m.DeliveryBoysComponent) },
-      { path: 'announcement', loadComponent: () => import('./features/announcement/announcement.component').then(m => m.AnnouncementComponent) }
+      { path: 'announcement', loadComponent: () => import('./features/announcement/announcement.component').then(m => m.AnnouncementComponent) },
+      { path: 'support-contact', loadComponent: () => import('./features/support-contact/support-contact.component').then(m => m.SupportContactComponent) }
     ]
   }
 ];

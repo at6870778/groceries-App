@@ -1,0 +1,39 @@
+You Already Have a Working Bot ✅
+That means you have:
+
+A Bot Token (like 123456789:ABCxyz...)
+Your personal Chat ID (the number in TELEGRAM_CHAT_ID)
+What You Need To Do — Only 3 Steps
+Step 1 — Rider messages your bot once
+
+Tell your rider:
+
+"Open Telegram → Search @YourBotName → Tap Start"
+
+That's it from rider's side.
+
+Step 2 — You find their Chat ID
+
+Open this URL in your browser (replace with your actual bot token):
+
+https://api.telegram.org/bot123456789:ABCxyz/getUpdates
+You will see something like:
+
+"from": {
+  "id": 987654321,
+  "first_name": "Rahul"
+}
+That number 987654321 is your rider's chat ID.
+Step 3 — Save it in database
+
+Run this SQL in your DB (replace phone and chat ID):
+
+
+UPDATE users 
+SET telegram_chat_id = '987654321' 
+WHERE phone = '9999999992';
+Done ✅
+From now on:
+
+When admin assigns order to that rider → rider gets personal Telegram message with customer name, address, phone, amount
+When rider delivers → you get notified in your existing chat

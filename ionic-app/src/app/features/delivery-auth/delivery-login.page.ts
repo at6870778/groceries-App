@@ -59,6 +59,9 @@ import { SyncService } from '../../core/services/sync.service';
           <div class="tagline-row">
             <p class="tagline">Karo Order, Kahi Bhi Kuch Bhi! 🛍️</p>
           </div>
+          <div class="welcome-back" *ngIf="mode === 'CUSTOMER' && isReturningUser()">
+            Welcome back, {{ returningDisplayName() }}
+          </div>
           <div class="loc-chip" *ngIf="locationService.currentLocation() as loc">
             <span>📍</span>
             <span class="loc-chip-text">{{ loc.address || 'Detecting location…' }}</span>
@@ -567,6 +570,15 @@ import { SyncService } from '../../core/services/sync.service';
       padding: 0 20px 16px;
     }
 
+    .welcome-back {
+      margin: 4px 0 10px;
+      color: #1f7a44;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: left;
+      padding-left: 2px;
+    }
+
     .name-input {
       width: 100%;
       padding: 14px 16px;
@@ -680,6 +692,8 @@ export class DeliveryLoginPage implements OnInit, OnDestroy {
   loading = false;
   error = '';
 
+  private readonly knownUsersStorageKey = 'orderkro_known_customer_phones';
+
   constructor(
     private auth: AuthService,
     private router: Router,
@@ -725,6 +739,17 @@ export class DeliveryLoginPage implements OnInit, OnDestroy {
     input.value = clean;
     this.phone = clean;
     this.error = '';
+  }
+
+  isReturningUser(): boolean {
+    if (!/^[0-9]{10}$/.test(this.phone)) return false;
+    return this.getKnownCustomerPhones().includes(this.phone);
+  }
+
+  returningDisplayName(): string {
+    const rememberedName = localStorage.getItem(this.customerNameKey(this.phone)) || '';
+    const trimmed = rememberedName.trim();
+    return trimmed || this.phone;
   }
 
   changeNumber(): void {
@@ -852,6 +877,11 @@ export class DeliveryLoginPage implements OnInit, OnDestroy {
           return;
         }
         this.auth.saveToken(token, this.mode, res?.data?.phone || this.phone);
+        if (this.mode === 'CUSTOMER') {
+          const loggedInPhone = String(res?.data?.phone || this.phone || '').trim();
+          const candidateName = String(res?.data?.fullName || name || '').trim();
+          this.rememberCustomer(loggedInPhone, candidateName || loggedInPhone);
+        }
         this.saveLocationOnLogin();
         if (this.mode === 'CUSTOMER') this.sync.syncCart(); // pull saved cart immediately
         this.loading = false;
@@ -924,6 +954,32 @@ export class DeliveryLoginPage implements OnInit, OnDestroy {
         address: loc.address,
         timestamp: new Date().toISOString()
       }));
+    }
+  }
+
+  private customerNameKey(phone: string): string {
+    return `orderkro_customer_name_${phone}`;
+  }
+
+  private getKnownCustomerPhones(): string[] {
+    try {
+      const raw = localStorage.getItem(this.knownUsersStorageKey);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string') : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private rememberCustomer(phone: string, name: string): void {
+    if (!/^[0-9]{10}$/.test(phone)) return;
+    const phones = this.getKnownCustomerPhones();
+    if (!phones.includes(phone)) {
+      phones.push(phone);
+      localStorage.setItem(this.knownUsersStorageKey, JSON.stringify(phones));
+    }
+    if (name.trim()) {
+      localStorage.setItem(this.customerNameKey(phone), name.trim());
     }
   }
 }

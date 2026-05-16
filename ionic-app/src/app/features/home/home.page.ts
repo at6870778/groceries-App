@@ -188,37 +188,55 @@ import { NotificationStateService } from '../../core/services/notification-state
           <div class="section-row">
             <h3 class="section-title" *ngIf="selectedCategoryId() === null">✨ All Products</h3>
             <h3 class="section-title" *ngIf="selectedCategoryId() !== null">{{ catEmoji(activeCategorySlug()) }} {{ activeCategoryName() }}</h3>
-            <span class="item-count">{{ (selectedCategoryId() === null ? allProducts() : categoryProducts()).length }} items</span>
+            <span class="item-count">{{ isInitialDataLoading() ? 'Loading...' : ((selectedCategoryId() === null ? allProducts() : categoryProducts()).length + ' items') }}</span>
           </div>
 
-          <div class="prod-grid" *ngIf="(selectedCategoryId() === null ? allProducts() : categoryProducts()).length > 0; else noItems">
-            <div class="prod-card"
-              *ngFor="let p of (selectedCategoryId() === null ? allProducts().slice(0,40) : categoryProducts()); let i = index"
-              [style.animationDelay.ms]="i*20"
-              [routerLink]="['/products']" [queryParams]="{ query: p.name }">
-              <div class="disc-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
-              <div class="prod-img-wrap" [style.background]="p.imageUrl ? '#f8f9f0' : productBg(p)">
-                <img *ngIf="p.imageUrl" class="prod-img" [src]="p.imageUrl" [alt]="p.name">
-              </div>
-              <div class="prod-body">
-                <div class="prod-cat-tag">{{ p.categoryName }}</div>
-                <div class="prod-name">{{ p.name }}</div>
-                <div class="prod-unit">{{ scaledUnit(p.unit, cartQty(p.id)) }}</div>
-                <div class="prod-price-row">
-                  <span class="prod-mrp" *ngIf="getDiscount(p) > 0">₹{{ getOriginalPrice(p) }}</span>
-                  <span class="prod-price">₹{{ p.sellingPrice }}</span>
-                </div>
-                <div class="prod-actions" (click)="$event.stopPropagation()">
-                  <ng-container *ngIf="cartQty(p.id) === 0; else allStep">
-                    <button class="add-btn-flat" (click)="addToCart(p)">+ Add</button>
-                  </ng-container>
-                  <ng-template #allStep>
-                    <div class="stepper"><button class="step-btn" (click)="removeFromCart(p)">−</button><span class="step-qty">{{ cartQty(p.id) }}</span><button class="step-btn" (click)="addToCart(p)">+</button></div>
-                  </ng-template>
+          <ng-container *ngIf="isInitialDataLoading(); else loadedProducts">
+            <div class="prod-grid skeleton-grid">
+              <div class="prod-card" *ngFor="let _ of skeletonCards">
+                <div class="prod-img-wrap skel-block"></div>
+                <div class="prod-body">
+                  <div class="skel-line skel-line-sm"></div>
+                  <div class="skel-line skel-line-md"></div>
+                  <div class="skel-line skel-line-xs"></div>
+                  <div class="skel-line skel-line-sm"></div>
+                  <div class="skel-btn"></div>
                 </div>
               </div>
             </div>
-          </div>
+          </ng-container>
+
+          <ng-template #loadedProducts>
+            <div class="prod-grid" *ngIf="(selectedCategoryId() === null ? allProducts() : categoryProducts()).length > 0; else noItems">
+              <div class="prod-card"
+                *ngFor="let p of (selectedCategoryId() === null ? allProducts().slice(0,40) : categoryProducts()); let i = index"
+                [style.animationDelay.ms]="i*20"
+                [routerLink]="['/products']" [queryParams]="{ query: p.name }">
+                <div class="disc-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
+                <div class="prod-img-wrap" [style.background]="p.imageUrl ? '#f8f9f0' : productBg(p)">
+                  <img *ngIf="p.imageUrl" class="prod-img" [src]="p.imageUrl" [alt]="p.name">
+                </div>
+                <div class="prod-body">
+                  <div class="prod-cat-tag">{{ p.categoryName }}</div>
+                  <div class="prod-name">{{ p.name }}</div>
+                  <div class="prod-unit">{{ scaledUnit(p.unit, cartQty(p.id)) }}</div>
+                  <div class="prod-price-row">
+                    <span class="prod-mrp" *ngIf="getDiscount(p) > 0">₹{{ getOriginalPrice(p) }}</span>
+                    <span class="prod-price">₹{{ p.sellingPrice }}</span>
+                  </div>
+                  <div class="prod-actions" (click)="$event.stopPropagation()">
+                    <ng-container *ngIf="cartQty(p.id) === 0; else allStep">
+                      <button class="add-btn-flat" (click)="addToCart(p)">+ Add</button>
+                    </ng-container>
+                    <ng-template #allStep>
+                      <div class="stepper"><button class="step-btn" (click)="removeFromCart(p)">−</button><span class="step-qty">{{ cartQty(p.id) }}</span><button class="step-btn" (click)="addToCart(p)">+</button></div>
+                    </ng-template>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-template>
+
           <ng-template #noItems>
             <div class="empty-state"><div class="empty-icon">🛒</div><div class="empty-title">No products yet</div></div>
           </ng-template>
@@ -898,6 +916,19 @@ import { NotificationStateService } from '../../core/services/notification-state
     .browse-pad { padding: 14px 14px 20px; }
     .prod-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
     .prod-card { background: #fff; border-radius: 14px; border: 1px solid #e8ecf4; overflow: hidden; position: relative; cursor: pointer; animation: rise 0.4s ease both; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; }
+    .skeleton-grid .prod-card { cursor: default; animation: none; }
+    .skel-block,
+    .skel-line,
+    .skel-btn {
+      background: linear-gradient(90deg, #eef2f8 8%, #f8faff 18%, #eef2f8 33%);
+      background-size: 220% 100%;
+      animation: shimmer-sweep 1.2s linear infinite;
+    }
+    .skel-line { height: 10px; border-radius: 6px; margin-bottom: 6px; }
+    .skel-line-xs { width: 42%; }
+    .skel-line-sm { width: 56%; }
+    .skel-line-md { width: 78%; }
+    .skel-btn { margin-top: auto; height: 32px; border-radius: 8px; }
     .disc-badge { position: absolute; top: 7px; right: 7px; background: linear-gradient(135deg,#ff6b6b,#ee5a6f); color: #fff; border-radius: 6px; padding: 2px 6px; font-size: 0.68rem; font-weight: 800; z-index: 2; }
     .prod-img-wrap { width: 100%; height: 100px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
     .prod-img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
@@ -989,6 +1020,8 @@ export class HomePage implements OnInit, OnDestroy {
   readonly categories = signal<any[]>([]);
   readonly products = signal<any[]>([]);
   readonly allProducts = signal<any[]>([]); // master list, never mutated after load
+  readonly isInitialDataLoading = signal(true);
+  readonly skeletonCards = Array.from({ length: 8 });
   readonly adding = signal<number | null>(null);
   readonly errorMsg = signal('');
   readonly quickSearches = ['Milk', 'Banana', 'Rice', 'Bread', 'Chips', 'Juice'];
@@ -1010,6 +1043,7 @@ export class HomePage implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
   private backButtonListener: any;
+  private pendingHomeDataRequests = 2;
 
   // ── Feature strip data ──
   readonly featureItems = [
@@ -1106,8 +1140,14 @@ export class HomePage implements OnInit, OnDestroy {
     this.api.get<any[]>('/catalog/categories')
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (res) => this.categories.set(Array.isArray(res) ? res : (res as any)?.content || []),
-        error: () => this.errorMsg.set('Could not load categories')
+        next: (res) => {
+          this.categories.set(Array.isArray(res) ? res : (res as any)?.content || []);
+          this.finishHomeDataRequest();
+        },
+        error: () => {
+          this.errorMsg.set('Could not load categories');
+          this.finishHomeDataRequest();
+        }
       });
 
     this.api.get<any[]>('/catalog/restaurants')
@@ -1121,8 +1161,12 @@ export class HomePage implements OnInit, OnDestroy {
           const items = res?.content || [];
           this.allProducts.set(items);
           this.products.set(items);
+          this.finishHomeDataRequest();
         },
-        error: () => this.errorMsg.set('Could not load products')
+        error: () => {
+          this.errorMsg.set('Could not load products');
+          this.finishHomeDataRequest();
+        }
       });
 
   }
@@ -1131,6 +1175,13 @@ export class HomePage implements OnInit, OnDestroy {
     this.backButtonListener?.then((h: any) => h.remove());
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private finishHomeDataRequest(): void {
+    this.pendingHomeDataRequests = Math.max(0, this.pendingHomeDataRequests - 1);
+    if (this.pendingHomeDataRequests === 0) {
+      this.isInitialDataLoading.set(false);
+    }
   }
 
   dismissBanner(): void {
@@ -1263,17 +1314,7 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   selectChip(slug: string): void {
-    if (slug === 'food') {
-      this.selectedCategorySlug.set('food');
-      this.selectedCategoryId.set(-1);
-      this.selectedRestaurantId.set(null);
-      this.restaurantMenuItems.set([]);
-      this.products.set([]);
-      // Fetch nearby restaurants using current GPS location
-      this.loadNearbyRestaurants();
-      return;
-    }
-    // clear food state when switching to a non-food chip
+    // clear restaurant state on any chip selection
     this.selectedRestaurantId.set(null);
     this.restaurantMenuItems.set([]);
     this.selectedCategorySlug.set(slug);
@@ -1287,8 +1328,14 @@ export class HomePage implements OnInit, OnDestroy {
     }
     if (cat) {
       this.selectedCategoryId.set(cat.id);
-      // filter from already-loaded allProducts — no extra API call needed
-      this.products.set(this.allProducts().filter(p => p.categoryId === cat!.id));
+      // Fetch directly by categoryId so we get ALL products in that category,
+      // not just the first 100 from the master allProducts list.
+      this.api.get<any>('/catalog/products', { categoryId: cat.id, page: 0, size: 100 })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (res) => this.products.set(res?.content || []),
+          error: () => this.products.set([])
+        });
     } else {
       // slug not in categories yet — show nothing so user sees the filter is active
       this.selectedCategoryId.set(-1);

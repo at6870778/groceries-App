@@ -99,7 +99,7 @@ declare global {
           </div>
 
           <!-- Village + Landmark prompt before payment -->
-          <div class="addr-picker-overlay" *ngIf="showLocationDetailsPrompt()" (click)="cancelLocationDetailsPrompt()"></div>
+          <div class="addr-picker-overlay" *ngIf="showLocationDetailsPrompt()"></div>
           <div class="addr-picker-sheet" *ngIf="showLocationDetailsPrompt()">
             <div class="addr-picker-title">Delivery details required</div>
             <p class="addr-meta-hint">Please add village and landmark so delivery partner can find you quickly.</p>
@@ -272,7 +272,7 @@ declare global {
     </ion-content>
 
     <!-- Action button — fixed above the bottom nav on BOTH cart and payment steps -->
-    <div class="action-footer" *ngIf="!checkoutSuccess() && cartState.items().length > 0">
+    <div class="action-footer" *ngIf="!checkoutSuccess() && cartState.items().length > 0 && !showLocationDetailsPrompt()">
       <ion-button *ngIf="checkoutStep() === 'cart'" expand="block" class="proceed-btn" (click)="proceedToPayment()">
         Proceed to Payment →
       </ion-button>
@@ -809,14 +809,15 @@ declare global {
     }
     /* ===== ADDRESS PICKER ===== */
     .addr-picker-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 900;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 993;
     }
     .addr-picker-sheet {
       position: fixed; bottom: 0; left: 0; right: 0;
       background: #fff; border-radius: 20px 20px 0 0;
-      padding: 20px 16px 32px; z-index: 901;
+      padding: 20px 16px 40px; z-index: 994;
       box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
-      max-height: 75vh; overflow-y: auto;
+      max-height: 80vh; overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .addr-picker-title {
       font-weight: 800; font-size: 1rem; color: #1a1a1a; margin-bottom: 14px; text-align: center;
@@ -1035,8 +1036,9 @@ export class CartPage implements OnInit, OnDestroy {
 
   private openLocationDetailsPrompt() {
     const meta = this.getPersistedVillageAndLandmark();
-    this.checkoutVillage = meta.village;
-    this.checkoutLandmark = meta.landmark;
+    // Only overwrite if the fields aren't already partially filled by the user
+    if (!this.checkoutVillage) this.checkoutVillage = meta.village;
+    if (!this.checkoutLandmark) this.checkoutLandmark = meta.landmark;
     this.locationDetailsError.set('');
     this.showLocationDetailsPrompt.set(true);
   }

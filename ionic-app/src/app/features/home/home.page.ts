@@ -1177,12 +1177,45 @@ export class HomePage implements OnInit, OnDestroy {
     // Refresh saved addresses every time the home page is navigated to,
     // so "Deliver To" always reflects the latest saved address.
     this.loadSavedAddresses();
+    
+    // Refresh dismissed announcement status from localStorage
+    this.refreshAnnouncementStatus();
+    
+    // Check for new announcements
+    this.loadLatestAnnouncement();
   }
 
   private loadSavedAddresses(): void {
     this.api.get<any[]>('/customer/profile/addresses')
       .pipe(takeUntil(this.destroy$))
       .subscribe({ next: (res) => this.savedAddresses.set(res || []) });
+  }
+
+  private loadLatestAnnouncement(): void {
+    this.api.get<any>('/public/announcement')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.announcementBanner.set(res);
+          // After fetching, check if it should be hidden
+          this.refreshAnnouncementStatus();
+        }
+      });
+  }
+
+  private refreshAnnouncementStatus(): void {
+    // Read latest dismissed_announcement from localStorage
+    this.dismissedMessage = localStorage.getItem('dismissed_announcement') || '';
+    
+    const currentMsg = this.announcementBanner()?.message || '';
+    
+    // If current banner message matches dismissed one, hide it
+    // If different or no message is dismissed, show it (if active)
+    if (currentMsg && currentMsg === this.dismissedMessage) {
+      this.bannerDismissed.set(true);
+    } else if (currentMsg && currentMsg !== this.dismissedMessage) {
+      this.bannerDismissed.set(false);
+    }
   }
 
   ngOnDestroy(): void {

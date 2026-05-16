@@ -1265,12 +1265,17 @@ export class CartPage implements OnInit, OnDestroy {
         notes: this.buildCheckoutNotes()
       };
 
+      // Attach saved address ID so backend can build the full address string
+      const saved = this.selectedAddress();
+      if (saved?.id) {
+        checkoutData.addressId = saved.id;
+      }
+
       if (this.paymentMode() === 'UPI') {
         checkoutData.upiReference = this.upiReference() || 'RAZORPAY_UPI';
       }
 
       // Use selected address coords, or fall back to GPS
-      const saved = this.selectedAddress();
       if (saved?.latitude && saved?.longitude) {
         checkoutData.customerLat = saved.latitude;
         checkoutData.customerLng = saved.longitude;

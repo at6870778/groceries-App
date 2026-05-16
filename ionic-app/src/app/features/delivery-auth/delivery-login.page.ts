@@ -114,6 +114,12 @@ import { SyncService } from '../../core/services/sync.service';
           </div>
         </div>
 
+        <!-- Welcome back banner for returning customers -->
+        <div class="otp-welcome-back" *ngIf="mode === 'CUSTOMER' && isReturningUser()">
+          <span class="otp-wb-emoji">🙏</span>
+          <span>Welcome back, <strong>{{ returningDisplayName() }} Ji</strong>! Great to see you again.</span>
+        </div>
+
         <!-- 6 digit boxes (box-0 carries autocomplete for SMS autofill) -->
         <div class="otp-boxes">
           <input id="otpbox-0" class="otp-box" type="tel" inputmode="numeric" maxlength="1" autocomplete="one-time-code" [value]="otpDigits[0]" (input)="onOtpInput(0,$event)" (change)="onOtpInput(0,$event)" (keydown)="onOtpKeydown(0,$event)" (paste)="onOtpPaste($event)">
@@ -539,6 +545,26 @@ import { SyncService } from '../../core/services/sync.service';
       margin: 0;
     }
 
+    /* === OTP WELCOME BACK === */
+    .otp-welcome-back {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 20px 4px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #f0faf5 0%, #e8f5ff 100%);
+      border-radius: 14px;
+      border: 1.5px solid #b2dfc7;
+      font-size: 14px;
+      color: #1a5c3a;
+      animation: fadeInDown 0.4s ease;
+    }
+    .otp-wb-emoji { font-size: 1.6rem; flex-shrink: 0; }
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
     /* === OTP BOXES === */
     .otp-boxes {
       display: flex;
@@ -795,6 +821,11 @@ export class DeliveryLoginPage implements OnInit, OnDestroy {
         this._otpSent = true;
         this.startResendCooldown();
         this.loading = false;
+        // Auto-populate name for returning users
+        if (this.isReturningUser() && !this.fullName.trim()) {
+          const remembered = localStorage.getItem(this.customerNameKey(this.phone)) || '';
+          if (remembered.trim()) this.fullName = remembered.trim();
+        }
         // Try Web OTP API (Android Chrome) to auto-fill SMS OTP
         this.listenForSmsOtp();
       },

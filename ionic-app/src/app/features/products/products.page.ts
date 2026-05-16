@@ -354,6 +354,10 @@ export class ProductsPage implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // Listen for online/offline events
+    window.addEventListener('online', () => this.onOnline());
+    window.addEventListener('offline', () => this.onOffline());
+
     this.route.queryParamMap
       .pipe(takeUntil(this.destroy$))
       .subscribe((qp) => {
@@ -373,6 +377,8 @@ export class ProductsPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    window.removeEventListener('online', () => this.onOnline());
+    window.removeEventListener('offline', () => this.onOffline());
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -528,5 +534,17 @@ export class ProductsPage implements OnInit, OnDestroy {
     }
     
     return defaultMsg;
+  }
+
+  private onOnline(): void {
+    // Internet is back! Reload products
+    console.log('🟢 Internet connection restored - reloading products');
+    const categoryId = this.route.snapshot.queryParamMap.get('categoryId');
+    const query = this.searchTerm();
+    this.loadProducts(categoryId, query);
+  }
+
+  private onOffline(): void {
+    console.log('🔴 Internet connection lost');
   }
 }

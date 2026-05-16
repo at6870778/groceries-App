@@ -1115,6 +1115,10 @@ export class HomePage implements OnInit, OnDestroy {
     this.backButtonListener = App.addListener('backButton', () => App.exitApp());
     this.notifState.load();
 
+    // Listen for online/offline events
+    window.addEventListener('online', () => this.onOnline());
+    window.addEventListener('offline', () => this.onOffline());
+
     this.api.get<any>('/public/announcement')
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -1183,6 +1187,8 @@ export class HomePage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.backButtonListener?.then((h: any) => h.remove());
+    window.removeEventListener('online', () => this.onOnline());
+    window.removeEventListener('offline', () => this.onOffline());
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -1534,6 +1540,41 @@ export class HomePage implements OnInit, OnDestroy {
     }
     
     return defaultMsg;
+  }
+
+  private onOnline(): void {
+    // Internet is back! Reload all data
+    console.log('🟢 Internet connection restored');
+    this.errorMsg.set(''); // Clear error message
+    
+    // Reload categories and products
+    this.api.get<any[]>('/catalog/categories')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.categories.set(Array.isArray(res) ? res : (res as any)?.content || []);
+        },
+        error: (err) => {
+          this.errorMsg.set(this.getErrorMessage('Could not load categories', err));
+        }
+      });
+
+    this.api.get<any>('/catalog/products', { page: 0, size: 100 })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          const items = res?.content || [];
+          this.allProducts.set(items);
+          this.products.set(items);
+        },
+        error: (err) => {
+          this.errorMsg.set(this.getErrorMessage('Could not load products', err));
+        }
+      });
+  }
+
+  private onOffline(): void {
+    console.log('🔴 Internet connection lost');
   }
 
 }

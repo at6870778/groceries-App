@@ -30,7 +30,7 @@ public class SupportContactConfig {
     private String privacyEmail = "privacy@orderkro.in";
 
     @Column(name = "address_line", length = 255)
-    private String addressLine = "Khanago, India";
+    private String addressLine = "Hata Kushinagar, Uttar Pradesh";
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();

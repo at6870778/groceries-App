@@ -494,7 +494,7 @@ export class ProfilePage implements OnInit, OnDestroy {
     phoneNumber: '+919876543210',
     supportEmail: 'support@orderkro.in',
     privacyEmail: 'privacy@orderkro.in',
-    addressLine: 'Khanago, India'
+    addressLine: 'Hata Kushinagar, Uttar Pradesh'
   };
   readonly supportContact = signal({ ...this.defaultSupportContact });
   readonly profile = signal<any | null>(null);

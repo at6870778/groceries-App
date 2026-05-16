@@ -1133,6 +1133,7 @@ export class CartPage implements OnInit, OnDestroy {
         city: gpsAddrStr ? gpsAddrStr.split(',').pop()?.trim() || '' : '',
         state: '',
         postalCode: '',
+        village,
         landmark,
         latitude: gpsLoc?.latitude ?? null,
         longitude: gpsLoc?.longitude ?? null,
@@ -1170,10 +1171,11 @@ export class CartPage implements OnInit, OnDestroy {
     const payload = {
       label: selected.label || 'Home',
       line1: selected.line1 || selected.addressLine1 || '',
-      line2: village,
+      line2: selected.line2 || '',
       city: selected.city || '',
       state: selected.state || '',
       postalCode: selected.postalCode || '',
+      village,
       landmark,
       latitude: selected.latitude ?? null,
       longitude: selected.longitude ?? null,
@@ -1186,7 +1188,7 @@ export class CartPage implements OnInit, OnDestroy {
         next: (updated) => {
           this.savingLocationDetails.set(false);
           this.showLocationDetailsPrompt.set(false);
-          const merged = { ...selected, ...updated, line2: village, landmark };
+          const merged = { ...selected, ...updated, village, landmark };
           this.selectedAddress.set(merged);
           this.savedAddresses.set(this.savedAddresses().map((a: any) => a.id === selected.id ? merged : a));
           if (this.pendingProceedAfterDetails) {

@@ -42,6 +42,9 @@ public class Address extends BaseAuditEntity {
     @Column(length = 120)
     private String landmark;
 
+    @Column(length = 120)
+    private String village;
+
     @Column(precision = 10, scale = 7)
     private BigDecimal latitude;
 

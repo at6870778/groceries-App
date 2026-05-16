@@ -175,6 +175,7 @@ public class OrderService {
         StringBuilder sb = new StringBuilder();
         sb.append(addr.getLine1());
         if (addr.getLine2() != null && !addr.getLine2().isBlank()) sb.append(", ").append(addr.getLine2());
+        if (addr.getVillage() != null && !addr.getVillage().isBlank()) sb.append(", ").append(addr.getVillage());
         if (addr.getLandmark() != null && !addr.getLandmark().isBlank()) sb.append(", Near: ").append(addr.getLandmark());
         sb.append(", ").append(addr.getCity());
         if (addr.getState() != null && !addr.getState().isBlank()) sb.append(", ").append(addr.getState());

@@ -38,5 +38,6 @@ export const appRoutes: Routes = [
   { path: 'profile', canActivate: [authGuard], loadComponent: () => import('./features/profile/profile.page').then(m => m.ProfilePage) },
   { path: 'notifications', canActivate: [authGuard], loadComponent: () => import('./features/notifications/notifications.page').then(m => m.NotificationsPage) },
   { path: 'delivery/orders', canActivate: [deliveryGuard], loadComponent: () => import('./features/delivery-orders/delivery-orders.page').then(m => m.DeliveryOrdersPage) },
+  { path: 'delivery/profile', canActivate: [deliveryGuard], loadComponent: () => import('./features/delivery-auth/delivery-profile.page').then(m => m.DeliveryProfilePage) },
   { path: '**', redirectTo: 'login' }
 ];

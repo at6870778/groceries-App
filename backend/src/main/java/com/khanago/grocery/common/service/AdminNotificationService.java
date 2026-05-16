@@ -118,6 +118,51 @@ public class AdminNotificationService {
         sendTelegram(tg.getBotToken(), tg.getChatId(), text);
     }
 
+    /**
+     * Fired when delivery boy marks the order as PICKED.
+     */
+    @Async
+    public void notifyOrderPicked(OrderDto order, String deliveryBoyName) {
+        AppProperties.Telegram tg = appProperties.getTelegram();
+        if (!tg.isConfigured()) {
+            log.info("[NOTIFY] Order #{} picked by {} (Telegram not configured, skipping)", order.id(), deliveryBoyName);
+            return;
+        }
+
+        String text = "📦 *Order Picked!*\n\n" +
+                "📦 Order #" + order.id() + "\n" +
+                "👤 Customer: " + escape(order.customerName()) + "\n" +
+                "📞 Phone: " + escape(order.customerPhone()) + "\n" +
+                "📍 Address: " + escape(order.deliveryAddress()) + "\n" +
+                formatVillageLandmark(order.notes()) +
+                "🛵 Picked by: " + escape(deliveryBoyName) + "\n" +
+                "💰 Amount: ₹" + order.totalAmount();
+        sendTelegram(tg.getBotToken(), tg.getChatId(), text);
+    }
+
+    /**
+     * Fired when delivery boy marks the order as OUT_FOR_DELIVERY.
+     */
+    @Async
+    public void notifyOrderOutForDelivery(OrderDto order, String deliveryBoyName) {
+        AppProperties.Telegram tg = appProperties.getTelegram();
+        if (!tg.isConfigured()) {
+            log.info("[NOTIFY] Order #{} out for delivery by {} (Telegram not configured, skipping)", order.id(), deliveryBoyName);
+            return;
+        }
+
+        String text = "🚴 *Order Out For Delivery!*\n\n" +
+                "📦 Order #" + order.id() + "\n" +
+                "👤 Customer: " + escape(order.customerName()) + "\n" +
+                "📞 Phone: " + escape(order.customerPhone()) + "\n" +
+                "📍 Address: " + escape(order.deliveryAddress()) + "\n" +
+                formatVillageLandmark(order.notes()) +
+                "🛵 Rider: " + escape(deliveryBoyName) + "\n" +
+                "💰 Amount: ₹" + order.totalAmount() + "\n\n" +
+                "⏱️ Estimated delivery: 15-20 minutes";
+        sendTelegram(tg.getBotToken(), tg.getChatId(), text);
+    }
+
     private String buildOrderMessage(OrderDto order) {
         StringBuilder sb = new StringBuilder();
         sb.append("🛒 *New Order Received!*\n\n");

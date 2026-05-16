@@ -14,6 +14,7 @@ import { AuthService } from '../../core/services/auth.service';
         <ion-title>Delivery Orders</ion-title>
         <div class="header-right">
           <span class="order-count">{{ orders().length }} Active</span>
+          <button class="profile-btn" (click)="goToProfile()" title="My Profile">👤</button>
           <button class="logout-btn" (click)="logout()">Logout</button>
         </div>
       </ion-toolbar>
@@ -159,6 +160,21 @@ import { AuthService } from '../../core/services/auth.service';
       font-size: 12px;
       font-weight: 700;
       cursor: pointer;
+    }
+
+    .profile-btn {
+      border: 1px solid rgba(255,255,255,0.55);
+      background: rgba(255,255,255,0.14);
+      color: #fff;
+      border-radius: 18px;
+      padding: 6px 10px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .profile-btn:hover {
+      background: rgba(255,255,255,0.25);
     }
 
     ion-content {
@@ -578,6 +594,10 @@ export class DeliveryOrdersPage implements OnInit {
     const village = notes.match(/Village\/Area:\s*([^|]+)/i)?.[1]?.trim() || '';
     const landmark = notes.match(/Landmark:\s*([^|]+)/i)?.[1]?.trim() || '';
     return (village || landmark) ? { village, landmark } : null;
+  }
+
+  goToProfile() {
+    this.router.navigate(['/delivery/profile']);
   }
 
   logout() {

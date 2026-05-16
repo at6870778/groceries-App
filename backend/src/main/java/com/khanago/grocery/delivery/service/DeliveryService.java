@@ -105,15 +105,21 @@ public class DeliveryService {
         assignment.setStatus(status);
         assignment = assignmentRepository.save(assignment);
 
+        OrderDto orderDto = orderService.getOrderForDelivery(assignment.getOrder().getId());
+        String deliveryBoyName = assignment.getDeliveryBoy().getFullName();
+
         if (status == DeliveryAssignmentStatus.PICKED) {
             orderService.updateOrderStatus(assignment.getOrder().getId(), OrderStatus.PREPARING);
+            // Notify admin that order is picked
+            adminNotificationService.notifyOrderPicked(orderDto, deliveryBoyName);
         } else if (status == DeliveryAssignmentStatus.OUT_FOR_DELIVERY) {
             orderService.updateOrderStatus(assignment.getOrder().getId(), OrderStatus.OUT_FOR_DELIVERY);
+            // Notify admin that order is out for delivery
+            adminNotificationService.notifyOrderOutForDelivery(orderDto, deliveryBoyName);
         } else if (status == DeliveryAssignmentStatus.DELIVERED) {
             orderService.updateOrderStatus(assignment.getOrder().getId(), OrderStatus.DELIVERED);
             // Notify admin that delivery is completed
-            OrderDto orderDto = orderService.getOrderForDelivery(assignment.getOrder().getId());
-            adminNotificationService.notifyOrderDelivered(orderDto, assignment.getDeliveryBoy().getFullName());
+            adminNotificationService.notifyOrderDelivered(orderDto, deliveryBoyName);
         }
 
         return new AssignmentDto(assignment.getId(), assignment.getOrder().getId(), assignment.getDeliveryBoy().getId(), assignment.getStatus().name());

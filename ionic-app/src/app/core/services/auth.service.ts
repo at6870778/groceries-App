@@ -87,4 +87,41 @@ export class AuthService {
     localStorage.removeItem('active_phone');
     this.notifyScopeChanged();
   }
+
+  logout(role?: AppRole) {
+    if (role === 'DELIVERY_BOY') {
+      this.deliveryToken.set(null);
+      localStorage.removeItem('delivery_token');
+    } else {
+      this.customerToken.set(null);
+      localStorage.removeItem('customer_token');
+    }
+    if (this.activeRole() === role || !role) {
+      this.activeRole.set(null);
+      localStorage.removeItem('active_role');
+      localStorage.removeItem('active_phone');
+    }
+    this.notifyScopeChanged();
+  }
+
+  getCurrentUser(): any {
+    const role = this.activeRole();
+    const token = role === 'DELIVERY_BOY' ? this.deliveryToken() : this.customerToken();
+    
+    if (!token) return null;
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return {
+        phone: payload.sub || localStorage.getItem('active_phone') || '',
+        fullName: payload.name || '',
+        role: role
+      };
+    } catch {
+      return {
+        phone: localStorage.getItem('active_phone') || '',
+        role: role
+      };
+    }
+  }
 }

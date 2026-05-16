@@ -1059,13 +1059,50 @@ export class CartPage implements OnInit, OnDestroy {
 
     const selected = this.selectedAddress();
     if (!selected?.id) {
+      // GPS path — save village/landmark to localStorage as fallback
       localStorage.setItem(this.gpsVillageKey, village);
       localStorage.setItem(this.gpsLandmarkKey, landmark);
-      this.showLocationDetailsPrompt.set(false);
-      if (this.pendingProceedAfterDetails) {
-        this.pendingProceedAfterDetails = false;
-        this.checkoutStep.set('payment');
-      }
+
+      // Also create a real saved address on the backend so it appears in profile and "Deliver To"
+      const gpsLoc = this.locationService.currentLocation();
+      const gpsAddrStr = gpsLoc?.address || '';
+      const line1 = village; // village/area as the primary address line
+      const addressPayload = {
+        label: 'Home',
+        line1,
+        line2: '',
+        city: gpsAddrStr ? gpsAddrStr.split(',').pop()?.trim() || '' : '',
+        state: '',
+        postalCode: '',
+        landmark,
+        latitude: gpsLoc?.latitude ?? null,
+        longitude: gpsLoc?.longitude ?? null,
+        isDefault: true
+      };
+      this.savingLocationDetails.set(true);
+      this.api.post<any>('/customer/profile/addresses', addressPayload)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (created) => {
+            this.savingLocationDetails.set(false);
+            this.selectedAddress.set(created);
+            this.savedAddresses.set([created, ...this.savedAddresses()]);
+            this.showLocationDetailsPrompt.set(false);
+            if (this.pendingProceedAfterDetails) {
+              this.pendingProceedAfterDetails = false;
+              this.checkoutStep.set('payment');
+            }
+          },
+          error: () => {
+            // Fallback: proceed with localStorage values even if save fails
+            this.savingLocationDetails.set(false);
+            this.showLocationDetailsPrompt.set(false);
+            if (this.pendingProceedAfterDetails) {
+              this.pendingProceedAfterDetails = false;
+              this.checkoutStep.set('payment');
+            }
+          }
+        });
       return;
     }
 

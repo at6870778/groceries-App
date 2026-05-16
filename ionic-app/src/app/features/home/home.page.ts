@@ -1129,9 +1129,7 @@ export class HomePage implements OnInit, OnDestroy {
         }
       });
 
-    this.api.get<any[]>('/customer/profile/addresses')
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({ next: (res) => this.savedAddresses.set(res || []) });
+    this.loadSavedAddresses();
 
     if (!this.locationService.currentLocation()) {
       this.locationService.detectCurrentLocation().catch(() => {});
@@ -1169,6 +1167,18 @@ export class HomePage implements OnInit, OnDestroy {
         }
       });
 
+  }
+
+  ionViewWillEnter(): void {
+    // Refresh saved addresses every time the home page is navigated to,
+    // so "Deliver To" always reflects the latest saved address.
+    this.loadSavedAddresses();
+  }
+
+  private loadSavedAddresses(): void {
+    this.api.get<any[]>('/customer/profile/addresses')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: (res) => this.savedAddresses.set(res || []) });
   }
 
   ngOnDestroy(): void {

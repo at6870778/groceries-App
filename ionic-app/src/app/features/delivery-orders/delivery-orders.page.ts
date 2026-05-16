@@ -59,25 +59,33 @@ import { AuthService } from '../../core/services/auth.service';
           </div>
 
           <div class="order-details">
-            <div class="detail-row">
-              <span class="label">Customer</span>
-              <span class="value">{{ order.customerName || 'N/A' }}</span>
+            <div class="detail-row customer-row">
+              <span class="label">👤 Customer</span>
+              <span class="value customer-name">{{ order.customerName || 'N/A' }}</span>
             </div>
             <div class="detail-row">
-              <span class="label">Phone</span>
-              <span class="value">{{ order.customerPhone || 'N/A' }}</span>
+              <span class="label">📞 Phone</span>
+              <a class="value phone-link" [href]="'tel:+91' + (order.customerPhone || '')">
+                {{ order.customerPhone || 'N/A' }}
+              </a>
             </div>
             <div class="detail-row">
-              <span class="label">Items</span>
-              <span class="value badge">{{ (order.items || []).length }} items</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Amount</span>
+              <span class="label">🛒 Items ({{ (order.items || []).length }})</span>
               <span class="value amount">₹{{ order.totalAmount || 0 }}</span>
             </div>
-            <div class="detail-row address">
-              <span class="label">📍 Delivery To</span>
-              <span class="value">{{ order.deliveryAddress || 'N/A' }}</span>
+            <div class="items-mini-list" *ngIf="(order.items || []).length > 0">
+              <div class="mini-item" *ngFor="let item of order.items">
+                <span class="mini-name">{{ item.productName }}</span>
+                <span class="mini-qty">× {{ item.quantity }}</span>
+              </div>
+            </div>
+            <div class="address-block">
+              <div class="address-label">📍 Deliver To</div>
+              <div class="address-line">{{ order.deliveryAddress || 'N/A' }}</div>
+              <ng-container *ngIf="extractNotes(order.notes) as noteInfo">
+                <div class="notes-line" *ngIf="noteInfo.village">🏘️ {{ noteInfo.village }}</div>
+                <div class="notes-line" *ngIf="noteInfo.landmark">🏠 Near: {{ noteInfo.landmark }}</div>
+              </ng-container>
             </div>
           </div>
 
@@ -317,18 +325,67 @@ import { AuthService } from '../../core/services/auth.service';
       text-align: right;
     }
 
-    .value.badge {
-      background: #667eea;
-      color: white;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 12px;
+    .customer-name {
+      font-weight: 700;
+      font-size: 14px;
+      color: #1a1a1a;
+    }
+
+    .phone-link {
+      color: #667eea;
+      font-weight: 700;
+      text-decoration: none;
+      font-size: 14px;
     }
 
     .value.amount {
       font-size: 16px;
       font-weight: 700;
       color: #667eea;
+    }
+
+    .items-mini-list {
+      background: #f7f9fc;
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin: 4px 0 10px;
+    }
+    .mini-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 3px 0;
+      border-bottom: 1px solid #edf0f5;
+    }
+    .mini-item:last-child { border-bottom: none; }
+    .mini-name { color: #3a4b63; font-weight: 500; }
+    .mini-qty { color: #667eea; font-weight: 700; }
+
+    .address-block {
+      background: #eef3ff;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-top: 6px;
+    }
+    .address-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #667eea;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .address-line {
+      font-size: 13px;
+      color: #1a1a1a;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+    .notes-line {
+      font-size: 12px;
+      color: #4a5568;
+      margin-top: 4px;
+      font-weight: 600;
     }
 
     .status-flow {
@@ -513,6 +570,14 @@ export class DeliveryOrdersPage implements OnInit {
     return this.orders()
       .filter(o => o.assignmentStatus === 'DELIVERED')
       .reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+  }
+
+  /** Parses checkout notes like "Deliver fast | Village/Area: X | Landmark: Y" */
+  extractNotes(notes: string | null): { village: string; landmark: string } | null {
+    if (!notes) return null;
+    const village = notes.match(/Village\/Area:\s*([^|]+)/i)?.[1]?.trim() || '';
+    const landmark = notes.match(/Landmark:\s*([^|]+)/i)?.[1]?.trim() || '';
+    return (village || landmark) ? { village, landmark } : null;
   }
 
   logout() {

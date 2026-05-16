@@ -126,7 +126,9 @@ import { SyncService } from '../../core/services/sync.service';
 
         <!-- Name field -->
         <div class="name-row">
-          <input class="name-input" type="text" [(ngModel)]="fullName" placeholder="Your Name (for first-time users)">
+          <label class="name-label">Your Full Name <span class="req-star">*</span></label>
+          <input class="name-input" [class.name-input-error]="nameError" type="text" [(ngModel)]="fullName" placeholder="e.g. Ravi Kumar" autocomplete="name">
+          <p class="name-error-msg" *ngIf="nameError">{{ nameError }}</p>
         </div>
 
         <div class="otp-btn-wrap">
@@ -567,7 +569,22 @@ import { SyncService } from '../../core/services/sync.service';
 
     /* === NAME INPUT === */
     .name-row {
-      padding: 0 20px 16px;
+      padding: 0 20px 12px;
+    }
+    .name-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #6f7f95;
+      margin-bottom: 6px;
+      letter-spacing: 0.3px;
+    }
+    .req-star { color: #d32f2f; }
+    .name-error-msg {
+      margin: 4px 0 0;
+      color: #d32f2f;
+      font-size: 12px;
+      font-weight: 600;
     }
 
     .welcome-back {
@@ -594,6 +611,10 @@ import { SyncService } from '../../core/services/sync.service';
 
     .name-input:focus {
       border-color: #1ba672;
+    }
+    .name-input-error {
+      border-color: #d32f2f !important;
+      background: #fff5f5 !important;
     }
 
     .name-input::placeholder {
@@ -680,6 +701,7 @@ export class DeliveryLoginPage implements OnInit, OnDestroy {
   get otp(): string { return this.otpDigits.join(''); }
   get isOtpComplete(): boolean { return this.otpDigits.every(d => d.length === 1); }
   fullName = '';
+  nameError = '';
   otpRequestId = '';
   get otpSent(): boolean { return this._otpSent; }
   private _otpSent = false;
@@ -865,9 +887,14 @@ export class DeliveryLoginPage implements OnInit, OnDestroy {
       }
     }
     if (!this.isOtpComplete || this.loading) return;
+    const name = this.fullName.trim();
+    if (!name) {
+      this.nameError = 'Please enter your full name to continue.';
+      return;
+    }
+    this.nameError = '';
     this.loading = true;
     this.error = '';
-    const name = this.fullName.trim(); // empty string is fine — backend will use phone as fallback
     this.auth.loginWithRole(this.phone, name, this.mode, this.otp, this.otpRequestId).subscribe({
       next: (res) => {
         const token = res?.data?.token || res?.data?.accessToken;

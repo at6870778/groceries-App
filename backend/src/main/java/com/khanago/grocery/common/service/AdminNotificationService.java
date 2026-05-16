@@ -65,6 +65,7 @@ public class AdminNotificationService {
                 "👤 Customer: " + escape(order.customerName()) + "\n" +
                 "📞 Phone: " + escape(order.customerPhone()) + "\n" +
                 "📍 Address: " + escape(order.deliveryAddress()) + "\n" +
+                formatVillageLandmark(order.notes()) +
                 "💳 Payment: " + order.paymentMode() + "\n" +
                 "💰 Total: ₹" + order.totalAmount();
         sendTelegram(tg.getBotToken(), tg.getChatId(), adminText);
@@ -77,11 +78,17 @@ public class AdminNotificationService {
             sb.append("👤 Customer: ").append(escape(order.customerName())).append("\n");
             sb.append("📞 Phone: ").append(escape(order.customerPhone())).append("\n");
             sb.append("📍 Address: ").append(escape(order.deliveryAddress())).append("\n");
+            sb.append(formatVillageLandmark(order.notes()));
+            if (order.items() != null && !order.items().isEmpty()) {
+                sb.append("\n*Items:*\n");
+                order.items().forEach(item ->
+                    sb.append("  • ").append(escape(item.productName()))
+                      .append(" × ").append(item.quantity())
+                      .append(" @ ₹").append(item.unitPrice()).append("\n")
+                );
+            }
             sb.append("💳 Payment: ").append(order.paymentMode()).append("\n");
             sb.append("💰 Collect: ₹").append(order.totalAmount()).append("\n");
-            if (order.notes() != null && !order.notes().isBlank()) {
-                sb.append("📝 Note: ").append(escape(order.notes())).append("\n");
-            }
             sb.append("\n✅ Please pick up and deliver at the earliest!");
             sendTelegram(tg.getBotToken(), deliveryBoyTelegramChatId, sb.toString());
         }
@@ -102,7 +109,9 @@ public class AdminNotificationService {
                 "📦 Order #" + order.id() + "\n" +
                 "👤 Customer: " + escape(order.customerName()) + "\n" +
                 "📞 Phone: " + escape(order.customerPhone()) + "\n" +
-                "🛵 Delivered by: " + escape(deliveryBoyName) + "\n" +
+                "� Address: " + escape(order.deliveryAddress()) + "\n" +
+                formatVillageLandmark(order.notes()) +
+                "�🛵 Delivered by: " + escape(deliveryBoyName) + "\n" +
                 "💰 Amount: ₹" + order.totalAmount() + "\n" +
                 "💳 Payment: " + order.paymentMode() + "\n\n" +
                 "🎉 Order completed successfully!";
@@ -115,7 +124,9 @@ public class AdminNotificationService {
         sb.append("📦 Order #").append(order.id()).append("\n");
         sb.append("👤 Customer: ").append(escape(order.customerName())).append("\n");
         sb.append("📞 Phone: ").append(escape(order.customerPhone())).append("\n");
-        sb.append("💳 Payment: ").append(order.paymentMode()).append("\n");
+        sb.append("� Address: ").append(escape(order.deliveryAddress())).append("\n");
+        sb.append(formatVillageLandmark(order.notes()));
+        sb.append("�💳 Payment: ").append(order.paymentMode()).append("\n");
         sb.append("💰 Total: ₹").append(order.totalAmount()).append("\n");
 
         if (order.items() != null && !order.items().isEmpty()) {
@@ -127,12 +138,31 @@ public class AdminNotificationService {
             );
         }
 
-        if (order.notes() != null && !order.notes().isBlank()) {
-            sb.append("\n📝 Note: ").append(escape(order.notes())).append("\n");
-        }
-
         sb.append("\n👉 Open admin panel to assign a rider.");
         return sb.toString();
+    }
+
+    /**
+     * Extracts Village/Area and Landmark from checkout notes
+     * (format: "Deliver fast | Village/Area: X | Landmark: Y")
+     * and returns them as formatted Telegram lines, or empty string if none found.
+     */
+    private String formatVillageLandmark(String notes) {
+        if (notes == null || notes.isBlank()) return "";
+        StringBuilder result = new StringBuilder();
+        java.util.regex.Matcher villageMatcher = java.util.regex.Pattern
+                .compile("Village/Area:\\s*([^|]+)", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(notes);
+        if (villageMatcher.find()) {
+            result.append("🏘 Village/Area: ").append(escape(villageMatcher.group(1).trim())).append("\n");
+        }
+        java.util.regex.Matcher landmarkMatcher = java.util.regex.Pattern
+                .compile("Landmark:\\s*([^|]+)", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(notes);
+        if (landmarkMatcher.find()) {
+            result.append("🏠 Landmark: ").append(escape(landmarkMatcher.group(1).trim())).append("\n");
+        }
+        return result.toString();
     }
 
     private void sendTelegram(String botToken, String chatId, String text) {

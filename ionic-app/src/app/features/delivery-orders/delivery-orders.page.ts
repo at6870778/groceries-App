@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonRefresher, IonRefresherContent } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   standalone: true,
@@ -13,6 +14,7 @@ import { ApiService } from '../../core/services/api.service';
         <ion-title>Delivery Orders</ion-title>
         <div class="header-right">
           <span class="order-count">{{ orders().length }} Active</span>
+          <button class="logout-btn" (click)="logout()">Logout</button>
         </div>
       </ion-toolbar>
     </ion-header>
@@ -138,6 +140,17 @@ import { ApiService } from '../../core/services/api.service';
       border-radius: 20px;
       font-size: 12px;
       font-weight: 600;
+    }
+
+    .logout-btn {
+      border: 1px solid rgba(255,255,255,0.55);
+      background: rgba(255,255,255,0.14);
+      color: #fff;
+      border-radius: 18px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
     }
 
     ion-content {
@@ -435,7 +448,7 @@ export class DeliveryOrdersPage implements OnInit {
   readonly loading = signal(false);
   readonly errorMsg = signal('');
 
-  constructor(private api: ApiService, private router: Router) {}
+  constructor(private api: ApiService, private router: Router, private auth: AuthService) {}
 
   ngOnInit(): void {
     this.load();
@@ -500,5 +513,11 @@ export class DeliveryOrdersPage implements OnInit {
     return this.orders()
       .filter(o => o.assignmentStatus === 'DELIVERED')
       .reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+  }
+
+  logout() {
+    if (!confirm('Are you sure you want to logout?')) return;
+    this.auth.clearTokens();
+    this.router.navigateByUrl('/login', { replaceUrl: true });
   }
 }

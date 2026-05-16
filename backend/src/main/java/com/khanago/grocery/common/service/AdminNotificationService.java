@@ -64,7 +64,7 @@ public class AdminNotificationService {
                 "📦 Order #" + order.id() + " assigned to *" + escape(deliveryBoyName) + "*\n" +
                 "👤 Customer: " + escape(order.customerName()) + "\n" +
                 "📞 Phone: " + escape(order.customerPhone()) + "\n" +
-                "📍 Address: " + escape(order.deliveryAddress()) + "\n" +
+            "📍 Address: " + escape(resolveAddressLine(order)) + "\n" +
                 formatVillageLandmark(order.notes()) +
                 "💳 Payment: " + order.paymentMode() + "\n" +
                 "💰 Total: ₹" + order.totalAmount();
@@ -77,7 +77,7 @@ public class AdminNotificationService {
             sb.append("🆔 Order #").append(order.id()).append("\n");
             sb.append("👤 Customer: ").append(escape(order.customerName())).append("\n");
             sb.append("📞 Phone: ").append(escape(order.customerPhone())).append("\n");
-            sb.append("📍 Address: ").append(escape(order.deliveryAddress())).append("\n");
+            sb.append("📍 Address: ").append(escape(resolveAddressLine(order))).append("\n");
             sb.append(formatVillageLandmark(order.notes()));
             if (order.items() != null && !order.items().isEmpty()) {
                 sb.append("\n*Items:*\n");
@@ -109,9 +109,9 @@ public class AdminNotificationService {
                 "📦 Order #" + order.id() + "\n" +
                 "👤 Customer: " + escape(order.customerName()) + "\n" +
                 "📞 Phone: " + escape(order.customerPhone()) + "\n" +
-                "� Address: " + escape(order.deliveryAddress()) + "\n" +
+            "📍 Address: " + escape(resolveAddressLine(order)) + "\n" +
                 formatVillageLandmark(order.notes()) +
-                "�🛵 Delivered by: " + escape(deliveryBoyName) + "\n" +
+            "🛵 Delivered by: " + escape(deliveryBoyName) + "\n" +
                 "💰 Amount: ₹" + order.totalAmount() + "\n" +
                 "💳 Payment: " + order.paymentMode() + "\n\n" +
                 "🎉 Order completed successfully!";
@@ -133,7 +133,7 @@ public class AdminNotificationService {
                 "📦 Order #" + order.id() + "\n" +
                 "👤 Customer: " + escape(order.customerName()) + "\n" +
                 "📞 Phone: " + escape(order.customerPhone()) + "\n" +
-                "📍 Address: " + escape(order.deliveryAddress()) + "\n" +
+            "📍 Address: " + escape(resolveAddressLine(order)) + "\n" +
                 formatVillageLandmark(order.notes()) +
                 "🛵 Picked by: " + escape(deliveryBoyName) + "\n" +
                 "💰 Amount: ₹" + order.totalAmount();
@@ -155,7 +155,7 @@ public class AdminNotificationService {
                 "📦 Order #" + order.id() + "\n" +
                 "👤 Customer: " + escape(order.customerName()) + "\n" +
                 "📞 Phone: " + escape(order.customerPhone()) + "\n" +
-                "📍 Address: " + escape(order.deliveryAddress()) + "\n" +
+            "📍 Address: " + escape(resolveAddressLine(order)) + "\n" +
                 formatVillageLandmark(order.notes()) +
                 "🛵 Rider: " + escape(deliveryBoyName) + "\n" +
                 "💰 Amount: ₹" + order.totalAmount() + "\n\n" +
@@ -169,9 +169,9 @@ public class AdminNotificationService {
         sb.append("📦 Order #").append(order.id()).append("\n");
         sb.append("👤 Customer: ").append(escape(order.customerName())).append("\n");
         sb.append("📞 Phone: ").append(escape(order.customerPhone())).append("\n");
-        sb.append("� Address: ").append(escape(order.deliveryAddress())).append("\n");
+        sb.append("📍 Address: ").append(escape(resolveAddressLine(order))).append("\n");
         sb.append(formatVillageLandmark(order.notes()));
-        sb.append("�💳 Payment: ").append(order.paymentMode()).append("\n");
+        sb.append("💳 Payment: ").append(order.paymentMode()).append("\n");
         sb.append("💰 Total: ₹").append(order.totalAmount()).append("\n");
 
         if (order.items() != null && !order.items().isEmpty()) {
@@ -208,6 +208,59 @@ public class AdminNotificationService {
             result.append("🏠 Landmark: ").append(escape(landmarkMatcher.group(1).trim())).append("\n");
         }
         return result.toString();
+    }
+
+    private String resolveAddressLine(OrderDto order) {
+        String address = order.deliveryAddress();
+        if (address != null && !address.isBlank() && !"N/A".equalsIgnoreCase(address.trim())) {
+            return address;
+        }
+
+        String notes = order.notes();
+        if (notes == null || notes.isBlank()) {
+            return "Address not available";
+        }
+
+        String village = "";
+        String landmark = "";
+        String detectedAddress = "";
+
+        java.util.regex.Matcher detectedMatcher = java.util.regex.Pattern
+                .compile("Detected Location:\\s*([^|]+)", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(notes);
+        if (detectedMatcher.find()) {
+            detectedAddress = detectedMatcher.group(1).trim();
+        }
+
+        if (!detectedAddress.isBlank()) {
+            return detectedAddress;
+        }
+
+        java.util.regex.Matcher villageMatcher = java.util.regex.Pattern
+                .compile("Village/Area:\\s*([^|]+)", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(notes);
+        if (villageMatcher.find()) {
+            village = villageMatcher.group(1).trim();
+        }
+
+        java.util.regex.Matcher landmarkMatcher = java.util.regex.Pattern
+                .compile("Landmark:\\s*([^|]+)", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(notes);
+        if (landmarkMatcher.find()) {
+            landmark = landmarkMatcher.group(1).trim();
+        }
+
+        if (!village.isBlank() && !landmark.isBlank()) {
+            return village + ", Near: " + landmark;
+        }
+        if (!village.isBlank()) {
+            return village;
+        }
+        if (!landmark.isBlank()) {
+            return "Near: " + landmark;
+        }
+
+        return "Address not available";
     }
 
     private void sendTelegram(String botToken, String chatId, String text) {

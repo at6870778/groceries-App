@@ -11,13 +11,24 @@ import { AuthService } from '../../core/services/auth.service';
   template: `
     <ion-header>
       <ion-toolbar class="header-bar">
-        <ion-title>Delivery Orders</ion-title>
-        <div class="header-right">
+        <div class="title-wrap">
+          <ion-title>Delivery Orders</ion-title>
           <span class="order-count">{{ orders().length }} Active</span>
-          <button class="profile-btn" (click)="goToProfile()" title="My Profile">👤</button>
-          <button class="logout-btn" (click)="logout()">Logout</button>
         </div>
+        <button class="logout-btn" (click)="logout()">Logout</button>
       </ion-toolbar>
+
+      <div class="rider-strip">
+        <button class="rider-card" (click)="goToProfile()" aria-label="Open rider profile">
+          <span class="rider-avatar">{{ getInitials(riderName()) }}</span>
+          <span class="rider-meta">
+            <span class="rider-label">Logged in as</span>
+            <span class="rider-name">{{ riderName() }}</span>
+            <span class="rider-phone" *ngIf="riderPhone()">+91 {{ riderPhone() }}</span>
+          </span>
+          <span class="rider-cta">View Profile</span>
+        </button>
+      </div>
     </ion-header>
 
     <ion-content [scrollEvents]="true" [fullscreen]="false" class="ion-padding" style="--padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px))">
@@ -130,51 +141,135 @@ import { AuthService } from '../../core/services/auth.service';
     ion-toolbar {
       --color: white;
       padding: 12px 16px;
+      --min-height: 64px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-bar {
+      --background: linear-gradient(135deg, #0f3d6e 0%, #1d5fa6 100%);
     }
 
     ion-title {
       font-size: 20px;
       font-weight: 700;
+      padding: 0;
     }
 
-    .header-right {
+    .title-wrap {
       display: flex;
-      gap: 16px;
+      flex-direction: column;
+      gap: 4px;
       align-items: center;
+      text-align: left;
+      min-width: 0;
     }
 
     .order-count {
-      background: rgba(255, 255, 255, 0.2);
-      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.16);
+      padding: 4px 10px;
       border-radius: 20px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
+      letter-spacing: 0.2px;
     }
 
     .logout-btn {
       border: 1px solid rgba(255,255,255,0.55);
-      background: rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.2);
       color: #fff;
       border-radius: 18px;
-      padding: 6px 12px;
+      padding: 7px 12px;
       font-size: 12px;
       font-weight: 700;
-      cursor: pointer;
-    }
-
-    .profile-btn {
-      border: 1px solid rgba(255,255,255,0.55);
-      background: rgba(255,255,255,0.14);
-      color: #fff;
-      border-radius: 18px;
-      padding: 6px 10px;
-      font-size: 16px;
       cursor: pointer;
       transition: all 0.2s ease;
     }
 
-    .profile-btn:hover {
-      background: rgba(255,255,255,0.25);
+    .logout-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .rider-strip {
+      background: linear-gradient(135deg, #0f3d6e 0%, #1d5fa6 100%);
+      padding: 0 16px 14px;
+    }
+
+    .rider-card {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.18);
+      color: #fff;
+      border-radius: 14px;
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .rider-card:active {
+      transform: scale(0.99);
+    }
+
+    .rider-card:hover {
+      background: rgba(255,255,255,0.24);
+    }
+
+    .rider-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.27);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .rider-meta {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      gap: 1px;
+    }
+
+    .rider-label {
+      font-size: 10px;
+      opacity: 0.85;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+    }
+
+    .rider-name {
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .rider-phone {
+      font-size: 11px;
+      opacity: 0.88;
+      font-weight: 600;
+    }
+
+    .rider-cta {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.08);
+      white-space: nowrap;
     }
 
     ion-content {
@@ -520,11 +615,45 @@ export class DeliveryOrdersPage implements OnInit {
   readonly orders = signal<any[]>([]);
   readonly loading = signal(false);
   readonly errorMsg = signal('');
+  readonly riderName = signal('Delivery Partner');
+  readonly riderPhone = signal('');
 
   constructor(private api: ApiService, private router: Router, private auth: AuthService) {}
 
   ngOnInit(): void {
+    this.hydrateRiderInfo();
     this.load();
+  }
+
+  private hydrateRiderInfo(): void {
+    const user = this.auth.getCurrentUser?.() as any;
+    const token = localStorage.getItem('delivery_token') || '';
+    let tokenName = '';
+    let tokenPhone = '';
+
+    if (token && token.includes('.')) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1] || ''));
+        tokenName = String(payload?.name || '').trim();
+        tokenPhone = String(payload?.sub || '').trim();
+      } catch {
+        tokenName = '';
+      }
+    }
+
+    const resolvedName = String(user?.fullName || tokenName || '').trim();
+    const resolvedPhone = String(user?.phone || tokenPhone || localStorage.getItem('active_phone') || '').trim();
+
+    this.riderName.set(resolvedName || 'Delivery Partner');
+    this.riderPhone.set(resolvedPhone);
+  }
+
+  getInitials(name: string): string {
+    const cleanName = String(name || '').trim();
+    if (!cleanName) return 'DP';
+    const parts = cleanName.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
   }
 
   load() {

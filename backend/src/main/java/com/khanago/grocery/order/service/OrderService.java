@@ -183,6 +183,17 @@ public class OrderService {
         return sb.toString();
     }
 
+    private String extractDetectedAddressFromNotes(String notes) {
+        if (notes == null || notes.isBlank()) return "";
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("Detected Location:\\s*([^|]+)", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(notes);
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+        return "";
+    }
+
     private String orderStatusTitle(OrderStatus status) {
         return switch (status) {
             case CONFIRMED        -> "Order Confirmed 🎉";
@@ -215,7 +226,17 @@ public class OrderService {
                 ? order.getCustomer().getFullName() : "Unknown";
         String customerPhone = (order.getCustomer() != null && order.getCustomer().getPhone() != null)
                 ? order.getCustomer().getPhone() : "N/A";
-        String address = buildAddressString(order.getAddress());
+        Address resolvedAddress = order.getAddress();
+        if (resolvedAddress == null && order.getCustomer() != null && order.getCustomer().getId() != null) {
+            resolvedAddress = addressRepository.findTopByUserIdOrderByIdDesc(order.getCustomer().getId());
+        }
+        String address = buildAddressString(resolvedAddress);
+        if ("N/A".equals(address)) {
+            String detected = extractDetectedAddressFromNotes(order.getNotes());
+            if (!detected.isBlank()) {
+                address = detected;
+            }
+        }
         return new OrderDto(
                 order.getId(),
                 null,
@@ -254,6 +275,12 @@ public class OrderService {
         }
 
         String address = buildAddressString(order.getAddress());
+        if ("N/A".equals(address)) {
+            String detected = extractDetectedAddressFromNotes(order.getNotes());
+            if (!detected.isBlank()) {
+                address = detected;
+            }
+        }
 
         String customerName = (order.getCustomer() != null && order.getCustomer().getFullName() != null)
                 ? order.getCustomer().getFullName()

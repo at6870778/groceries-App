@@ -53,10 +53,9 @@ import { ApiService } from '../../core/services/api.service';
         </div>
       </div>
 
-      <div class="action-section">
-        <h3 class="section-title">⚙️ Actions</h3>
-        <button class="action-btn logout-btn" (click)="logout()">
-          🚪 Logout
+      <div class="logout-wrap">
+        <button class="logout-btn" (click)="logout()">
+          🚪 Logout Account
         </button>
       </div>
 
@@ -178,11 +177,11 @@ import { ApiService } from '../../core/services/api.service';
       opacity: 0.9;
     }
 
-    .action-section {
+    .logout-wrap {
       margin-bottom: 24px;
     }
 
-    .action-btn {
+    .logout-btn {
       display: block;
       width: 100%;
       padding: 14px 16px;
@@ -192,16 +191,6 @@ import { ApiService } from '../../core/services/api.service';
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s ease;
-      background: #f5f5f5;
-      color: #1a1a1a;
-      margin-bottom: 10px;
-    }
-
-    .action-btn:hover {
-      background: #e8e8e8;
-    }
-
-    .logout-btn {
       background: #ff4444;
       color: white;
     }
@@ -244,23 +233,50 @@ export class DeliveryProfilePage implements OnInit {
   }
 
   loadProfileData(): void {
-    // Get current user info from AuthService
-    const currentUser = this.auth.getCurrentUser();
-    if (currentUser) {
-      this.userDetails = currentUser;
-    }
+    this.hydrateUserDetails();
 
-    // Load delivery stats
-    this.api.get<any>('/deliveryboy/stats').subscribe({
-      next: (res) => {
-        if (res?.data) {
-          this.stats = res.data;
-        }
+    // Use real assigned orders endpoint so stats always match delivery module data.
+    this.api.get<any[]>('/delivery/orders').subscribe({
+      next: (orders) => {
+        const list = Array.isArray(orders) ? orders : [];
+        const delivered = list.filter((o: any) => o?.assignmentStatus === 'DELIVERED');
+
+        this.stats = {
+          totalOrders: list.length,
+          deliveredOrders: delivered.length,
+          totalEarnings: delivered.reduce((sum: number, o: any) => sum + (+o?.totalAmount || 0), 0)
+        };
       },
       error: () => {
-        // If stats endpoint doesn't exist, just show default values
+        this.stats = {
+          totalOrders: 0,
+          deliveredOrders: 0,
+          totalEarnings: 0
+        };
       }
     });
+  }
+
+  private hydrateUserDetails(): void {
+    const currentUser = this.auth.getCurrentUser?.() as any;
+    const token = localStorage.getItem('delivery_token') || '';
+
+    let tokenName = '';
+    let tokenPhone = '';
+    if (token && token.includes('.')) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1] || ''));
+        tokenName = String(payload?.name || '').trim();
+        tokenPhone = String(payload?.sub || '').trim();
+      } catch {
+        tokenName = '';
+      }
+    }
+
+    const fullName = String(currentUser?.fullName || tokenName || '').trim() || 'Delivery Partner';
+    const phone = String(currentUser?.phone || tokenPhone || localStorage.getItem('active_phone') || '').trim();
+
+    this.userDetails = { fullName, phone };
   }
 
   logout(): void {

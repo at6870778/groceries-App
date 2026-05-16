@@ -127,6 +127,15 @@ public class OtpAuthService {
         return nextReqId;
     }
 
+    @Transactional(readOnly = true)
+    public String lookupCustomerName(String phone) {
+        return userRepository.findByPhone(phone)
+                .filter(user -> user.getRoles().stream().anyMatch(r -> r.getName() == RoleName.CUSTOMER))
+                .map(User::getFullName)
+                .map(name -> name == null ? "" : name.trim())
+                .orElse("");
+    }
+
     @Transactional
     public AuthResponseDto verifyOtp(OtpVerifyDto request, String clientIp) {
         String phone = request.phone();

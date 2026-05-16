@@ -30,6 +30,12 @@ public class AuthController {
                 otpAuthService.requestOtp(request, extractClientIp(httpRequest)));
     }
 
+    @PostMapping("/lookup-customer")
+    public ApiSuccessResponse<String> lookupCustomer(@Valid @RequestBody OtpRequestDto request) {
+        return new ApiSuccessResponse<>("Lookup completed",
+                otpAuthService.lookupCustomerName(request.phone()));
+    }
+
     @PostMapping("/retry-otp")
     public ApiSuccessResponse<String> retryOtp(
             @Valid @RequestBody OtpRetryDto request,

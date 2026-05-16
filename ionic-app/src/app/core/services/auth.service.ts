@@ -50,6 +50,10 @@ export class AuthService {
     return this.http.post<{ message: string; data: string }>(`${this.baseUrl}/auth/request-otp`, { phone });
   }
 
+  lookupCustomerName(phone: string) {
+    return this.http.post<{ message: string; data: string }>(`${this.baseUrl}/auth/lookup-customer`, { phone });
+  }
+
   retryOtp(phone: string, reqId: string) {
     return this.http.post<{ message: string; data: string }>(`${this.baseUrl}/auth/retry-otp`, {
       phone,

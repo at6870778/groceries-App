@@ -1078,7 +1078,7 @@ export class CartPage implements OnInit, OnDestroy {
     const saved = this.selectedAddress();
     if (saved) {
       return {
-        village: String(saved?.line2 || '').trim(),
+        village: String(saved?.village || saved?.line2 || '').trim(),
         landmark: String(saved?.landmark || '').trim()
       };
     }
@@ -1124,13 +1124,13 @@ export class CartPage implements OnInit, OnDestroy {
 
       // Also create a real saved address on the backend so it appears in profile and "Deliver To"
       const gpsLoc = this.locationService.currentLocation();
-      const gpsAddrStr = gpsLoc?.address || '';
-      const line1 = village; // village/area as the primary address line
+      const gpsAddrStr = String(gpsLoc?.address || '').trim();
+      const line1 = gpsAddrStr || village;
       const addressPayload = {
         label: 'Home',
         line1,
         line2: '',
-        city: gpsAddrStr ? gpsAddrStr.split(',').pop()?.trim() || '' : '',
+        city: gpsAddrStr ? gpsAddrStr.split(',').pop()?.trim() || 'Unknown City' : 'Unknown City',
         state: '',
         postalCode: '',
         village,
@@ -1146,6 +1146,7 @@ export class CartPage implements OnInit, OnDestroy {
           next: (created) => {
             this.savingLocationDetails.set(false);
             this.selectedAddress.set(created);
+            this.selectedAddressId.set(created?.id || 'gps');
             this.savedAddresses.set([created, ...this.savedAddresses()]);
             this.showLocationDetailsPrompt.set(false);
             if (this.pendingProceedAfterDetails) {
@@ -1441,6 +1442,10 @@ export class CartPage implements OnInit, OnDestroy {
   private buildCheckoutNotes(): string {
     const meta = this.getPersistedVillageAndLandmark();
     const parts = ['Deliver fast'];
+    const detectedLocation = String(this.locationService.currentLocation()?.address || '').trim();
+    if (this.selectedAddressId() === 'gps' && detectedLocation) {
+      parts.push(`Detected Location: ${detectedLocation}`);
+    }
     if (meta.village) parts.push(`Village/Area: ${meta.village}`);
     if (meta.landmark) parts.push(`Landmark: ${meta.landmark}`);
     return parts.join(' | ');

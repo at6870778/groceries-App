@@ -741,6 +741,7 @@ export class DeliveryLoginPage implements OnInit, OnDestroy {
   error = '';
 
   private readonly knownUsersStorageKey = 'orderkro_known_customer_phones';
+  private serverKnownCustomerName = '';
 
   constructor(
     private auth: AuthService,
@@ -786,17 +787,18 @@ export class DeliveryLoginPage implements OnInit, OnDestroy {
     const clean = input.value.replace(/[^0-9]/g, '').slice(0, 10);
     input.value = clean;
     this.phone = clean;
+    this.serverKnownCustomerName = '';
     this.error = '';
   }
 
   isReturningUser(): boolean {
     if (!/^[0-9]{10}$/.test(this.phone)) return false;
-    return this.getKnownCustomerPhones().includes(this.phone);
+    return this.getKnownCustomerPhones().includes(this.phone) || !!this.serverKnownCustomerName;
   }
 
   returningDisplayName(): string {
     const rememberedName = localStorage.getItem(this.customerNameKey(this.phone)) || '';
-    const trimmed = rememberedName.trim();
+    const trimmed = rememberedName.trim() || this.serverKnownCustomerName;
     return trimmed || this.phone;
   }
 
@@ -821,10 +823,29 @@ export class DeliveryLoginPage implements OnInit, OnDestroy {
         this._otpSent = true;
         this.startResendCooldown();
         this.loading = false;
+
+        if (this.mode === 'CUSTOMER') {
+          this.auth.lookupCustomerName(this.phone).subscribe({
+            next: (lookupRes) => {
+              const serverName = String(lookupRes?.data || '').trim();
+              if (!serverName) return;
+              this.serverKnownCustomerName = serverName;
+              this.rememberCustomer(this.phone, serverName);
+              if (!this.fullName.trim()) {
+                this.fullName = serverName;
+              }
+            },
+            error: () => {
+              // Silent fallback to local remembered-name flow.
+            }
+          });
+        }
+
         // Auto-populate name for returning users
         if (this.isReturningUser() && !this.fullName.trim()) {
           const remembered = localStorage.getItem(this.customerNameKey(this.phone)) || '';
-          if (remembered.trim()) this.fullName = remembered.trim();
+          const fallbackName = remembered.trim() || this.serverKnownCustomerName;
+          if (fallbackName) this.fullName = fallbackName;
         }
         // Try Web OTP API (Android Chrome) to auto-fill SMS OTP
         this.listenForSmsOtp();

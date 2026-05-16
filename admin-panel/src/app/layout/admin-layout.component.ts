@@ -29,6 +29,7 @@ import { AuthService } from '../core/services/auth.service';
         <a routerLink="/customers">Customers</a>
         <a routerLink="/delivery-boys">Delivery Boys</a>
         <a routerLink="/announcement">📢 Announcement</a>
+        <a routerLink="/push-notifications">📲 Push Notifications</a>
         <a routerLink="/support-contact">🛟 Support Contact</a>
       </mat-sidenav>
       <mat-sidenav-content>

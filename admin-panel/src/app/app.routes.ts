@@ -19,7 +19,8 @@ export const appRoutes: Routes = [
       { path: 'customers', loadComponent: () => import('./features/users/customers.component').then(m => m.CustomersComponent) },
       { path: 'delivery-boys', loadComponent: () => import('./features/users/delivery-boys.component').then(m => m.DeliveryBoysComponent) },
       { path: 'announcement', loadComponent: () => import('./features/announcement/announcement.component').then(m => m.AnnouncementComponent) },
-      { path: 'support-contact', loadComponent: () => import('./features/support-contact/support-contact.component').then(m => m.SupportContactComponent) }
+      { path: 'support-contact', loadComponent: () => import('./features/support-contact/support-contact.component').then(m => m.SupportContactComponent) },
+      { path: 'push-notifications', loadComponent: () => import('./features/push-notifications/push-notifications.component').then(m => m.PushNotificationsComponent) }
     ]
   }
 ];

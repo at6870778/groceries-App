@@ -99,25 +99,28 @@ declare global {
           </div>
 
           <!-- Village + Landmark prompt before payment -->
-          <div class="addr-picker-overlay" *ngIf="showLocationDetailsPrompt()"></div>
-          <div class="addr-picker-sheet" *ngIf="showLocationDetailsPrompt()">
-            <div class="addr-picker-title">Delivery details required</div>
-            <p class="addr-meta-hint">Please add village and landmark so delivery partner can find you quickly.</p>
+          <div class="loc-prompt-overlay" *ngIf="showLocationDetailsPrompt()"></div>
+          <div class="loc-prompt-card" *ngIf="showLocationDetailsPrompt()">
+            <div class="loc-prompt-icon">📍</div>
+            <div class="loc-prompt-title">Delivery details required</div>
+            <p class="loc-prompt-hint">Help your delivery partner find you quickly</p>
 
-            <div class="meta-field">
-              <label>Village / Area</label>
-              <input class="meta-input" type="text" maxlength="120" [(ngModel)]="checkoutVillage" placeholder="Enter village or area" />
+            <div class="loc-field">
+              <label class="loc-label">🏘 Village / Area <span class="loc-req">*</span></label>
+              <input class="loc-input" type="text" maxlength="120" [(ngModel)]="checkoutVillage"
+                placeholder="e.g. Shivajinagar, Sector 4" autocomplete="off" />
             </div>
 
-            <div class="meta-field">
-              <label>Landmark</label>
-              <input class="meta-input" type="text" maxlength="120" [(ngModel)]="checkoutLandmark" placeholder="Near temple, school, chowk..." />
+            <div class="loc-field">
+              <label class="loc-label">🏠 Landmark <span class="loc-req">*</span></label>
+              <input class="loc-input" type="text" maxlength="120" [(ngModel)]="checkoutLandmark"
+                placeholder="e.g. Near Ram Mandir, behind school" autocomplete="off" />
             </div>
 
-            <p class="addr-meta-error" *ngIf="locationDetailsError()">{{ locationDetailsError() }}</p>
+            <p class="loc-error" *ngIf="locationDetailsError()">⚠️ {{ locationDetailsError() }}</p>
 
-            <button class="addr-picker-close" (click)="saveLocationDetailsAndProceed()" [disabled]="savingLocationDetails()">
-              {{ savingLocationDetails() ? 'Saving...' : 'Save & Continue' }}
+            <button class="loc-save-btn" (click)="saveLocationDetailsAndProceed()" [disabled]="savingLocationDetails()">
+              {{ savingLocationDetails() ? 'Saving...' : 'Confirm & Proceed to Payment →' }}
             </button>
           </div>
 
@@ -819,6 +822,60 @@ declare global {
       max-height: 80vh; overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
+    /* ===== VILLAGE / LANDMARK PROMPT (top-anchored so keyboard can't cover it) ===== */
+    .loc-prompt-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 993;
+    }
+    .loc-prompt-card {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: calc(100% - 32px);
+      max-width: 420px;
+      background: #fff;
+      border-radius: 20px;
+      padding: 24px 20px 28px;
+      z-index: 994;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+    }
+    .loc-prompt-icon {
+      text-align: center; font-size: 2.4rem; margin-bottom: 6px;
+    }
+    .loc-prompt-title {
+      font-size: 1.05rem; font-weight: 800; color: #1a1a1a;
+      text-align: center; margin-bottom: 4px;
+    }
+    .loc-prompt-hint {
+      font-size: 0.82rem; color: #6f7f95; text-align: center;
+      margin: 0 0 18px;
+    }
+    .loc-field { margin-bottom: 14px; }
+    .loc-label {
+      display: block; font-size: 0.78rem; font-weight: 700;
+      color: #4a5568; margin-bottom: 6px;
+    }
+    .loc-req { color: #d32f2f; }
+    .loc-input {
+      width: 100%; border: 2px solid #dbe4f0; border-radius: 12px;
+      padding: 12px 14px; font-size: 0.95rem; outline: none;
+      box-sizing: border-box; background: #f8fbff;
+      transition: border-color 0.2s;
+    }
+    .loc-input:focus { border-color: #667eea; background: #fff; }
+    .loc-error {
+      color: #d32f2f; font-size: 0.82rem; font-weight: 600;
+      margin: -6px 0 10px; text-align: center;
+    }
+    .loc-save-btn {
+      display: block; width: 100%; margin-top: 6px;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff; border: none; border-radius: 14px;
+      font-size: 0.95rem; font-weight: 700; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(102,126,234,0.35);
+    }
+    .loc-save-btn:disabled { opacity: 0.65; }
     .addr-picker-title {
       font-weight: 800; font-size: 1rem; color: #1a1a1a; margin-bottom: 14px; text-align: center;
     }

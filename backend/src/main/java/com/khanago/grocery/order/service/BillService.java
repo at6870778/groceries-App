@@ -144,11 +144,29 @@ public class BillService {
             rightMeta.add(new Paragraph(order.getCustomer().getPhone()).setFont(regular).setFontSize(10).setFontColor(TEXT_MUTED));
         }
         if (order.getAddress() != null) {
-            String addr = order.getAddress().getLine1()
-                    + (order.getAddress().getLine2() != null && !order.getAddress().getLine2().isBlank()
-                        ? ", " + order.getAddress().getLine2() : "")
-                    + "\n" + order.getAddress().getCity() + " - " + order.getAddress().getPostalCode();
-            rightMeta.add(new Paragraph(addr).setFont(regular).setFontSize(9).setFontColor(TEXT_MUTED).setMarginTop(4));
+            StringBuilder addr = new StringBuilder();
+            addr.append(order.getAddress().getLine1());
+            if (order.getAddress().getLine2() != null && !order.getAddress().getLine2().isBlank())
+                addr.append(", ").append(order.getAddress().getLine2());
+            if (order.getAddress().getLandmark() != null && !order.getAddress().getLandmark().isBlank())
+                addr.append(", Near: ").append(order.getAddress().getLandmark());
+            addr.append("\n").append(order.getAddress().getCity());
+            if (order.getAddress().getState() != null && !order.getAddress().getState().isBlank())
+                addr.append(", ").append(order.getAddress().getState());
+            addr.append(" - ").append(order.getAddress().getPostalCode());
+            rightMeta.add(new Paragraph(addr.toString()).setFont(regular).setFontSize(9).setFontColor(TEXT_MUTED).setMarginTop(4));
+        }
+        // Show village/landmark from notes for GPS orders (no saved address)
+        if (order.getNotes() != null && !order.getNotes().isBlank()) {
+            java.util.regex.Matcher vm = java.util.regex.Pattern
+                    .compile("Village/Area:\\s*([^|]+)", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(order.getNotes());
+            java.util.regex.Matcher lm = java.util.regex.Pattern
+                    .compile("Landmark:\\s*([^|]+)", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(order.getNotes());
+            StringBuilder extra = new StringBuilder();
+            if (vm.find()) extra.append("Village: ").append(vm.group(1).trim()).append("\n");
+            if (lm.find()) extra.append("Near: ").append(lm.group(1).trim());
+            if (!extra.isEmpty())
+                rightMeta.add(new Paragraph(extra.toString().trim()).setFont(bold).setFontSize(9).setFontColor(BRAND_DARK_GREEN).setMarginTop(2));
         }
         metaTable.addCell(rightMeta);
         document.add(metaTable);

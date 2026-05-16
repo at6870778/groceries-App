@@ -6,7 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
-import { IonContent, IonFooter, IonHeader, IonTitle, IonToolbar, IonButton } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonButton } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
 import { CartState } from '../../core/state/cart.state';
 import { ActivityState } from '../../core/state/activity.state';
@@ -23,7 +23,7 @@ declare global {
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IonContent, IonFooter, IonHeader, IonTitle, IonToolbar, IonButton, BottomNavComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IonContent, IonHeader, IonTitle, IonToolbar, IonButton, BottomNavComponent],
   template: `
     <ion-header>
       <ion-toolbar>

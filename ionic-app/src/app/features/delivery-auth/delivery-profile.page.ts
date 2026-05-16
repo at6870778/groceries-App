@@ -1,13 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonButton } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/angular/standalone';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, IonContent, IonHeader, IonTitle, IonToolbar, IonButton],
+  imports: [CommonModule, IonContent, IonHeader, IonTitle, IonToolbar],
   template: `
     <ion-header>
       <ion-toolbar class="header-bar">
@@ -271,6 +271,6 @@ export class DeliveryProfilePage implements OnInit {
   }
 
   goBack(): void {
-    this.router.back();
+    this.router.navigateByUrl('/delivery/orders');
   }
 }

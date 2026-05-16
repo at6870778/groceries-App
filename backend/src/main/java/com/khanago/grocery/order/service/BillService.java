@@ -148,6 +148,8 @@ public class BillService {
             addr.append(order.getAddress().getLine1());
             if (order.getAddress().getLine2() != null && !order.getAddress().getLine2().isBlank())
                 addr.append(", ").append(order.getAddress().getLine2());
+            if (order.getAddress().getVillage() != null && !order.getAddress().getVillage().isBlank())
+                addr.append(", ").append(order.getAddress().getVillage());
             if (order.getAddress().getLandmark() != null && !order.getAddress().getLandmark().isBlank())
                 addr.append(", Near: ").append(order.getAddress().getLandmark());
             addr.append("\n").append(order.getAddress().getCity());

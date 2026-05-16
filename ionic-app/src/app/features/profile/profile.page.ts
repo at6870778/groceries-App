@@ -129,7 +129,7 @@ import { ActivityState } from '../../core/state/activity.state';
             <span class="addr-label">{{ a.label || 'Address' }}</span>
             <span class="default-badge" *ngIf="a.isDefault">✓ Default</span>
           </div>
-          <div class="addr-text">{{ a.line1 }}{{ a.line2 ? ', ' + a.line2 : '' }}</div>
+          <div class="addr-text">{{ a.line1 }}{{ a.line2 ? ', ' + a.line2 : '' }}{{ a.village ? ', ' + a.village : '' }}</div>
           <div class="addr-text">{{ a.city }}, {{ a.state }} {{ a.postalCode }}</div>
           <div class="addr-text muted" *ngIf="a.landmark">Near: {{ a.landmark }}</div>
           <div class="addr-actions">
@@ -552,6 +552,7 @@ export class ProfilePage implements OnInit, OnDestroy {
     city: '',
     state: '',
     postalCode: '',
+    village: '',
     landmark: '',
     latitude: null as number | null,
     longitude: null as number | null,
@@ -632,6 +633,7 @@ export class ProfilePage implements OnInit, OnDestroy {
         city: structured.city,
         state: structured.state,
         postalCode: structured.postcode || '',
+        village: '',
         landmark: '',
         latitude: loc.latitude,
         longitude: loc.longitude,
@@ -679,7 +681,7 @@ export class ProfilePage implements OnInit, OnDestroy {
 
   openAddForm() {
     this.editingId.set(null);
-    this.form = { label: 'Home', line1: '', line2: '', city: '', state: '', postalCode: '', landmark: '', latitude: null, longitude: null, isDefault: this.addresses().length === 0 };
+    this.form = { label: 'Home', line1: '', line2: '', city: '', state: '', postalCode: '', village: '', landmark: '', latitude: null, longitude: null, isDefault: this.addresses().length === 0 };
     this.formError.set('');
     this.showForm.set(true);
   }
@@ -693,6 +695,7 @@ export class ProfilePage implements OnInit, OnDestroy {
       city: a.city || '',
       state: a.state || '',
       postalCode: a.postalCode || '',
+      village: a.village || '',
       landmark: a.landmark || '',
       latitude: a.latitude ? Number(a.latitude) : null,
       longitude: a.longitude ? Number(a.longitude) : null,

@@ -833,11 +833,13 @@ declare global {
       transform: translate(-50%, -50%);
       width: calc(100% - 32px);
       max-width: 420px;
+      max-height: min(85vh, calc(100vh - 80px));
       background: #fff;
       border-radius: 20px;
       padding: 24px 20px 28px;
       z-index: 994;
       box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+      overflow-y: auto;
     }
     .loc-prompt-icon {
       text-align: center; font-size: 2.4rem; margin-bottom: 6px;

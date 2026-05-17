@@ -1120,8 +1120,7 @@ import { NotificationStateService } from '../../core/services/notification-state
       overflow-x: hidden;
       box-sizing: border-box;
       padding-bottom: env(safe-area-inset-bottom, 16px);
-      display: flex;
-      flex-direction: column;
+      display: block;
     }
     .modal-content::-webkit-scrollbar { width: 5px; }
     .modal-content::-webkit-scrollbar-track { background: transparent; }

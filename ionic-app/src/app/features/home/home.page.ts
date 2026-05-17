@@ -692,7 +692,6 @@ import { NotificationStateService } from '../../core/services/notification-state
     .cat-chip:active { transform: scale(0.9) !important; }
 
     /* ── Colour themes driven by [ngStyle] on each chip ── */
-    }
 
     /* Sheen shimmer on inactive */
     .cat-chip::after {

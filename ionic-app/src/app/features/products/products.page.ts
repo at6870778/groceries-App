@@ -91,17 +91,17 @@ import { takeUntil } from 'rxjs/operators';
     }
     .header-searchbar {
       --background: #f2f3f7;
-      --border-radius: clamp(10px, 2vw, 12px);
+      --border-radius: 12px;
       --box-shadow: none;
       --placeholder-color: #9aa0b2;
       --color: #1a1a1a;
       --icon-color: #9aa0b2;
       --clear-button-color: #9aa0b2;
-      padding: clamp(4px, 1vw, 6px) 0;
-      font-size: clamp(0.9rem, 2vw, 0.95rem);
+      padding: 6px 0;
+      font-size: 0.95rem;
     }
     .cart-btn {
-      font-size: clamp(1rem, 3vw, 1.2rem);
+      font-size: 1.2rem;
       position: relative;
     }
     .products-content {
@@ -114,18 +114,18 @@ import { takeUntil } from 'rxjs/operators';
     .status {
       text-align: center;
       color: #6f7f95;
-      margin: clamp(16px, 4vw, 22px) 0;
+      margin: 22px 0;
     }
     .grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: clamp(8px, 2vw, 10px);
-      padding-bottom: clamp(24px, 5vw, 30px);
+      gap: 10px;
+      padding-bottom: 30px;
     }
     .item {
       position: relative;
       border: 1px solid #e7edf6;
-      border-radius: clamp(12px, 3vw, 14px);
+      border-radius: 14px;
       overflow: visible;
       background: #fff;
       box-shadow: 0 8px 24px rgba(26, 62, 109, 0.08);
@@ -133,19 +133,19 @@ import { takeUntil } from 'rxjs/operators';
     }
     .item img {
       width: 100%;
-      height: clamp(90px, 20vw, 110px);
+      height: 110px;
       object-fit: cover;
       display: block;
     }
     .item-art {
       width: 100%;
-      height: clamp(80px, 18vw, 98px);
+      height: 98px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: clamp(2px, 1vw, 4px);
-      padding: clamp(4px, 1vw, 6px) clamp(6px, 1.5vw, 8px);
+      gap: 4px;
+      padding: 6px 8px;
       position: relative;
       overflow: hidden;
     }
@@ -163,8 +163,8 @@ import { takeUntil } from 'rxjs/operators';
     .art-image {
       position: relative;
       z-index: 1;
-      width: clamp(70px, 15vw, 82px);
-      height: clamp(70px, 15vw, 82px);
+      width: 82px;
+      height: 82px;
       object-fit: contain;
       filter: drop-shadow(0 6px 8px rgba(0,0,0,.12));
       transform: translateY(-1px);
@@ -183,13 +183,13 @@ import { takeUntil } from 'rxjs/operators';
     .art-label {
       position: relative;
       z-index: 1;
-      font-size: clamp(0.7rem, 1.5vw, 0.78rem);
+      font-size: 0.78rem;
       font-weight: 700;
       color: rgba(20, 20, 20, 0.82);
       text-align: center;
       line-height: 1.1;
       background: rgba(255, 255, 255, 0.72);
-      padding: clamp(2px, 0.5vw, 3px) clamp(6px, 1.5vw, 8px);
+      padding: 3px 8px;
       border-radius: 999px;
       max-width: 92%;
       overflow: hidden;
@@ -197,26 +197,26 @@ import { takeUntil } from 'rxjs/operators';
       white-space: nowrap;
     }
     .meta { 
-      padding: clamp(8px, 1.5vw, 11px) clamp(8px, 1.5vw, 10px) clamp(8px, 1.5vw, 10px); 
+      padding: 11px 10px 10px; 
       background: white;
     }
     .brand {
-      font-size: clamp(0.6rem, 1.2vw, 0.7rem);
+      font-size: 0.7rem;
       color: #999;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.3px;
-      margin-bottom: clamp(2px, 0.5vw, 3px);
+      margin-bottom: 3px;
     }
     .name { 
       font-weight: 700; 
       line-height: 1.2;
-      font-size: clamp(0.85rem, 2vw, 0.95rem);
+      font-size: 0.95rem;
       color: #1a1a1a;
-      margin-bottom: clamp(1px, 0.5vw, 2px);
+      margin-bottom: 2px;
     }
     .unit { 
-      font-size: clamp(0.7rem, 1.5vw, 0.8rem); 
+      font-size: 0.8rem; 
       color: #888; 
       margin-bottom: 6px;
     }

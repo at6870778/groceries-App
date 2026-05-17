@@ -326,8 +326,6 @@ import { NotificationStateService } from '../../core/services/notification-state
       gap: 6px;
       cursor: pointer;
       transition: all 0.3s ease;
-      min-width: 0; /* Prevent flex children from overflowing */
-      flex-shrink: 1; /* Allow shrinking on narrow screens */
     }
     .hdr-logo-wrap:hover {
       transform: translateY(-2px);
@@ -343,20 +341,6 @@ import { NotificationStateService } from '../../core/services/notification-state
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      min-width: 0; /* Ensure flex children shrink properly */
-      flex-shrink: 1;
-    }
-    /* On narrow screens, reduce logo font size */
-    @media (max-width: 374px) {
-      .logo-text-wrap {
-        width: 100%;
-      }
-      .logo-text {
-        font-size: 1.1rem !important;
-      }
-      .logo-leaf {
-        font-size: 1.2rem !important;
-      }
     }
     /* Scooter — delivery motion with speed boost */
     .logo-leaf {

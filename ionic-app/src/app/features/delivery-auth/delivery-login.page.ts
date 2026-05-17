@@ -315,7 +315,6 @@ import { SyncService } from '../../core/services/sync.service';
       letter-spacing: -0.2px;
       text-shadow: 0 2px 8px rgba(0,0,0,0.2);
       line-height: 1.2;
-      word-wrap: break-word;
     }
 
     .banner-sub {
@@ -324,33 +323,6 @@ import { SyncService } from '../../core/services/sync.service';
       line-height: 1.2;
       margin-top: 2px;
       text-shadow: 0 1px 4px rgba(0,0,0,0.15);
-      word-wrap: break-word;
-    }
-
-    /* Fix banner on narrow phones like OnePlus */
-    @media (max-width: 374px) {
-      .banner-wrap {
-        min-height: 110px;
-      }
-      
-      .banner-slide {
-        padding: 12px 8px;
-        gap: 8px;
-        min-height: 110px;
-      }
-      
-      .banner-img {
-        width: 50px;
-        height: 50px;
-      }
-      
-      .banner-title {
-        font-size: 14px;
-      }
-      
-      .banner-sub {
-        font-size: 10px;
-      }
     }
 
     .slider-dots {

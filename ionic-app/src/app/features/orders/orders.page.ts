@@ -69,9 +69,9 @@ import { takeUntil, switchMap } from 'rxjs/operators';
     /* ── Order cards ── */
     .order-card {
       background: #fff;
-      border-radius: 14px;
-      padding: 14px 16px;
-      margin-bottom: 12px;
+      border-radius: clamp(12px, 3vw, 14px);
+      padding: clamp(12px, 2vw, 14px) clamp(12px, 3vw, 16px);
+      margin-bottom: clamp(10px, 2vw, 12px);
       box-shadow: 0 1px 6px rgba(0,0,0,0.08);
       border: 1px solid #f0f0f0;
       cursor: pointer;
@@ -83,11 +83,11 @@ import { takeUntil, switchMap } from 'rxjs/operators';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 10px;
+      margin-bottom: clamp(8px, 2vw, 10px);
     }
 
     .order-id {
-      font-size: 0.82rem;
+      font-size: clamp(0.75rem, 1.5vw, 0.82rem);
       color: #999;
       font-weight: 500;
     }
@@ -95,26 +95,26 @@ import { takeUntil, switchMap } from 'rxjs/operators';
     .order-card-body {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 6px;
+      gap: clamp(8px, 2vw, 10px);
+      margin-bottom: clamp(4px, 1vw, 6px);
     }
 
     .order-amount {
-      font-size: 1.05rem;
+      font-size: clamp(0.95rem, 2.5vw, 1.05rem);
       font-weight: 700;
       color: #1a1a1a;
     }
 
     .order-payment {
-      font-size: 0.78rem;
+      font-size: clamp(0.7rem, 1.5vw, 0.78rem);
       color: #777;
       background: #f5f5f5;
-      padding: 2px 8px;
+      padding: clamp(2px, 0.5vw, 2px) clamp(6px, 1.5vw, 8px);
       border-radius: 20px;
     }
 
     .order-date {
-      font-size: 0.78rem;
+      font-size: clamp(0.7rem, 1.5vw, 0.78rem);
       color: #aaa;
       margin: 0;
     }
@@ -122,9 +122,9 @@ import { takeUntil, switchMap } from 'rxjs/operators';
     /* ── Status badge ── */
     .status-badge {
       display: inline-block;
-      padding: 5px 12px;
+      padding: clamp(4px, 1vw, 5px) clamp(10px, 2vw, 12px);
       border-radius: 20px;
-      font-size: 0.72rem;
+      font-size: clamp(0.65rem, 1.2vw, 0.72rem);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -140,27 +140,27 @@ import { takeUntil, switchMap } from 'rxjs/operators';
     .status-info {
       background: #fafafa;
       border: 1px solid #eee;
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin-top: 8px;
-      margin-bottom: 16px;
+      border-radius: clamp(10px, 3vw, 12px);
+      padding: clamp(12px, 2vw, 14px) clamp(12px, 3vw, 16px);
+      margin-top: clamp(6px, 1vw, 8px);
+      margin-bottom: clamp(12px, 2vw, 16px);
     }
 
     .status-info-title {
-      font-size: 0.78rem;
+      font-size: clamp(0.7rem, 1.5vw, 0.78rem);
       font-weight: 700;
       color: #888;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin: 0 0 10px;
+      margin: 0 0 clamp(8px, 2vw, 10px);
     }
 
     .status-info-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 8px;
-      font-size: 0.82rem;
+      gap: clamp(8px, 2vw, 10px);
+      margin-bottom: clamp(6px, 1vw, 8px);
+      font-size: clamp(0.75rem, 1.5vw, 0.82rem);
       color: #555;
     }
     .status-info-row:last-child { margin-bottom: 0; }

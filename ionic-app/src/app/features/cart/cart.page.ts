@@ -292,62 +292,64 @@ declare global {
       text-align: center;
       background: linear-gradient(135deg, #ecfff2 0%, #f8fffb 100%);
       border: 1px solid #bce4cb;
-      border-radius: 16px;
-      padding: 20px 14px;
-      margin-top: 18px;
+      border-radius: clamp(12px, 3vw, 16px);
+      padding: clamp(14px, 3vw, 20px);
+      margin-top: clamp(12px, 3vw, 18px);
     }
 
     .success-emoji {
-      font-size: 2.4rem;
+      font-size: clamp(2rem, 5vw, 2.4rem);
       line-height: 1;
     }
 
     .success-card h2 {
-      margin: 10px 0 6px;
+      margin: clamp(8px, 2vw, 10px) 0 clamp(4px, 1vw, 6px);
       color: #1d6e3a;
+      font-size: clamp(1.1rem, 3vw, 1.4rem);
     }
 
     .success-card p {
       margin: 0;
       color: #2a6642;
+      font-size: clamp(0.9rem, 2vw, 1rem);
     }
 
     .success-card .amount {
-      margin-top: 8px;
+      margin-top: clamp(6px, 2vw, 8px);
       font-weight: 700;
       color: #145b2f;
     }
 
     .success-card .order-id {
-      margin-top: 4px;
-      font-size: 0.9rem;
+      margin-top: clamp(2px, 1vw, 4px);
+      font-size: clamp(0.8rem, 1.5vw, 0.9rem);
       color: #1d6e3a;
       font-weight: 500;
     }
 
     .success-actions {
-      margin-top: 14px;
+      margin-top: clamp(10px, 3vw, 14px);
       display: grid;
-      gap: 10px;
+      gap: clamp(8px, 2vw, 10px);
     }
 
     .location-card {
       background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
       border: 1px solid #a5d6a7;
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 16px;
+      border-radius: clamp(10px, 3vw, 14px);
+      padding: clamp(12px, 2vw, 14px);
+      margin-bottom: clamp(12px, 2vw, 16px);
     }
 
     .location-header {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 10px;
+      gap: clamp(6px, 1vw, 8px);
+      margin-bottom: clamp(8px, 2vw, 10px);
     }
 
     .location-icon {
-      font-size: 20px;
+      font-size: clamp(18px, 4vw, 20px);
       animation: pulse 2s infinite;
     }
 

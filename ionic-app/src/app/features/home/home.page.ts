@@ -1127,16 +1127,16 @@ import { NotificationStateService } from '../../core/services/notification-state
     }
     .modal-content {
       width: 100%;
-      max-height: calc(100vh - 60px);
+      max-height: 92vh;
       background: #fff;
       border-radius: 28px 28px 0 0;
-      overflow: visible !important;
+      overflow: hidden;
       animation: slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       position: relative;
       box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
       display: flex;
       flex-direction: column;
-      padding-bottom: env(safe-area-inset-bottom, 16px);
+      box-sizing: border-box;
     }
     @keyframes slide-up {
       from { transform: translateY(100%); }
@@ -1165,10 +1165,12 @@ import { NotificationStateService } from '../../core/services/notification-state
     .quick-view-product {
       padding: 16px 16px 12px;
       overflow-y: auto;
+      overflow-x: hidden;
       flex: 1;
       min-height: 0;
       display: flex;
       flex-direction: column;
+      box-sizing: border-box;
     }
     .quick-view-product::-webkit-scrollbar { width: 4px; }
     .quick-view-product::-webkit-scrollbar-track { background: transparent; }
@@ -1254,13 +1256,14 @@ import { NotificationStateService } from '../../core/services/notification-state
       display: flex;
       gap: 10px;
       margin: 0;
-      padding: 14px 16px 16px;
-      padding-bottom: calc(16px + env(safe-area-inset-bottom, 16px));
+      padding: 14px 16px;
+      padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
       border-top: 1px solid #f0f0f0;
       background: #fff;
       z-index: 5;
       flex-shrink: 0;
       box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+      box-sizing: border-box;
     }
     .qv-cancel-btn {
       flex: 1;

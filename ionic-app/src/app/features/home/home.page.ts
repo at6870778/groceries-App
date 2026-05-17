@@ -1161,17 +1161,19 @@ import { NotificationStateService } from '../../core/services/notification-state
       height: 350px;
       border-radius: 0;
       overflow: hidden;
-      margin-bottom: 20px;
+      margin: 0;
+      margin-bottom: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       background: #f8f9f0 !important;
+      flex-shrink: 0;
     }
     .qv-image { 
       width: 100%; 
       height: 100%; 
       object-fit: contain; 
-      padding: 30px;
+      padding: 20px;
       background: #f8f9f0;
     }
     
@@ -1179,53 +1181,54 @@ import { NotificationStateService } from '../../core/services/notification-state
       display: flex;
       gap: 10px;
       margin: 0;
-      padding: 16px 16px 20px;
-      border-top: 1px solid #f0f0f0;
+      padding: 14px 16px;
       background: #fff;
       flex-wrap: wrap;
       justify-content: space-between;
+      border-top: none;
+      flex-shrink: 0;
     }
     
     .qv-cancel-btn {
       flex: 1;
-      min-width: 120px;
-      padding: 12px 16px;
-      font-size: 0.95rem;
+      min-width: 100px;
+      padding: 10px 14px;
+      font-size: 0.9rem;
       font-weight: 600;
       background: #f5f5f5;
       border: 1px solid #ddd;
-      border-radius: 10px;
+      border-radius: 8px;
       color: #1a1a1a;
       cursor: pointer;
       transition: all 0.3s ease;
     }
     .qv-cancel-btn:hover {
       background: #efefef;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
     
     .qv-add-btn {
       flex: 1;
-      min-width: 120px;
-      padding: 12px 16px;
+      min-width: 100px;
+      padding: 10px 14px;
       background: linear-gradient(135deg, #667eea, #764ba2);
       color: #fff;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 700;
       border: none;
-      border-radius: 10px;
+      border-radius: 8px;
       cursor: pointer;
       transition: all 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      gap: 4px;
+      box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
     }
     .qv-add-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
     }
     .qv-add-btn:active {
       transform: translateY(0);
@@ -1233,15 +1236,15 @@ import { NotificationStateService } from '../../core/services/notification-state
     
     .qv-stepper {
       flex: 1;
-      min-width: 120px;
+      min-width: 100px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       background: linear-gradient(135deg, #667eea, #764ba2);
-      border-radius: 10px;
-      padding: 0 12px;
-      height: 44px;
+      border-radius: 8px;
+      padding: 0 10px;
+      height: 40px;
     }
     
     .qv-step-btn {

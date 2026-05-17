@@ -256,6 +256,20 @@ import { NotificationStateService } from '../../core/services/notification-state
           <div class="qv-image-wrap" [style.background]="productBg(product)">
             <img *ngIf="product.imageUrl" class="qv-image" [src]="product.imageUrl" [alt]="product.name">
           </div>
+          
+          <!-- Product Details -->
+          <div class="qv-details">
+            <div class="qv-category">{{ product.category }}</div>
+            <h2 class="qv-name">{{ product.name }}</h2>
+            <div class="qv-unit" *ngIf="product.unit">{{ product.unit }}</div>
+            <div class="qv-price-row">
+              <span class="qv-price">₹{{ product.price }}</span>
+              <span class="qv-mrp" *ngIf="product.mrp && product.mrp > product.price">₹{{ product.mrp }}</span>
+              <span class="qv-discount" *ngIf="product.discount">{{ product.discount }}% OFF</span>
+            </div>
+            <div class="qv-description" *ngIf="product.description">{{ product.description }}</div>
+          </div>
+          
           <div class="qv-actions">
             <button class="qv-cancel-btn" (click)="closeQuickView()">Continue Shopping</button>
             <ng-container *ngIf="cartQty(product.id) === 0; else qvStep">
@@ -1198,15 +1212,82 @@ import { NotificationStateService } from '../../core/services/notification-state
       transform: scale(1.05);
     }
     
+    /* Product Details Section */
+    .qv-details {
+      padding: 16px;
+      background: #fff;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .qv-category {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #667eea;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    
+    .qv-name {
+      margin: 0 0 8px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #1a1a1a;
+      line-height: 1.3;
+    }
+    
+    .qv-unit {
+      font-size: 0.75rem;
+      color: #999;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    
+    .qv-price-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    
+    .qv-price {
+      font-weight: 800;
+      font-size: 1.3rem;
+      color: #1a1a1a;
+    }
+    
+    .qv-mrp {
+      text-decoration: line-through;
+      color: #bbb;
+      font-size: 0.9rem;
+    }
+    
+    .qv-discount {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-left: auto;
+    }
+    
+    .qv-description {
+      font-size: 0.85rem;
+      color: #666;
+      line-height: 1.4;
+      margin-top: 6px;
+    }
+    
     .qv-actions {
       display: flex;
       gap: 12px;
       margin: 0;
-      padding: 16px;
+      padding: 14px 16px;
       background: #fff;
       flex-wrap: wrap;
       justify-content: space-between;
-      border-top: 1px solid #f0f0f0;
+      border-top: none;
       flex-shrink: 0;
       border-radius: 0 0 16px 16px;
     }
@@ -1217,17 +1298,16 @@ import { NotificationStateService } from '../../core/services/notification-state
       padding: 11px 16px;
       font-size: 0.92rem;
       font-weight: 600;
-      background: #f5f5f5;
-      border: 1px solid #e0e0e0;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border: none;
       border-radius: 10px;
-      color: #1a1a1a;
+      color: #fff;
       cursor: pointer;
       transition: all 0.3s ease;
     }
     .qv-cancel-btn:hover {
-      background: #efefef;
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
     .qv-cancel-btn:active {
       transform: translateY(0);

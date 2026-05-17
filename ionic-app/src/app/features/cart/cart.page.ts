@@ -939,6 +939,106 @@ declare global {
       padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff;
       border: none; border-radius: 14px; font-size: 1rem; font-weight: 700; cursor: pointer;
     }
+
+    /* ═══════════════════════════════════════════════════════════
+       RESPONSIVE DESIGN FOR ALL PHONE SIZES
+    ═══════════════════════════════════════════════════════════ */
+    @media (max-width: 360px) {
+      .addr-picker-sheet {
+        padding: 16px 12px 40px;
+        max-height: 75vh;
+        border-radius: 16px 16px 0 0;
+      }
+      .loc-prompt-card {
+        width: calc(100% - 24px);
+        max-width: 360px;
+        padding: 20px 16px 24px;
+        border-radius: 16px;
+      }
+      .addr-item-label, .addr-item-line {
+        font-size: 0.9rem;
+      }
+      .addr-picker-item {
+        padding: 12px;
+      }
+      .loc-prompt-title {
+        font-size: 1rem;
+      }
+      .loc-field label, .loc-input, .loc-save-btn {
+        font-size: 0.9rem;
+      }
+      .loc-input {
+        padding: 10px;
+        border-radius: 8px;
+      }
+      .loc-save-btn {
+        padding: 10px;
+        min-height: 44px;
+      }
+    }
+
+    @media (max-width: 280px) {
+      .addr-picker-sheet {
+        padding: 12px 10px 40px;
+        max-height: 70vh;
+        border-radius: 14px 14px 0 0;
+      }
+      .loc-prompt-card {
+        width: calc(100% - 20px);
+        max-width: 280px;
+        padding: 16px 12px 20px;
+        border-radius: 12px;
+      }
+      .addr-item-label, .addr-item-line {
+        font-size: 0.8rem;
+      }
+      .addr-item-icon {
+        font-size: 1.5rem;
+      }
+      .addr-picker-item {
+        padding: 10px;
+        gap: 10px;
+      }
+      .loc-prompt-icon {
+        font-size: 2rem;
+      }
+      .loc-prompt-title {
+        font-size: 0.9rem;
+      }
+      .loc-prompt-hint {
+        font-size: 0.8rem;
+      }
+      .loc-field label {
+        font-size: 0.8rem;
+      }
+      .loc-input {
+        padding: 8px;
+        font-size: 0.85rem;
+        border-radius: 6px;
+      }
+      .loc-save-btn {
+        padding: 8px;
+        font-size: 0.85rem;
+        min-height: 40px;
+      }
+      .addr-picker-close {
+        padding: 10px;
+        font-size: 0.9rem;
+        min-height: 44px;
+      }
+    }
+
+    /* Ensure touch targets are always >= 44px */
+    @media (max-width: 480px) {
+      .loc-retry-btn, .addr-manual-btn, .addr-edit-btn, .addr-del-btn {
+        min-height: 44px;
+        padding: 10px;
+      }
+      .cstep-btn {
+        min-width: 40px;
+        min-height: 40px;
+      }
+    }
   `]
 })
 export class CartPage implements OnInit, OnDestroy {

@@ -695,6 +695,102 @@ import { SyncService } from '../../core/services/sync.service';
       font-size: 14px;
       border-left: 3px solid #c62828;
     }
+
+    /* ═══════════════════════════════════════════════════════════
+       RESPONSIVE DESIGN FOR ALL PHONE SIZES
+    ═══════════════════════════════════════════════════════════ */
+    @media (max-width: 360px) {
+      .loc-picker-sheet {
+        padding: 16px 12px 32px;
+        border-radius: 16px 16px 0 0;
+      }
+      .loc-chip {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+      }
+      .loc-chip-text {
+        font-size: 0.8rem;
+      }
+      .inp-group label {
+        font-size: 0.9rem;
+      }
+      .inp-group input {
+        padding: 10px;
+        font-size: 0.9rem;
+        border-radius: 8px;
+      }
+      .btn-submit {
+        padding: 10px;
+        font-size: 0.9rem;
+        min-height: 44px;
+      }
+    }
+
+    @media (max-width: 280px) {
+      .login-card {
+        padding: 16px;
+        border-radius: 12px;
+      }
+      .login-title {
+        font-size: 1.1rem;
+        margin-bottom: 12px;
+      }
+      .mode-tabs {
+        gap: 6px;
+        margin-bottom: 16px;
+      }
+      .mode-tab {
+        padding: 8px 10px;
+        font-size: 0.8rem;
+        border-radius: 8px;
+      }
+      .inp-group {
+        margin-bottom: 10px;
+      }
+      .inp-group label {
+        font-size: 0.8rem;
+        margin-bottom: 4px;
+      }
+      .inp-group input {
+        padding: 8px;
+        font-size: 0.85rem;
+        border-radius: 6px;
+      }
+      .btn-submit {
+        padding: 8px;
+        font-size: 0.85rem;
+        min-height: 40px;
+      }
+      .error-msg {
+        margin: 0 16px 12px;
+        padding: 8px 12px;
+        font-size: 0.75rem;
+        border-radius: 8px;
+      }
+      .loc-picker-sheet {
+        padding: 12px 10px 32px;
+        border-radius: 14px 14px 0 0;
+      }
+      .loc-chip {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+      }
+      .loc-chip-text {
+        font-size: 0.75rem;
+      }
+    }
+
+    /* Ensure touch targets are always >= 44px */
+    @media (max-width: 480px) {
+      .btn-submit {
+        min-height: 44px;
+      }
+      input[type="text"],
+      input[type="tel"],
+      input[type="email"] {
+        min-height: 44px;
+      }
+    }
   `]
 })
 export class DeliveryLoginPage implements OnInit, OnDestroy {

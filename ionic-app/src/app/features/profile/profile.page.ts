@@ -488,6 +488,133 @@ import { ActivityState } from '../../core/state/activity.state';
 
     .empty-addr { text-align: center; padding: 20px 0; color: #888; }
     .muted-text { color: #6f7f95; font-size: 0.9rem; }
+
+    /* ═══════════════════════════════════════════════════════════
+       RESPONSIVE DESIGN FOR ALL PHONE SIZES
+    ═══════════════════════════════════════════════════════════ */
+    @media (max-width: 360px) {
+      .sheet-overlay {
+        z-index: 993;
+      }
+      .addr-sheet {
+        padding: 16px 12px 32px;
+        border-radius: 16px 16px 0 0;
+        max-height: 75vh;
+      }
+      .sheet-title {
+        font-size: 1rem;
+        margin-bottom: 12px;
+      }
+      .inp-group label {
+        font-size: 0.9rem;
+      }
+      .inp-group input {
+        padding: 10px;
+        font-size: 0.9rem;
+        border-radius: 8px;
+      }
+      .btn-save, .detect-btn {
+        padding: 10px;
+        font-size: 0.9rem;
+        min-height: 44px;
+      }
+      .addr-card {
+        padding: 12px;
+        border-radius: 12px;
+      }
+      .addr-top {
+        gap: 8px;
+        font-size: 0.9rem;
+      }
+      .addr-text {
+        font-size: 0.85rem;
+        margin-bottom: 8px;
+      }
+      .addr-actions {
+        gap: 6px;
+      }
+      .addr-edit-btn, .addr-del-btn {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+        min-height: 36px;
+      }
+    }
+
+    @media (max-width: 280px) {
+      .addr-sheet {
+        padding: 12px 10px 32px;
+        border-radius: 14px 14px 0 0;
+        max-height: 70vh;
+      }
+      .sheet-title {
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+      }
+      .inp-group {
+        margin-bottom: 8px;
+      }
+      .inp-group label {
+        font-size: 0.8rem;
+        margin-bottom: 4px;
+      }
+      .inp-group input {
+        padding: 8px;
+        font-size: 0.85rem;
+        border-radius: 6px;
+      }
+      .inp-group input::placeholder {
+        font-size: 0.8rem;
+      }
+      .btn-save, .detect-btn {
+        padding: 8px;
+        font-size: 0.85rem;
+        min-height: 40px;
+        border-radius: 8px;
+      }
+      .addr-card {
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 8px;
+      }
+      .addr-top {
+        gap: 6px;
+        font-size: 0.8rem;
+        margin-bottom: 6px;
+      }
+      .default-badge {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+      }
+      .addr-text {
+        font-size: 0.8rem;
+        margin-bottom: 6px;
+      }
+      .addr-actions {
+        gap: 4px;
+      }
+      .addr-edit-btn, .addr-del-btn {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        min-height: 32px;
+        border-radius: 6px;
+      }
+      .empty-addr {
+        padding: 16px;
+        font-size: 0.85rem;
+      }
+    }
+
+    /* Ensure touch targets are always >= 44px */
+    @media (max-width: 480px) {
+      .btn-save, .detect-btn, .addr-edit-btn, .addr-del-btn {
+        min-height: 44px;
+      }
+      input[type="text"],
+      input[type="tel"],
+      input[type="email"] {
+        min-height: 44px;
+      }
+    }
   `]
 })
 export class ProfilePage implements OnInit, OnDestroy {

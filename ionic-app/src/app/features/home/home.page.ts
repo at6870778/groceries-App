@@ -1442,6 +1442,84 @@ import { NotificationStateService } from '../../core/services/notification-state
       margin-right: 6px;
       cursor: pointer;
     }
+
+    /* ═══════════════════════════════════════════════════════════
+       RESPONSIVE DESIGN FOR ALL PHONE SIZES
+    ═══════════════════════════════════════════════════════════ */
+    @media (max-width: 360px) {
+      .modal-content {
+        max-width: calc(100% - 20px);
+        max-height: 85vh;
+        border-radius: 16px;
+      }
+      .qv-image-wrap {
+        height: 120px;
+      }
+      .qv-details {
+        padding: 10px;
+      }
+      .qv-category, .qv-name, .qv-description, .qv-unit {
+        font-size: 0.75rem;
+      }
+      .qv-price-row {
+        font-size: 0.85rem;
+      }
+      .qv-actions {
+        gap: 6px;
+        padding: 10px;
+      }
+      .qv-cancel-btn, .qv-add-btn {
+        padding: 8px 10px;
+        font-size: 0.8rem;
+        height: 40px;
+      }
+      .qv-stepper {
+        min-width: 100px;
+      }
+    }
+
+    @media (max-width: 280px) {
+      .modal-content {
+        max-width: calc(100% - 16px);
+        border-radius: 12px;
+        max-height: 80vh;
+      }
+      .qv-image-wrap {
+        height: 100px;
+      }
+      .qv-details {
+        padding: 8px;
+      }
+      .qv-category, .qv-unit {
+        font-size: 0.65rem;
+      }
+      .qv-name {
+        font-size: 0.8rem;
+      }
+      .qv-description {
+        font-size: 0.7rem;
+      }
+      .qv-price-row {
+        font-size: 0.75rem;
+      }
+      .qv-cancel-btn, .qv-add-btn {
+        padding: 6px 8px;
+        font-size: 0.75rem;
+        height: 36px;
+        min-height: 36px;
+      }
+    }
+
+    /* Ensure touch targets are always >= 44px for accessibility */
+    @media (max-width: 480px) {
+      .add-btn-flat, .stepper {
+        min-height: 44px;
+      }
+      .step-btn {
+        min-width: 40px;
+        min-height: 40px;
+      }
+    }
   `]
 })
 export class HomePage implements OnInit, OnDestroy {

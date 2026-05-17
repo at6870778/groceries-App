@@ -15,12 +15,18 @@ public class UserNotificationService {
 
     /** Save a notification for a user (called alongside FCM send). */
     public void save(User user, String title, String body, String type) {
+        save(user, title, body, type, null);
+    }
+
+    /** Save a notification for a user (called alongside FCM send). */
+    public void save(User user, String title, String body, String type, String imageUrl) {
         if (user == null) return;
         UserNotification n = new UserNotification();
         n.setUser(user);
         n.setTitle(title);
         n.setBody(body);
         n.setType(type);
+        n.setImageUrl(imageUrl);
         repository.save(n);
     }
 

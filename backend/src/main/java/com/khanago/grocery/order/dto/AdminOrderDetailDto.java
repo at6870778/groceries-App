@@ -1,7 +1,7 @@
 package com.khanago.grocery.order.dto;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 public record AdminOrderDetailDto(
@@ -15,7 +15,7 @@ public record AdminOrderDetailDto(
         BigDecimal deliveryFee,
         BigDecimal totalAmount,
         String notes,
-        LocalDateTime createdAt,
+        Instant createdAt,
         Long assignmentId,
         String deliveryBoyName,
         String deliveryStatus,

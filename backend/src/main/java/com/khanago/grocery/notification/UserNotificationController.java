@@ -48,6 +48,7 @@ public class UserNotificationController {
                 n.getTitle(),
                 n.getBody(),
                 n.getType(),
+            n.getImageUrl(),
                 n.getCreatedAt()
         );
     }
@@ -57,6 +58,7 @@ public class UserNotificationController {
             String title,
             String body,
             String type,
+            String imageUrl,
             Instant createdAt
     ) {}
 }

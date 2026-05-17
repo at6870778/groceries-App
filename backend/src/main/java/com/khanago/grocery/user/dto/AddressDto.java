@@ -10,6 +10,7 @@ public record AddressDto(
         String city,
         String state,
         String postalCode,
+        String village,
         String landmark,
         BigDecimal latitude,
         BigDecimal longitude,

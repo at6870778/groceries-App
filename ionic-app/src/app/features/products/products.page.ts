@@ -458,7 +458,9 @@ export class ProductsPage implements OnInit, OnDestroy {
         error: (err) => {
           this.adding.set(null);
           this.cartState.removeOrDecrement({ id: product.id }); // revert optimistic
-          const msg = err?.error?.message || 'Could not add to cart';
+          const msg = (!navigator.onLine || err?.status === 0)
+            ? 'No internet — turn on Wi-Fi or mobile data'
+            : (err?.error?.message || 'Could not add to cart');
           this.toastMsg.set(msg);
           this.toastColor.set('danger');
           this.toastOpen.set(true);

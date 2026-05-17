@@ -152,21 +152,14 @@ import { NotificationStateService } from '../../core/services/notification-state
         <!-- CATEGORY CHIPS -->
         <div class="cat-strip-sticky">
         <div class="cat-strip" [class.has-selection]="selectedCategorySlug()">
-          <button class="cat-chip chip-fv" [class.active]="activeCategorySlug()==='fruits-vegetables'" (click)="selectChip('fruits-vegetables')">
-            <span class="chip-emoji">🥦</span>
-            <span class="chip-label">Fruits & Veg</span>
-          </button>
-          <button class="cat-chip chip-gr" [class.active]="activeCategorySlug()==='groceries'" (click)="selectChip('groceries')">
-            <span class="chip-emoji">🛒</span>
-            <span class="chip-label">Groceries</span>
-          </button>
-          <button class="cat-chip chip-sn" [class.active]="activeCategorySlug()==='snacks'" (click)="selectChip('snacks')">
-            <span class="chip-emoji">🍿</span>
-            <span class="chip-label">Snacks</span>
-          </button>
-          <button class="cat-chip chip-fd" [class.active]="activeCategorySlug()==='food'" (click)="selectChip('food')">
-            <span class="chip-emoji">🍽️</span>
-            <span class="chip-label">Food</span>
+          <button
+            class="cat-chip"
+            *ngFor="let cat of activeCategories(); let i = index"
+            [class.active]="activeCategorySlug() === cat.slug"
+            [ngStyle]="chipNgStyle(i, activeCategorySlug() === cat.slug)"
+            (click)="selectChip(cat.slug)">
+            <span class="chip-emoji">{{ catEmoji(cat.slug) }}</span>
+            <span class="chip-label">{{ cat.name }}</span>
           </button>
         </div>
         </div>
@@ -698,36 +691,7 @@ import { NotificationStateService } from '../../core/services/notification-state
     /* Tap feedback */
     .cat-chip:active { transform: scale(0.9) !important; }
 
-    /* Staggered entry delays */
-    .chip-fv { animation-delay: 0s; }
-    .chip-gr { animation-delay: 0.07s; }
-    .chip-sn { animation-delay: 0.14s; }
-    .chip-fd { animation-delay: 0.21s; }
-
-    /* ── Colour themes (inactive pastel) ── */
-    .chip-fv {
-      background: linear-gradient(160deg, #d1fae5, #a7f3d0);
-      color: #065f46;
-      box-shadow: 0 2px 8px rgba(16,185,129,0.20);
-      border-color: rgba(16,185,129,0.35);
-    }
-    .chip-gr {
-      background: linear-gradient(160deg, #fef3c7, #fde68a);
-      color: #92400e;
-      box-shadow: 0 2px 8px rgba(245,158,11,0.20);
-      border-color: rgba(245,158,11,0.4);
-    }
-    .chip-sn {
-      background: linear-gradient(160deg, #fee2e2, #fca5a5);
-      color: #991b1b;
-      box-shadow: 0 2px 8px rgba(239,68,68,0.18);
-      border-color: rgba(239,68,68,0.35);
-    }
-    .chip-fd {
-      background: linear-gradient(160deg, #ede9fe, #c4b5fd);
-      color: #4c1d95;
-      box-shadow: 0 2px 8px rgba(139,92,246,0.20);
-      border-color: rgba(139,92,246,0.35);
+    /* ── Colour themes driven by [ngStyle] on each chip ── */
     }
 
     /* Sheen shimmer on inactive */
@@ -739,14 +703,11 @@ import { NotificationStateService } from '../../core/services/notification-state
       animation: chip-sheen 3s linear infinite;
       pointer-events: none;
     }
-    .chip-fv::after  { animation-delay: 0s; }
-    .chip-gr::after  { animation-delay: 0.75s; }
-    .chip-sn::after  { animation-delay: 1.5s; }
-    .chip-fd::after  { animation-delay: 2.25s; }
     @keyframes chip-sheen {
       0%   { background-position: -200% center; }
       100% { background-position: 200% center; }
     }
+    .cat-chip.active::after { animation: none; opacity: 0; }
 
     /* ── ACTIVE chip — grows bigger, bolder ── */
     .cat-chip.active {
@@ -757,13 +718,9 @@ import { NotificationStateService } from '../../core/services/notification-state
     }
     .cat-chip.active .chip-emoji { transform: scale(1.18); }
     .cat-chip.active .chip-label { font-size: 0.7rem; }
-    .cat-chip.active::after { animation: none; opacity: 0; }
+    .cat-chip.active::after { animation: none; opacity: 0; }  /* already set above, kept for specificity */
 
-    /* Active colour fills */
-    .chip-fv.active { background: linear-gradient(135deg,#059669,#10b981); color:#fff; box-shadow: 0 6px 20px rgba(16,185,129,0.5); }
-    .chip-gr.active { background: linear-gradient(135deg,#d97706,#f59e0b); color:#fff; box-shadow: 0 6px 20px rgba(245,158,11,0.5); }
-    .chip-sn.active { background: linear-gradient(135deg,#dc2626,#ef4444); color:#fff; box-shadow: 0 6px 20px rgba(239,68,68,0.5);  }
-    .chip-fd.active { background: linear-gradient(135deg,#7c3aed,#8b5cf6); color:#fff; box-shadow: 0 6px 20px rgba(139,92,246,0.5); }
+    /* Active bg/colour driven by [ngStyle] */
 
     /* ── When a chip IS selected: dim & shrink the others ── */
     .cat-strip.has-selection .cat-chip:not(.active) {
@@ -1068,6 +1025,27 @@ export class HomePage implements OnInit, OnDestroy {
 
   /** Saved addresses loaded from API */
   readonly savedAddresses = signal<any[]>([]);
+
+  /** Categories from DB — only active ones shown as chips */
+  readonly activeCategories = computed(() => this.categories().filter(c => c.isActive !== false && c.active !== false));
+
+  /** Colour palette for category chips (index % length) */
+  private readonly chipPalette = [
+    { ib: 'linear-gradient(160deg,#d1fae5,#a7f3d0)', ic: '#065f46', is: 'rgba(16,185,129,0.20)', ibr: 'rgba(16,185,129,0.35)', ab: 'linear-gradient(135deg,#059669,#10b981)', as_: 'rgba(16,185,129,0.5)' },
+    { ib: 'linear-gradient(160deg,#fef3c7,#fde68a)', ic: '#92400e', is: 'rgba(245,158,11,0.20)', ibr: 'rgba(245,158,11,0.40)', ab: 'linear-gradient(135deg,#d97706,#f59e0b)', as_: 'rgba(245,158,11,0.5)' },
+    { ib: 'linear-gradient(160deg,#fee2e2,#fca5a5)', ic: '#991b1b', is: 'rgba(239,68,68,0.18)',   ibr: 'rgba(239,68,68,0.35)',   ab: 'linear-gradient(135deg,#dc2626,#ef4444)', as_: 'rgba(239,68,68,0.5)'  },
+    { ib: 'linear-gradient(160deg,#ede9fe,#c4b5fd)', ic: '#4c1d95', is: 'rgba(139,92,246,0.20)', ibr: 'rgba(139,92,246,0.35)', ab: 'linear-gradient(135deg,#7c3aed,#8b5cf6)', as_: 'rgba(139,92,246,0.5)' },
+    { ib: 'linear-gradient(160deg,#dbeafe,#93c5fd)', ic: '#1e3a8a', is: 'rgba(59,130,246,0.18)',  ibr: 'rgba(59,130,246,0.35)',  ab: 'linear-gradient(135deg,#2563eb,#3b82f6)', as_: 'rgba(59,130,246,0.5)'  },
+    { ib: 'linear-gradient(160deg,#ffedd5,#fdba74)', ic: '#9a3412', is: 'rgba(249,115,22,0.18)',  ibr: 'rgba(249,115,22,0.35)',  ab: 'linear-gradient(135deg,#ea580c,#f97316)', as_: 'rgba(249,115,22,0.5)'  },
+  ];
+
+  chipNgStyle(index: number, isActive: boolean): Record<string, string> {
+    const p = this.chipPalette[index % this.chipPalette.length];
+    if (isActive) {
+      return { background: p.ab, color: '#fff', 'box-shadow': `0 6px 20px ${p.as_}`, 'border-color': 'transparent' };
+    }
+    return { background: p.ib, color: p.ic, 'box-shadow': `0 2px 8px ${p.is}`, 'border-color': p.ibr, 'animation-delay': `${index * 0.07}s` };
+  }
 
   readonly shortDeliveryLabel = computed(() => {
     const full = this.deliveryLabel();

@@ -51,6 +51,7 @@ import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component
           <!-- Content -->
           <div class="notif-body">
             <p class="notif-title">{{ n.title }}</p>
+            <img *ngIf="n.imageUrl" class="notif-image" [src]="n.imageUrl" [alt]="n.title">
             <p class="notif-msg">{{ n.body }}</p>
             <span class="notif-time">{{ timeAgo(n.createdAt) }}</span>
           </div>
@@ -180,6 +181,16 @@ import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component
 
     /* ── Body ── */
     .notif-body { flex: 1; min-width: 0; }
+    .notif-image {
+      width: 100%;
+      max-height: 168px;
+      object-fit: cover;
+      border-radius: 12px;
+      display: block;
+      margin: 0 0 8px;
+      background: #f2f4f8;
+      border: 1px solid #eef1f6;
+    }
     .notif-title {
       font-size: 14px;
       font-weight: 700;

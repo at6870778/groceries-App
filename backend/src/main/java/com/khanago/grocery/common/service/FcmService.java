@@ -82,8 +82,9 @@ public class FcmService {
                     .setTopic(topic)
                     .setNotification(notifBuilder.build())
                     .putData("click_action", "OPEN_PROMOTIONS")
+                    .putData("imageUrl", imageUrl != null ? imageUrl : "")
                     .setAndroidConfig(AndroidConfig.builder()
-                            .setPriority(AndroidConfig.Priority.NORMAL)
+                        .setPriority(AndroidConfig.Priority.HIGH)
                             .setNotification(androidNotifBuilder.build())
                             .build())
                     .build();

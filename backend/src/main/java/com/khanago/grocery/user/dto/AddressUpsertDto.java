@@ -11,6 +11,7 @@ public record AddressUpsertDto(
         @NotBlank String city,
         @NotBlank String state,
         @NotBlank String postalCode,
+        String village,
         String landmark,
         BigDecimal latitude,
         BigDecimal longitude,

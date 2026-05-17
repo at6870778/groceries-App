@@ -6,6 +6,7 @@ export interface AppNotification {
   title: string;
   body: string;
   type: string;
+  imageUrl?: string;
   createdAt: string;
 }
 

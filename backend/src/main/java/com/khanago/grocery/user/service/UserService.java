@@ -100,6 +100,7 @@ public class UserService {
         address.setCity(request.city());
         address.setState(request.state());
         address.setPostalCode(request.postalCode());
+        address.setVillage(request.village());
         address.setLandmark(request.landmark());
         address.setLatitude(request.latitude());
         address.setLongitude(request.longitude());
@@ -108,6 +109,6 @@ public class UserService {
 
     private AddressDto toAddressDto(Address a) {
         return new AddressDto(a.getId(), a.getLabel(), a.getLine1(), a.getLine2(), a.getCity(), a.getState(), a.getPostalCode(),
-                a.getLandmark(), a.getLatitude(), a.getLongitude(), a.isDefault());
+                a.getVillage(), a.getLandmark(), a.getLatitude(), a.getLongitude(), a.isDefault());
     }
 }

@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
+import { ApiService } from '../../core/services/api.service';
 
 interface Customer { id: number; name: string; phone: string; }
 
@@ -206,14 +205,24 @@ export class PushNotificationsComponent implements OnInit {
 
   sentLog: any[] = [];
 
-  private api = `${environment.apiUrl}/api/admin/notifications`;
-
-  constructor(private http: HttpClient) {}
+  constructor(private api: ApiService) {}
 
   ngOnInit() {
-    this.http.get<Customer[]>(`${this.api}/users`).subscribe({
-      next: (res) => this.allUsers = res || [],
-      error: () => {}
+    this.api.get<any>('/admin/customers', { page: 0, size: 200 }).subscribe({
+      next: (res) => {
+        this.allUsers = (res?.content || []).map((user: any) => ({
+          id: Number(user?.id),
+          name: String(user?.fullName || '').trim(),
+          phone: String(user?.phone || '').trim()
+        }));
+
+        if (this.searchTerm.trim().length >= 2) {
+          this.filterUsers();
+        }
+      },
+      error: () => {
+        this.errorMsg = 'Could not load customers for specific-user search.';
+      }
     });
   }
 
@@ -221,7 +230,11 @@ export class PushNotificationsComponent implements OnInit {
     const term = this.searchTerm.toLowerCase().trim();
     if (!term || term.length < 2) { this.filteredUsers = []; return; }
     this.filteredUsers = this.allUsers
-      .filter(u => u.name.toLowerCase().includes(term) || u.phone.includes(term))
+      .filter(u => {
+        const name = String(u?.name || '').toLowerCase();
+        const phone = String(u?.phone || '').toLowerCase();
+        return name.includes(term) || phone.includes(term);
+      })
       .slice(0, 10);
   }
 
@@ -243,13 +256,13 @@ export class PushNotificationsComponent implements OnInit {
     this.successMsg = '';
 
     const url = this.target === 'all'
-      ? `${this.api}/send-to-all`
-      : `${this.api}/send-to-user`;
+      ? '/admin/notifications/send-to-all'
+      : '/admin/notifications/send-to-user';
 
     const payload: any = { title, body };
     if (this.target === 'user') payload.userId = this.selectedUser!.id;
 
-    this.http.post<any>(url, payload).subscribe({
+    this.api.post<any>(url, payload).subscribe({
       next: (res) => {
         this.sending = false;
         if (this.target === 'all') {

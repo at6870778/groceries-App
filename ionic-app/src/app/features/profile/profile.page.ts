@@ -129,9 +129,7 @@ import { ActivityState } from '../../core/state/activity.state';
             <span class="addr-label">{{ a.label || 'Address' }}</span>
             <span class="default-badge" *ngIf="a.isDefault">✓ Default</span>
           </div>
-          <div class="addr-text">{{ a.line1 }}{{ a.line2 ? ', ' + a.line2 : '' }}{{ a.village ? ', ' + a.village : '' }}</div>
-          <div class="addr-text">{{ a.city }}, {{ a.state }} {{ a.postalCode }}</div>
-          <div class="addr-text muted" *ngIf="a.landmark">Near: {{ a.landmark }}</div>
+          <div class="addr-text">{{ formatAddress(a) }}</div>
           <div class="addr-actions">
             <button class="addr-edit-btn" (click)="startEdit(a)">✏️ Edit</button>
             <button class="addr-del-btn" (click)="deleteAddress(a.id)">🗑️ Remove</button>
@@ -507,6 +505,41 @@ export class ProfilePage implements OnInit, OnDestroy {
   readonly editingName = signal(false);
   readonly savingName = signal(false);
   nameEdit = '';
+
+  private normalizeAddressPart(value: any): string {
+    return String(value || '').trim().replace(/\s+/g, ' ');
+  }
+
+  private appendAddressPart(parts: string[], seen: Set<string>, value: any, prefix = '') {
+    const normalized = this.normalizeAddressPart(value);
+    if (!normalized) {
+      return;
+    }
+
+    const displayValue = prefix ? `${prefix}${normalized}` : normalized;
+    const key = displayValue.replace(/[^a-z0-9]/gi, '').toLowerCase();
+    if (!key || seen.has(key)) {
+      return;
+    }
+
+    seen.add(key);
+    parts.push(displayValue);
+  }
+
+  formatAddress(address: any): string {
+    const parts: string[] = [];
+    const seen = new Set<string>();
+
+    this.appendAddressPart(parts, seen, address?.village);
+    this.appendAddressPart(parts, seen, address?.landmark, 'Near By ');
+    this.appendAddressPart(parts, seen, address?.line1);
+    this.appendAddressPart(parts, seen, address?.line2);
+    this.appendAddressPart(parts, seen, address?.city);
+    this.appendAddressPart(parts, seen, address?.state);
+    this.appendAddressPart(parts, seen, address?.postalCode);
+
+    return parts.join(', ');
+  }
 
   displayName(): string {
     const p = this.profile();

@@ -81,7 +81,7 @@ declare global {
               <span class="addr-item-icon">🏠</span>
               <div class="addr-item-body">
                 <div class="addr-item-label">{{ a.label || 'Address' }}</div>
-                <div class="addr-item-line">{{ a.line1 || a.addressLine1 }}{{ a.city ? ', ' + a.city : '' }}</div>
+                <div class="addr-item-line">{{ formatAddress(a) }}</div>
               </div>
               <span class="addr-tick" *ngIf="selectedAddressId() === a.id">✓</span>
             </div>
@@ -969,7 +969,7 @@ export class CartPage implements OnInit, OnDestroy {
 
   readonly selectedAddressLabel = computed(() => {
     const addr = this.selectedAddress();
-    if (addr) return `${addr.label ? addr.label + ': ' : ''}${addr.line1 || addr.addressLine1 || ''}${addr.city ? ', ' + addr.city : ''}`;
+    if (addr) return `${addr.label ? addr.label + ': ' : ''}${this.formatAddress(addr)}`;
     const loc = this.locationService.currentLocation();
     if (loc?.address) return loc.address;
     if (this.locationService.isLocating()) return 'Detecting location…';
@@ -1039,8 +1039,7 @@ export class CartPage implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.savedAddresses.set(res || []);
-          // Auto-select default saved address if no address chosen yet and GPS unavailable
-          if (this.selectedAddressId() === 'gps' && !this.locationService.currentLocation()) {
+          if (this.selectedAddressId() === 'gps') {
             const def = (res || []).find((a: any) => a.isDefault) || (res || [])[0];
             if (def) {
               this.selectedAddress.set(def);
@@ -1093,6 +1092,59 @@ export class CartPage implements OnInit, OnDestroy {
     return !meta.village || !meta.landmark;
   }
 
+  private normalizeAddressPart(value: any): string {
+    return String(value || '').trim().replace(/\s+/g, ' ');
+  }
+
+  private appendAddressPart(parts: string[], seen: Set<string>, value: any, prefix = '') {
+    const normalized = this.normalizeAddressPart(value);
+    if (!normalized) {
+      return;
+    }
+
+    const displayValue = prefix ? `${prefix}${normalized}` : normalized;
+    const key = displayValue.replace(/[^a-z0-9]/gi, '').toLowerCase();
+    if (!key || seen.has(key)) {
+      return;
+    }
+
+    seen.add(key);
+    parts.push(displayValue);
+  }
+
+  formatAddress(address: any): string {
+    if (!address) {
+      return '';
+    }
+
+    const parts: string[] = [];
+    const seen = new Set<string>();
+
+    this.appendAddressPart(parts, seen, address.village);
+    this.appendAddressPart(parts, seen, address.landmark, 'Near By ');
+    this.appendAddressPart(parts, seen, address.line1 || address.addressLine1);
+    this.appendAddressPart(parts, seen, address.line2);
+    this.appendAddressPart(parts, seen, address.city);
+    this.appendAddressPart(parts, seen, address.state);
+    this.appendAddressPart(parts, seen, address.postalCode);
+
+    return parts.join(', ');
+  }
+
+  private async reverseGeocode(lat: number, lng: number): Promise<any> {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+    const data = await res.json();
+    const address = data.address || {};
+
+    return {
+      road: address.road || address.pedestrian || address.footway || address.path || '',
+      suburb: address.suburb || address.neighbourhood || address.quarter || '',
+      city: address.city || address.town || address.village || address.county || '',
+      state: address.state || '',
+      postcode: address.postcode || ''
+    };
+  }
+
   private openLocationDetailsPrompt() {
     const meta = this.getPersistedVillageAndLandmark();
     // Only overwrite if the fields aren't already partially filled by the user
@@ -1124,44 +1176,57 @@ export class CartPage implements OnInit, OnDestroy {
 
       // Also create a real saved address on the backend so it appears in profile and "Deliver To"
       const gpsLoc = this.locationService.currentLocation();
-      const gpsAddrStr = String(gpsLoc?.address || '').trim();
-      const line1 = gpsAddrStr || village;
-      const addressPayload = {
-        label: 'Home',
-        line1,
-        line2: '',
-        city: gpsAddrStr ? gpsAddrStr.split(',').pop()?.trim() || 'Unknown City' : 'Unknown City',
-        state: '',
-        postalCode: '',
-        village,
-        landmark,
-        latitude: gpsLoc?.latitude ?? null,
-        longitude: gpsLoc?.longitude ?? null,
-        isDefault: true
-      };
       this.savingLocationDetails.set(true);
-      this.api.post<any>('/customer/profile/addresses', addressPayload)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (created) => {
-            this.savingLocationDetails.set(false);
-            this.selectedAddress.set(created);
-            this.selectedAddressId.set(created?.id || 'gps');
-            this.savedAddresses.set([created, ...this.savedAddresses()]);
-            this.showLocationDetailsPrompt.set(false);
-            if (this.pendingProceedAfterDetails) {
-              this.pendingProceedAfterDetails = false;
-              this.checkoutStep.set('payment');
-            }
-          },
-          error: () => {
-            // Fallback: proceed with localStorage values even if save fails
-            this.savingLocationDetails.set(false);
-            this.showLocationDetailsPrompt.set(false);
-            if (this.pendingProceedAfterDetails) {
-              this.pendingProceedAfterDetails = false;
-              this.checkoutStep.set('payment');
-            }
+      Promise.resolve(
+        gpsLoc?.latitude != null && gpsLoc?.longitude != null
+          ? this.reverseGeocode(gpsLoc.latitude, gpsLoc.longitude)
+          : Promise.resolve({ road: '', suburb: '', city: '', state: '', postcode: '' })
+      )
+        .then((structured) => {
+          const addressPayload = {
+            label: 'Home',
+            line1: structured.road || structured.suburb || structured.city || village,
+            line2: structured.suburb || '',
+            city: structured.city || village,
+            state: structured.state || 'Uttar Pradesh',
+            postalCode: structured.postcode || '000000',
+            village,
+            landmark,
+            latitude: gpsLoc?.latitude ?? null,
+            longitude: gpsLoc?.longitude ?? null,
+            isDefault: true
+          };
+
+          this.api.post<any>('/customer/profile/addresses', addressPayload)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: (created) => {
+                this.savingLocationDetails.set(false);
+                this.selectedAddress.set(created);
+                this.selectedAddressId.set(created?.id || 'gps');
+                this.savedAddresses.set([created, ...this.savedAddresses().filter((a: any) => a.id !== created?.id)]);
+                this.showLocationDetailsPrompt.set(false);
+                if (this.pendingProceedAfterDetails) {
+                  this.pendingProceedAfterDetails = false;
+                  this.checkoutStep.set('payment');
+                }
+              },
+              error: () => {
+                this.savingLocationDetails.set(false);
+                this.showLocationDetailsPrompt.set(false);
+                if (this.pendingProceedAfterDetails) {
+                  this.pendingProceedAfterDetails = false;
+                  this.checkoutStep.set('payment');
+                }
+              }
+            });
+        })
+        .catch(() => {
+          this.savingLocationDetails.set(false);
+          this.showLocationDetailsPrompt.set(false);
+          if (this.pendingProceedAfterDetails) {
+            this.pendingProceedAfterDetails = false;
+            this.checkoutStep.set('payment');
           }
         });
       return;

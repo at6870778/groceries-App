@@ -5,6 +5,7 @@ import { PushNotifications, Token, PushNotificationSchema, ActionPerformed } fro
 import { ToastController } from '@ionic/angular/standalone';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
+import { NotificationStateService } from './notification-state.service';
 
 @Injectable({ providedIn: 'root' })
 export class PushNotificationService {
@@ -12,6 +13,7 @@ export class PushNotificationService {
   private auth = inject(AuthService);
   private router = inject(Router);
   private toastCtrl = inject(ToastController);
+  private notifState = inject(NotificationStateService);
 
   /**
    * Call once after the user has successfully logged in as CUSTOMER.
@@ -63,11 +65,13 @@ export class PushNotificationService {
     // Foreground notification — show as an in-app toast
     PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
       this.showToast(notification.title ?? 'Khanago', notification.body ?? '');
+      this.notifState.load();
     });
 
     // Notification tapped (background/killed)
     PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
       const clickAction = action.notification.data?.['click_action'];
+      this.notifState.load();
       this.handleClickAction(clickAction);
     });
   }

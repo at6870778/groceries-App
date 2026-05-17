@@ -237,8 +237,9 @@ export class OrdersPage implements OnInit, OnDestroy {
 
   formatDate(dateString: string): string {
     try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const normalized = dateString && !dateString.endsWith('Z') && !dateString.includes('+') ? dateString + 'Z' : dateString;
+      const date = new Date(normalized);
+      return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
     } catch {
       return dateString;
     }

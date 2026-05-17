@@ -30,6 +30,9 @@ public class UserNotification {
     @Column(nullable = false, length = 50)
     private String type = "ORDER";
 
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 }

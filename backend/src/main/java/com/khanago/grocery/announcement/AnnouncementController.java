@@ -41,7 +41,7 @@ public class AnnouncementController {
         boolean isNowActive = saved.isActive();
         if (!wasActive && isNowActive && saved.getMessage() != null && !saved.getMessage().isBlank()) {
             fcmService.sendToTopic("promotions", "🛍️ Order Kro", saved.getMessage(), saved.getImageUrl());
-            broadcastInAppNotification("🛍️ Order Kro", saved.getMessage());
+            broadcastInAppNotification("🛍️ Order Kro", saved.getMessage(), saved.getImageUrl());
         }
         return saved;
     }
@@ -58,15 +58,15 @@ public class AnnouncementController {
             return Map.of("status", "skipped", "reason", "No announcement message set.");
         }
         fcmService.sendToTopic("promotions", "🛍️ Order Kro", msg, a.getImageUrl());
-        broadcastInAppNotification("🛍️ Order Kro", msg);
+        broadcastInAppNotification("🛍️ Order Kro", msg, a.getImageUrl());
         return Map.of("status", "sent");
     }
 
     /** Save a UserNotification row for every customer so the bell icon shows a count. */
-    private void broadcastInAppNotification(String title, String body) {
+    private void broadcastInAppNotification(String title, String body, String imageUrl) {
         List<User> customers = userRepository.findByRoles_Name(RoleName.CUSTOMER);
         for (User customer : customers) {
-            userNotificationService.save(customer, title, body, "PROMO");
+            userNotificationService.save(customer, title, body, "PROMO", imageUrl);
         }
     }
 }

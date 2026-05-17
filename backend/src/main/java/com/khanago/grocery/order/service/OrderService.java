@@ -21,6 +21,7 @@ import com.khanago.grocery.order.repository.OrderItemRepository;
 import com.khanago.grocery.order.repository.OrderRepository;
 import com.khanago.grocery.security.SecurityUtils;
 import com.khanago.grocery.user.Address;
+import com.khanago.grocery.user.AddressFormatter;
 import com.khanago.grocery.user.User;
 import com.khanago.grocery.user.repository.AddressRepository;
 import com.khanago.grocery.user.repository.UserRepository;
@@ -31,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -171,27 +173,7 @@ public class OrderService {
     }
 
     private String buildAddressString(Address addr) {
-        if (addr == null) return "N/A";
-        StringBuilder sb = new StringBuilder();
-        sb.append(addr.getLine1());
-        if (addr.getLine2() != null && !addr.getLine2().isBlank()) sb.append(", ").append(addr.getLine2());
-        if (addr.getVillage() != null && !addr.getVillage().isBlank()) sb.append(", ").append(addr.getVillage());
-        if (addr.getLandmark() != null && !addr.getLandmark().isBlank()) sb.append(", Near: ").append(addr.getLandmark());
-        sb.append(", ").append(addr.getCity());
-        if (addr.getState() != null && !addr.getState().isBlank()) sb.append(", ").append(addr.getState());
-        sb.append(" - ").append(addr.getPostalCode());
-        return sb.toString();
-    }
-
-    private String extractDetectedAddressFromNotes(String notes) {
-        if (notes == null || notes.isBlank()) return "";
-        java.util.regex.Matcher matcher = java.util.regex.Pattern
-                .compile("Detected Location:\\s*([^|]+)", java.util.regex.Pattern.CASE_INSENSITIVE)
-                .matcher(notes);
-        if (matcher.find()) {
-            return matcher.group(1).trim();
-        }
-        return "";
+        return AddressFormatter.format(addr);
     }
 
     private String orderStatusTitle(OrderStatus status) {
@@ -232,7 +214,7 @@ public class OrderService {
         }
         String address = buildAddressString(resolvedAddress);
         if ("N/A".equals(address)) {
-            String detected = extractDetectedAddressFromNotes(order.getNotes());
+            String detected = AddressFormatter.formatFromNotes(order.getNotes());
             if (!detected.isBlank()) {
                 address = detected;
             }
@@ -247,7 +229,7 @@ public class OrderService {
                 order.getDeliveryFee(),
                 order.getTotalAmount(),
                 order.getNotes(),
-                order.getCreatedAt(),
+                order.getCreatedAt() != null ? order.getCreatedAt().toInstant(ZoneOffset.UTC) : null,
                 items.stream().map(i -> new OrderItemDto(i.getProductName(), i.getUnit(), i.getQuantity(), i.getUnitPrice(), i.getLineTotal())).toList(),
                 customerName,
                 customerPhone,
@@ -276,7 +258,7 @@ public class OrderService {
 
         String address = buildAddressString(order.getAddress());
         if ("N/A".equals(address)) {
-            String detected = extractDetectedAddressFromNotes(order.getNotes());
+            String detected = AddressFormatter.formatFromNotes(order.getNotes());
             if (!detected.isBlank()) {
                 address = detected;
             }
@@ -302,7 +284,7 @@ public class OrderService {
                 order.getDeliveryFee(),
                 order.getTotalAmount(),
                 order.getNotes(),
-                order.getCreatedAt(),
+                order.getCreatedAt() != null ? order.getCreatedAt().toInstant(ZoneOffset.UTC) : null,
                 assignmentId,
                 deliveryBoyName,
                 deliveryStatus,

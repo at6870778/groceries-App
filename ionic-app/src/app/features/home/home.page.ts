@@ -1127,15 +1127,16 @@ import { NotificationStateService } from '../../core/services/notification-state
     }
     .modal-content {
       width: 100%;
-      max-height: 85vh;
+      max-height: 90vh;
       background: #fff;
       border-radius: 28px 28px 0 0;
-      overflow: visible;
+      overflow: visible !important;
       animation: slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       position: relative;
       box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
       display: flex;
       flex-direction: column;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
     @keyframes slide-up {
       from { transform: translateY(100%); }
@@ -1164,7 +1165,8 @@ import { NotificationStateService } from '../../core/services/notification-state
     .quick-view-product {
       padding: 24px 16px 12px;
       overflow-y: auto;
-      max-height: calc(85vh - 120px);
+      flex: 1;
+      min-height: 0;
       display: flex;
       flex-direction: column;
     }
@@ -1252,11 +1254,13 @@ import { NotificationStateService } from '../../core/services/notification-state
       display: flex;
       gap: 10px;
       margin: 0;
-      padding: 12px 16px 16px;
+      padding: 12px 16px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
       border-top: 1px solid #f0f0f0;
       background: #fff;
       z-index: 5;
       flex-shrink: 0;
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
     }
     .qv-cancel-btn {
       flex: 1;
@@ -1535,19 +1539,24 @@ export class HomePage implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    // Register back button handler
-    App.addListener('backButton', () => {
-      // If modal is open, close it instead of exiting app
-      if (this.showQuickViewModal()) {
-        this.closeQuickView();
-      } else {
-        App.exitApp();
+    // Register back button handler - must happen before other listeners
+    const registerBackButton = async () => {
+      try {
+        this.backButtonListener = await App.addListener('backButton', async () => {
+          // If modal is open, close it instead of exiting app
+          if (this.showQuickViewModal()) {
+            this.closeQuickView();
+            return; // prevent default
+          } else {
+            // Close app
+            await App.exitApp();
+          }
+        });
+      } catch (err) {
+        console.error('Failed to register back button listener:', err);
       }
-    }).then((listener) => {
-      this.backButtonListener = listener;
-    }).catch((err) => {
-      console.error('Failed to register back button listener:', err);
-    });
+    };
+    registerBackButton();
     this.notifState.load();
 
     // Load current user for personalization

@@ -4,8 +4,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
       MYSQL_DATABASE: ${DB_NAME:-grocery_mvp}
-      MYSQL_INITDB_ARGS: --default-authentication-plugin=mysql_native_password
-    command: --default-authentication-plugin=mysql_native_password --max-connections=150 --max_allowed_packet=256M --innodb-buffer-pool-size=256M
+    command: --default_authentication_plugin=mysql_native_password --max_connections=150 --max_allowed_packet=256M --innodb_buffer_pool_size=256M
     ports:
       - "3306:3306"
     volumes:

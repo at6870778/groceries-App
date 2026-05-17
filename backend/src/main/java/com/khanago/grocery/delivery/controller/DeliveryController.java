@@ -20,13 +20,10 @@ public class DeliveryController {
 
     @GetMapping("/orders")
     public List<OrderDto> myOrders(@RequestParam(required = false) String phone) {
-        // Validate phone if provided
-        if (phone != null && !phone.isEmpty()) {
-            com.khanago.grocery.user.User currentUser = com.khanago.grocery.security.SecurityUtils.getCurrentUser();
-            if (currentUser == null || !currentUser.getPhone().equals(phone)) {
-                throw new com.khanago.grocery.common.exception.ApiException("Phone number does not match authenticated user");
-            }
-        }
+        // Get authenticated user ID for security
+        Long currentUserId = com.khanago.grocery.security.SecurityUtils.getCurrentUserId();
+        // If phone is provided, it's for logging/auditing purposes only
+        // The service will fetch the authenticated user's orders
         return deliveryService.myAssignedOrders();
     }
 

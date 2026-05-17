@@ -1130,7 +1130,7 @@ import { NotificationStateService } from '../../core/services/notification-state
       max-height: 85vh;
       background: #fff;
       border-radius: 28px 28px 0 0;
-      overflow: hidden;
+      overflow: visible;
       animation: slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       position: relative;
       box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
@@ -1164,7 +1164,7 @@ import { NotificationStateService } from '../../core/services/notification-state
     .quick-view-product {
       padding: 24px 16px 12px;
       overflow-y: auto;
-      flex: 1;
+      max-height: calc(85vh - 120px);
       display: flex;
       flex-direction: column;
     }
@@ -1535,8 +1535,9 @@ export class HomePage implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    App.addListener('backButton', async () => {
-      // If modal is open, close it first instead of exiting app
+    // Register back button handler
+    App.addListener('backButton', () => {
+      // If modal is open, close it instead of exiting app
       if (this.showQuickViewModal()) {
         this.closeQuickView();
       } else {
@@ -1544,6 +1545,8 @@ export class HomePage implements OnInit, OnDestroy {
       }
     }).then((listener) => {
       this.backButtonListener = listener;
+    }).catch((err) => {
+      console.error('Failed to register back button listener:', err);
     });
     this.notifState.load();
 

@@ -11,11 +11,11 @@ CREATE TABLE IF NOT EXISTS restaurants (
     is_active         BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- Add restaurant_id to products only if column does not already exist
-ALTER TABLE products ADD COLUMN IF NOT EXISTS restaurant_id BIGINT;
+-- Add restaurant_id to products
+ALTER TABLE products ADD COLUMN restaurant_id BIGINT;
 
--- Add FK only if not already present (H2 silently ignores duplicate constraint names)
-ALTER TABLE products ADD CONSTRAINT IF NOT EXISTS fk_products_restaurant
+-- Add FK constraint
+ALTER TABLE products ADD CONSTRAINT fk_products_restaurant
   FOREIGN KEY (restaurant_id) REFERENCES restaurants(id);
 
 -- Seed restaurants (skip if already inserted)

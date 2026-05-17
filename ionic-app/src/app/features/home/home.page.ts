@@ -256,36 +256,6 @@ import { NotificationStateService } from '../../core/services/notification-state
           <div class="qv-image-wrap" [style.background]="productBg(product)">
             <img *ngIf="product.imageUrl" class="qv-image" [src]="product.imageUrl" [alt]="product.name">
           </div>
-          <div class="qv-body">
-            <div class="qv-category">{{ product.categoryName }}</div>
-            <h3 class="qv-name">{{ product.name }}</h3>
-            <p class="qv-description">{{ product.description }}</p>
-            <div class="qv-unit">{{ product.unit }}</div>
-            <div class="qv-price-row">
-              <span class="qv-mrp" *ngIf="getDiscount(product) > 0">₹{{ getOriginalPrice(product) }}</span>
-              <span class="qv-price">₹{{ product.sellingPrice }}</span>
-              <span class="qv-discount" *ngIf="getDiscount(product) > 0">{{ getDiscount(product) }}% OFF</span>
-            </div>
-            <div class="qv-stock" [class.low-stock]="product.stockQty < 5">
-              <span *ngIf="product.stockQty > 0">{{ product.stockQty }} items in stock</span>
-              <span *ngIf="product.stockQty === 0" class="out-of-stock">Out of stock</span>
-            </div>
-          </div>
-        </div>
-        <div *ngIf="selectedProductForModal() as product" class="qv-actions">
-          <button class="qv-cancel-btn" (click)="closeQuickView()">Continue Shopping</button>
-          <ng-container *ngIf="cartQty(product.id) === 0; else qvStep">
-            <button class="qv-add-btn" (click)="addToCartFromModal(product)" [disabled]="product.stockQty === 0">
-              <span class="add-icon">+</span> Add to Cart
-            </button>
-          </ng-container>
-          <ng-template #qvStep>
-            <div class="qv-stepper">
-              <button class="qv-step-btn" (click)="removeFromCart(product)">−</button>
-              <span class="qv-qty">{{ cartQty(product.id) }}</span>
-              <button class="qv-step-btn" (click)="addToCart(product)">+</button>
-            </div>
-          </ng-template>
         </div>
       </div>
     </div>
@@ -1128,6 +1098,7 @@ import { NotificationStateService } from '../../core/services/notification-state
     .modal-content {
       width: 100%;
       max-height: 90vh;
+      height: 90vh;
       background: #fff;
       border-radius: 28px 28px 0 0;
       animation: slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1137,6 +1108,8 @@ import { NotificationStateService } from '../../core/services/notification-state
       overflow-x: hidden;
       box-sizing: border-box;
       padding-bottom: env(safe-area-inset-bottom, 16px);
+      display: flex;
+      flex-direction: column;
     }
     .modal-content::-webkit-scrollbar { width: 5px; }
     .modal-content::-webkit-scrollbar-track { background: transparent; }
@@ -1166,21 +1139,26 @@ import { NotificationStateService } from '../../core/services/notification-state
     .modal-close:hover { background: rgba(0, 0, 0, 0.15); transform: scale(1.1); }
     
     .quick-view-product {
-      padding: 14px 14px 10px;
+      padding: 0;
       margin: 0;
-      display: block;
-    }
-    .qv-image-wrap {
-      width: 100%;
-      height: 150px;
-      border-radius: 14px;
-      overflow: hidden;
-      margin-bottom: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex: 1;
+      width: 100%;
     }
-    .qv-image { width: 100%; height: 100%; object-fit: contain; padding: 12px; }
+    .qv-image-wrap {
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      overflow: hidden;
+      margin-bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8f9f0 !important;
+    }
+    .qv-image { width: 100%; height: 100%; object-fit: contain; padding: 20px; background: #f8f9f0; }
     .qv-category {
       font-size: 0.7rem;
       font-weight: 700;

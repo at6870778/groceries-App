@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
 import { PushNotifications, Token, PushNotificationSchema, ActionPerformed } from '@capacitor/push-notifications';
 import { ToastController } from '@ionic/angular/standalone';
 import { ApiService } from './api.service';
@@ -57,6 +58,11 @@ export class PushNotificationService {
 
     await PushNotifications.register();
 
+    // Listen for app resume from background
+    App.addListener('resume', () => {
+      this.notifState.load();
+    });
+
     // On token received — send to backend
     PushNotifications.addListener('registration', (token: Token) => {
       this.registerTokenWithBackend(token.value);
@@ -65,12 +71,18 @@ export class PushNotificationService {
     // Foreground notification — show as an in-app toast
     PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
       this.showToast(notification.title ?? 'Khanago', notification.body ?? '');
+      // Optimistic update: increment immediately for instant UI feedback
+      this.notifState.unreadCount.update(c => c + 1);
+      // Then refresh from server in background
       this.notifState.load();
     });
 
     // Notification tapped (background/killed)
     PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
       const clickAction = action.notification.data?.['click_action'];
+      // Optimistic update: increment immediately for instant UI feedback
+      this.notifState.unreadCount.update(c => c + 1);
+      // Then refresh from server in background
       this.notifState.load();
       this.handleClickAction(clickAction);
     });

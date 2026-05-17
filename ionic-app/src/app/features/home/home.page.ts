@@ -1127,16 +1127,16 @@ import { NotificationStateService } from '../../core/services/notification-state
     }
     .modal-content {
       width: 100%;
-      max-height: 92vh;
+      max-height: 100vh;
       background: #fff;
       border-radius: 28px 28px 0 0;
-      overflow: hidden;
       animation: slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       position: relative;
       box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
       display: flex;
       flex-direction: column;
       box-sizing: border-box;
+      overflow: hidden;
     }
     @keyframes slide-up {
       from { transform: translateY(100%); }
@@ -1168,6 +1168,7 @@ import { NotificationStateService } from '../../core/services/notification-state
       overflow-x: hidden;
       flex: 1;
       min-height: 0;
+      max-height: calc(100vh - 160px);
       display: flex;
       flex-direction: column;
       box-sizing: border-box;
@@ -1177,7 +1178,7 @@ import { NotificationStateService } from '../../core/services/notification-state
     .quick-view-product::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
     .qv-image-wrap {
       width: 100%;
-      height: 160px;
+      height: 120px;
       border-radius: 16px;
       overflow: hidden;
       margin-bottom: 16px;

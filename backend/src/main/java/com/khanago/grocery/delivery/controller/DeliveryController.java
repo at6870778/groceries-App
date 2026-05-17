@@ -19,7 +19,14 @@ public class DeliveryController {
     private final DeliveryService deliveryService;
 
     @GetMapping("/orders")
-    public List<OrderDto> myOrders() {
+    public List<OrderDto> myOrders(@RequestParam(required = false) String phone) {
+        // Validate phone if provided
+        if (phone != null && !phone.isEmpty()) {
+            com.khanago.grocery.user.User currentUser = com.khanago.grocery.security.SecurityUtils.getCurrentUser();
+            if (currentUser == null || !currentUser.getPhone().equals(phone)) {
+                throw new com.khanago.grocery.common.exception.ApiException("Phone number does not match authenticated user");
+            }
+        }
         return deliveryService.myAssignedOrders();
     }
 

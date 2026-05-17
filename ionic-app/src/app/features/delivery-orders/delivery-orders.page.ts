@@ -659,7 +659,12 @@ export class DeliveryOrdersPage implements OnInit {
   load() {
     this.loading.set(true);
     this.errorMsg.set('');
-    this.api.get<any[]>('/delivery/orders').subscribe({
+    
+    // Filter orders by the delivery person's phone number
+    const phone = this.riderPhone();
+    const endpoint = phone ? `/delivery/orders?phone=${encodeURIComponent(phone)}` : '/delivery/orders';
+    
+    this.api.get<any[]>(endpoint).subscribe({
       next: (res) => {
         this.orders.set(res || []);
         this.loading.set(false);

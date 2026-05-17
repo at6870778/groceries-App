@@ -1127,17 +1127,20 @@ import { NotificationStateService } from '../../core/services/notification-state
     }
     .modal-content {
       width: 100%;
-      max-height: 100vh;
+      max-height: 95vh;
       background: #fff;
       border-radius: 28px 28px 0 0;
       animation: slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       position: relative;
       box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
-      display: flex;
-      flex-direction: column;
+      overflow-y: auto;
+      overflow-x: hidden;
       box-sizing: border-box;
-      overflow: hidden;
+      padding-bottom: env(safe-area-inset-bottom, 16px);
     }
+    .modal-content::-webkit-scrollbar { width: 5px; }
+    .modal-content::-webkit-scrollbar-track { background: transparent; }
+    .modal-content::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
     @keyframes slide-up {
       from { transform: translateY(100%); }
       to { transform: translateY(0); }
@@ -1164,28 +1167,18 @@ import { NotificationStateService } from '../../core/services/notification-state
     
     .quick-view-product {
       padding: 16px 16px 12px;
-      overflow-y: auto;
-      overflow-x: hidden;
-      flex: 1;
-      min-height: 0;
-      max-height: calc(100vh - 160px);
-      display: flex;
-      flex-direction: column;
-      box-sizing: border-box;
+      margin: 0;
+      display: block;
     }
-    .quick-view-product::-webkit-scrollbar { width: 4px; }
-    .quick-view-product::-webkit-scrollbar-track { background: transparent; }
-    .quick-view-product::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
     .qv-image-wrap {
       width: 100%;
-      height: 120px;
+      height: 140px;
       border-radius: 16px;
       overflow: hidden;
       margin-bottom: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
     }
     .qv-image { width: 100%; height: 100%; object-fit: contain; padding: 12px; }
     .qv-category {
@@ -1252,17 +1245,14 @@ import { NotificationStateService } from '../../core/services/notification-state
     .qv-stock.low-stock { color: #ea580c; background: #fff7ed; }
     .qv-stock .out-of-stock { color: #dc2626; background: #fef2f2; }
     
-    .qv-body { flex-shrink: 0; margin-bottom: 0; }
+    .qv-body { margin: 0; }
     .qv-actions {
       display: flex;
       gap: 10px;
-      margin: 0;
-      padding: 14px 16px;
-      padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+      margin: 16px 0 0 0;
+      padding: 14px 16px 16px;
       border-top: 1px solid #f0f0f0;
       background: #fff;
-      z-index: 5;
-      flex-shrink: 0;
       box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
       box-sizing: border-box;
     }

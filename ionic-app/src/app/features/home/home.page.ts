@@ -1539,24 +1539,18 @@ export class HomePage implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    // Register back button handler - must happen before other listeners
-    const registerBackButton = async () => {
-      try {
-        this.backButtonListener = await App.addListener('backButton', async () => {
-          // If modal is open, close it instead of exiting app
-          if (this.showQuickViewModal()) {
-            this.closeQuickView();
-            return; // prevent default
-          } else {
-            // Close app
-            await App.exitApp();
-          }
-        });
-      } catch (err) {
-        console.error('Failed to register back button listener:', err);
+    // Register back button handler using same pattern as app.component.ts
+    this.backButtonListener = (e: Event) => {
+      // If modal is open, close it and prevent default back button behavior
+      if (this.showQuickViewModal()) {
+        e.preventDefault();
+        this.closeQuickView();
       }
+      // Otherwise let app.component handle it (back or exit)
     };
-    registerBackButton();
+    
+    // Listen to native back button event from MainActivity.java
+    window.addEventListener('androidBackButton', this.backButtonListener);
     this.notifState.load();
 
     // Load current user for personalization
@@ -1698,7 +1692,7 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.backButtonListener?.remove();
+    window.removeEventListener('androidBackButton', this.backButtonListener);
     window.removeEventListener('online', () => this.onOnline());
     window.removeEventListener('offline', () => this.onOffline());
     this.destroy$.next();

@@ -95,6 +95,7 @@ import { AuthService } from '../../core/services/auth.service';
               </div>
             </div>
             <div class="address-block">
+              <div class="address-label">📍 Deliver To</div>
               <div class="address-line">{{ order.deliveryAddress || 'N/A' }}</div>
               <ng-container *ngIf="extractNotes(order.notes) as noteInfo">
                 <div class="notes-line" *ngIf="noteInfo.village">🏘️ {{ noteInfo.village }}</div>

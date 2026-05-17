@@ -126,7 +126,7 @@ import { ActivityState } from '../../core/state/activity.state';
       <div class="addr-list" *ngIf="addresses().length > 0; else noAddresses">
         <div class="addr-card" *ngFor="let a of addresses()" [class.default-addr]="a.isDefault">
           <div class="addr-top">
-            <span class="addr-label" *ngIf="a.label">{{ a.label }}</span>
+            <span class="addr-label">{{ a.label || 'Address' }}</span>
             <span class="default-badge" *ngIf="a.isDefault">✓ Default</span>
           </div>
           <div class="addr-text">{{ formatAddress(a) }}</div>
@@ -664,7 +664,7 @@ export class ProfilePage implements OnInit, OnDestroy {
       if (!structured.city) return; // not enough data to auto-save
       const payload = {
         label: 'Home',
-        line1: structured.road || structured.suburb || 'My Location',
+        line1: structured.road || structured.suburb || '',
         line2: structured.suburb || '',
         city: structured.city,
         state: structured.state,

@@ -31,8 +31,9 @@ html, body {
   /* Responsive breakpoints */
   --breakpoint-xs: 320px;   /* Small phones (iPhone SE, Galaxy A21) */
   --breakpoint-sm: 375px;   /* Standard phones (iPhone 12, OnePlus 9) */
-  --breakpoint-md: 425px;   /* Medium phones (Galaxy S21, OnePlus 10) */
-  --breakpoint-lg: 768px;   /* Tablets */
+  --breakpoint-md: 412px;   /* Samsung Galaxy S20 Ultra width */
+  --breakpoint-lg: 425px;   /* Medium phones (Galaxy S21, OnePlus 10) */
+  --breakpoint-xl: 768px;   /* Tablets */
   
   /* Safe areas for notches */
   --safe-area-top: env(safe-area-inset-top, 0px);
@@ -42,12 +43,34 @@ html, body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   RESPONSIVE TYPOGRAPHY
+   RESPONSIVE TYPOGRAPHY - All phones
    ═══════════════════════════════════════════════════════════════════ */
 
+/* Extra small phones: ≤374px */
 @media (max-width: 374px) {
   :root {
-    font-size: 14px; /* Smaller phones get slightly smaller base font */
+    font-size: 14px;
+  }
+}
+
+/* Small phones: 375px-411px */
+@media (min-width: 375px) and (max-width: 411px) {
+  :root {
+    font-size: 15px;
+  }
+}
+
+/* Samsung Galaxy S20 Ultra & similar: 412px-424px */
+@media (min-width: 412px) and (max-width: 424px) {
+  :root {
+    font-size: 15.5px;
+  }
+}
+
+/* Medium phones: 425px+ */
+@media (min-width: 425px) {
+  :root {
+    font-size: 16px;
   }
 }
 
@@ -86,6 +109,111 @@ html, body {
 /* ═══════════════════════════════════════════════════════════════════
    PHONE-SPECIFIC FIXES
    ═══════════════════════════════════════════════════════════════════ */
+
+/* Extra small: ≤374px (iPhone SE, Galaxy A21) */
+@media (max-width: 374px) {
+  /* Tighter spacing for smallest phones */
+  .hdr-main-row { padding: 8px 12px 8px; }
+  .hdr-logo-wrap { gap: 4px; }
+  .logo-text { font-size: 1.1rem; }
+  .logo-tagline { font-size: 0.48rem; }
+  .hdr-deliver-text { max-width: 80px; font-size: 0.65rem; }
+  .search-input::placeholder { font-size: 0.72rem; }
+  .search-bar { padding: 7px 10px; }
+  
+  /* Modal adjustments */
+  .modal-overlay { padding: 12px; }
+  .modal-content { max-width: calc(100% - 24px); }
+  .qv-image-wrap { height: 240px; }
+  
+  /* Grid adjustments */
+  .prod-grid { gap: 10px; }
+  .prod-img-wrap { height: 90px; }
+  .prod-name { font-size: 0.78rem; }
+  .prod-price { font-size: 0.9rem; }
+  
+  /* Button sizing */
+  .add-btn-flat { padding: 6px 0; font-size: 0.75rem; }
+  .stepper { height: 28px; }
+  .step-btn { width: 28px; }
+}
+
+/* Small phones: 375px-411px (iPhone 12, OnePlus 9) */
+@media (min-width: 375px) and (max-width: 411px) {
+  .hdr-main-row { padding: 10px 14px 10px; }
+  .logo-text { font-size: 1.2rem; }
+  .logo-tagline { font-size: 0.54rem; }
+  .hdr-deliver-text { max-width: 90px; font-size: 0.68rem; }
+  .search-bar { padding: 8px 12px; }
+  .prod-grid { gap: 11px; }
+  .modal-content { max-height: 85vh; }
+}
+
+/* Samsung Galaxy S20 Ultra & similar: 412px-424px (THE CRITICAL BREAKPOINT) */
+@media (min-width: 412px) and (max-width: 424px) {
+  /* Ensure consistent header sizing */
+  .hdr-main-row { padding: 10px 14px 10px; }
+  .logo-text { font-size: 1.25rem; }
+  .logo-tagline { font-size: 0.56rem; }
+  .hdr-deliver-text { max-width: 100px; font-size: 0.70rem; }
+  
+  /* Modal: ensure full visibility and proper spacing */
+  .modal-overlay { padding: 16px; }
+  .modal-content { 
+    max-width: calc(100% - 32px); 
+    max-height: 90vh; 
+  }
+  .qv-image-wrap { height: 280px; }
+  .qv-details { padding: 16px; }
+  .qv-name { font-size: 1.1rem; }
+  .qv-price { font-size: 1.25rem; }
+  .qv-actions { 
+    padding: 14px 16px; 
+    gap: 10px;
+  }
+  
+  /* Grid spacing - consistent with smaller phones but slightly more generous */
+  .prod-grid { gap: 12px; }
+  .prod-img-wrap { height: 100px; }
+  .prod-name { font-size: 0.84rem; }
+  .prod-price { font-size: 0.95rem; }
+  .section-title { font-size: 1rem; }
+  
+  /* Button sizing for S20 Ultra */
+  .add-btn-flat { padding: 7px 0; font-size: 0.78rem; }
+  .qv-cancel-btn { font-size: 0.88rem; }
+  .qv-add-btn { font-size: 0.88rem; }
+  
+  /* Category chips */
+  .cat-chip { padding: 8px 6px 10px; }
+  .chip-emoji { font-size: 1.25rem; }
+  .chip-label { font-size: 0.60rem; }
+}
+
+/* Medium phones: 425px-480px (Galaxy S21, standard Android) */
+@media (min-width: 425px) and (max-width: 480px) {
+  .hdr-main-row { padding: 10px 14px 10px; }
+  .logo-text { font-size: 1.3rem; }
+  .logo-tagline { font-size: 0.56rem; }
+  .prod-grid { gap: 12px; }
+  .qv-image-wrap { height: 300px; }
+  .modal-content { max-width: 450px; }
+}
+
+/* Large phones: 481px-600px (Larger Androids, iPhones Plus) */
+@media (min-width: 481px) and (max-width: 600px) {
+  .prod-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .modal-content { max-width: 500px; }
+  .qv-image-wrap { height: 320px; }
+}
+
+/* Tablets: 768px+ */
+@media (min-width: 768px) {
+  .prod-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .hdr-main-row { padding: 14px 20px; }
+  .modal-content { max-width: 600px; }
+  .qv-image-wrap { height: 400px; }
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    COMPREHENSIVE RESPONSIVE UTILITIES

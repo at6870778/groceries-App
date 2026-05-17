@@ -90,6 +90,18 @@ import { NotificationStateService } from '../../core/services/notification-state
         <button class="announce-close" (click)="dismissBanner()" aria-label="Dismiss">✕</button>
       </div>
 
+      <!-- ══ PERSONALIZED WELCOME BANNER ══ -->
+      <div class="welcome-banner">
+        <div class="welcome-content">
+          <h2 class="welcome-greeting">{{ welcomeGreeting() }}</h2>
+          <p class="welcome-sub">Your groceries in 15 minutes</p>
+        </div>
+        <svg class="welcome-decoration" width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <circle cx="24" cy="24" r="20" fill="rgba(102,126,234,0.1)" stroke="#667eea" stroke-width="1.5"/>
+          <path d="M24 14v20M14 24h20" stroke="#667eea" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+
       <!-- ═══════════════════════════════════════
            SEARCH RESULTS MODE
       ═══════════════════════════════════════ -->
@@ -100,7 +112,7 @@ import { NotificationStateService } from '../../core/services/notification-state
         </div>
         <div class="prod-grid" *ngIf="filteredProducts().length > 0; else noSearchResults">
           <div class="prod-card" *ngFor="let p of filteredProducts().slice(0,24); let i = index"
-            [style.animationDelay.ms]="i*30" [routerLink]="['/products']" [queryParams]="{ query: p.name }">
+            [style.animationDelay.ms]="i*30" (click)="openQuickView(p, $event)">
             <div class="disc-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
             <div class="prod-img-wrap" [style.background]="p.imageUrl ? '#f8f9f0' : productBg(p)">
               <img *ngIf="p.imageUrl" class="prod-img" [src]="p.imageUrl" [alt]="p.name">
@@ -204,7 +216,7 @@ import { NotificationStateService } from '../../core/services/notification-state
               <div class="prod-card"
                 *ngFor="let p of (selectedCategoryId() === null ? allProducts().slice(0,40) : categoryProducts()); let i = index"
                 [style.animationDelay.ms]="i*20"
-                [routerLink]="['/products']" [queryParams]="{ query: p.name }">
+                (click)="openQuickView(p, $event)">
                 <div class="disc-badge" *ngIf="getDiscount(p) > 0">{{ getDiscount(p) }}%</div>
                 <div class="prod-img-wrap" [style.background]="p.imageUrl ? '#f8f9f0' : productBg(p)">
                   <img *ngIf="p.imageUrl" class="prod-img" [src]="p.imageUrl" [alt]="p.name">
@@ -237,6 +249,51 @@ import { NotificationStateService } from '../../core/services/notification-state
 
       </ng-container>
     </ion-content>
+
+    <!-- ══════════════════════════════════════
+         QUICK-VIEW MODAL
+    ══════════════════════════════════════ -->
+    <div class="modal-overlay" *ngIf="showQuickViewModal()" (click)="closeQuickView()">
+      <div class="modal-content" (click)="$event.stopPropagation()" [@slideUp]>
+        <button class="modal-close" (click)="closeQuickView()">✕</button>
+        <div *ngIf="selectedProductForModal() as product" class="quick-view-product">
+          <div class="qv-image-wrap" [style.background]="productBg(product)">
+            <img *ngIf="product.imageUrl" class="qv-image" [src]="product.imageUrl" [alt]="product.name">
+          </div>
+          <div class="qv-body">
+            <div class="qv-category">{{ product.categoryName }}</div>
+            <h3 class="qv-name">{{ product.name }}</h3>
+            <p class="qv-description">{{ product.description }}</p>
+            <div class="qv-unit">{{ product.unit }}</div>
+            <div class="qv-price-row">
+              <span class="qv-mrp" *ngIf="getDiscount(product) > 0">₹{{ getOriginalPrice(product) }}</span>
+              <span class="qv-price">₹{{ product.sellingPrice }}</span>
+              <span class="qv-discount" *ngIf="getDiscount(product) > 0">{{ getDiscount(product) }}% OFF</span>
+            </div>
+            <div class="qv-stock" [class.low-stock]="product.stockQty < 5">
+              <span *ngIf="product.stockQty > 0">{{ product.stockQty }} items in stock</span>
+              <span *ngIf="product.stockQty === 0" class="out-of-stock">Out of stock</span>
+            </div>
+            <div class="qv-actions">
+              <button class="qv-cancel-btn" (click)="closeQuickView()">Continue Shopping</button>
+              <ng-container *ngIf="cartQty(product.id) === 0; else qvStep">
+                <button class="qv-add-btn" (click)="addToCartFromModal(product)" [disabled]="product.stockQty === 0">
+                  <span class="add-icon">+</span> Add to Cart
+                </button>
+              </ng-container>
+              <ng-template #qvStep>
+                <div class="qv-stepper">
+                  <button class="qv-step-btn" (click)="removeFromCart(product)">−</button>
+                  <span class="qv-qty">{{ cartQty(product.id) }}</span>
+                  <button class="qv-step-btn" (click)="addToCart(product)">+</button>
+                </div>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <app-bottom-nav></app-bottom-nav>
   `,
   styles: [`
@@ -907,6 +964,291 @@ import { NotificationStateService } from '../../core/services/notification-state
     .empty-title { font-weight: 700; font-size: 1rem; color: #444; }
     .empty-sub { font-size: 0.83rem; color: #888; margin-top: 4px; }
     @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* ══════════════════════════════════════
+       WELCOME BANNER — PERSONALIZATION
+    ══════════════════════════════════════ */
+    .welcome-banner {
+      margin: 12px 14px 16px;
+      padding: 16px 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+      animation: slide-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .welcome-content { flex: 1; }
+    .welcome-greeting {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.3;
+    }
+    .welcome-sub {
+      margin: 4px 0 0;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.85);
+      font-weight: 500;
+    }
+    .welcome-decoration {
+      animation: float-bounce 3s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes float-bounce {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    /* ══════════════════════════════════════
+       PRODUCT CARD — ENHANCED WITH HOVER LIFT
+    ══════════════════════════════════════ */
+    .prod-card {
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .prod-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 32px rgba(102, 126, 234, 0.25);
+      border-color: #667eea;
+    }
+    .prod-card:active {
+      transform: translateY(-4px);
+    }
+    
+    /* Enhance CTA button with brand color */
+    .add-btn-flat {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(102, 126, 234, 0.05));
+      transition: all 0.25s ease;
+    }
+    .add-btn-flat:hover {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border-color: transparent;
+    }
+    .add-btn-flat:active {
+      background: linear-gradient(135deg, #5568d3, #6a3d94);
+      transform: scale(0.98);
+    }
+    
+    /* Stepper with brand gradient */
+    .stepper {
+      background: linear-gradient(135deg, #667eea, #764ba2) !important;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    /* ══════════════════════════════════════
+       QUICK-VIEW MODAL
+    ══════════════════════════════════════ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: flex-end;
+      z-index: 1000;
+      animation: fade-in 0.3s ease;
+    }
+    @keyframes fade-in {
+      from { opacity: 0; backdrop-filter: blur(0px); }
+      to { opacity: 1; backdrop-filter: blur(4px); }
+    }
+    .modal-content {
+      width: 100%;
+      max-height: 85vh;
+      background: #fff;
+      border-radius: 28px 28px 0 0;
+      overflow-y: auto;
+      animation: slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
+    }
+    @keyframes slide-up {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.08);
+      border: none;
+      font-size: 1.4rem;
+      color: #1a1a1a;
+      cursor: pointer;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .modal-close:hover { background: rgba(0, 0, 0, 0.15); transform: scale(1.1); }
+    
+    .quick-view-product { padding: 24px 16px 24px; }
+    .qv-image-wrap {
+      width: 100%;
+      height: 280px;
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .qv-image { width: 100%; height: 100%; object-fit: contain; padding: 16px; }
+    .qv-category {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #667eea;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 6px;
+    }
+    .qv-name {
+      margin: 0 0 8px;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #1a1a1a;
+      line-height: 1.3;
+    }
+    .qv-description {
+      margin: 0 0 12px;
+      font-size: 0.9rem;
+      color: #666;
+      line-height: 1.5;
+    }
+    .qv-unit {
+      font-size: 0.85rem;
+      color: #999;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+    .qv-price-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .qv-mrp {
+      text-decoration: line-through;
+      color: #bbb;
+      font-size: 0.9rem;
+    }
+    .qv-price {
+      font-weight: 800;
+      font-size: 1.6rem;
+      color: #1a1a1a;
+    }
+    .qv-discount {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 4px 8px;
+      border-radius: 6px;
+      margin-left: auto;
+    }
+    .qv-stock {
+      font-size: 0.8rem;
+      color: #16a34a;
+      font-weight: 600;
+      margin-bottom: 16px;
+      padding: 8px 12px;
+      background: #f0fdf4;
+      border-radius: 8px;
+    }
+    .qv-stock.low-stock { color: #ea580c; background: #fff7ed; }
+    .qv-stock .out-of-stock { color: #dc2626; background: #fef2f2; }
+    
+    .qv-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .qv-cancel-btn {
+      flex: 1;
+      padding: 12px 16px;
+      background: #f5f6fa;
+      border: 1.5px solid #e8ecf4;
+      border-radius: 12px;
+      font-weight: 700;
+      color: #667eea;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.95rem;
+    }
+    .qv-cancel-btn:hover {
+      background: #eff1ff;
+      border-color: #667eea;
+    }
+    .qv-add-btn {
+      flex: 1;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .qv-add-btn:hover {
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+      transform: translateY(-2px);
+    }
+    .qv-add-btn:active {
+      transform: translateY(0);
+    }
+    .qv-add-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .add-icon { font-size: 1.1rem; }
+    
+    .qv-stepper {
+      display: flex;
+      align-items: stretch;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 10px;
+      overflow: hidden;
+      height: 44px;
+      flex: 1;
+    }
+    .qv-step-btn {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 1.3rem;
+      font-weight: 700;
+      width: 44px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: all 0.2s ease;
+    }
+    .qv-step-btn:active { transform: scale(0.9); }
+    .qv-qty {
+      color: #fff;
+      font-weight: 700;
+      font-size: 1rem;
+      flex: 1;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     /* ══════════════════════════════════════
        RESTAURANT CARDS
     ══════════════════════════════════════ */
@@ -1046,6 +1388,21 @@ export class HomePage implements OnInit, OnDestroy {
     return { background: p.ib, color: p.ic, 'box-shadow': `0 2px 8px ${p.is}`, 'border-color': p.ibr, 'animation-delay': `${index * 0.07}s` };
   }
 
+  /** User personalization — welcome message */
+  readonly currentUserName = signal<string>('Guest');
+  readonly welcomeGreeting = computed(() => {
+    const name = this.currentUserName();
+    const hour = new Date().getHours();
+    let greeting = '🌅 Good Morning';
+    if (hour >= 12 && hour < 18) greeting = '🌤️ Good Afternoon';
+    else if (hour >= 18) greeting = '🌙 Good Evening';
+    return `${greeting}, ${name}!`;
+  });
+
+  /** Quick-view modal state */
+  readonly selectedProductForModal = signal<any>(null);
+  readonly showQuickViewModal = signal(false);
+
   readonly shortDeliveryLabel = computed(() => {
     const full = this.deliveryLabel();
     return full.length > 28 ? full.slice(0, 26) + '…' : full;
@@ -1091,6 +1448,17 @@ export class HomePage implements OnInit, OnDestroy {
   ngOnInit() {
     this.backButtonListener = App.addListener('backButton', () => App.exitApp());
     this.notifState.load();
+
+    // Load current user for personalization
+    this.api.get<any>('/customer/profile')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (profile) => {
+          const firstName = profile?.fullName?.split(' ')[0] || profile?.name?.split(' ')[0] || 'Friend';
+          this.currentUserName.set(firstName);
+        },
+        error: () => this.currentUserName.set('Friend')
+      });
 
     // Listen for online/offline events
     window.addEventListener('online', () => this.onOnline());
@@ -1500,6 +1868,22 @@ export class HomePage implements OnInit, OnDestroy {
   productBg(product: any) {
     const colors = ['#ffe3c2', '#c2e3ff', '#e3c2ff', '#c2ffe3', '#ffffc2', '#ffc2c2'];
     return colors[Math.abs(product.id % colors.length)];
+  }
+
+  openQuickView(product: any, event?: Event): void {
+    if (event) event.stopPropagation();
+    this.selectedProductForModal.set(product);
+    this.showQuickViewModal.set(true);
+  }
+
+  closeQuickView(): void {
+    this.showQuickViewModal.set(false);
+    setTimeout(() => this.selectedProductForModal.set(null), 200);
+  }
+
+  addToCartFromModal(product: any): void {
+    this.addToCart(product);
+    this.closeQuickView();
   }
 
   categoryImage(category: any) {

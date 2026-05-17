@@ -752,6 +752,14 @@ export class DeliveryLoginPage implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.startSlider();
+    
+    // Check if there's a suggested role from another section (e.g., delivery person switching to shop)
+    const suggestedRole = localStorage.getItem('suggested_role') as 'CUSTOMER' | 'DELIVERY_BOY' | null;
+    if (suggestedRole) {
+      this.mode = suggestedRole;
+      localStorage.removeItem('suggested_role');
+    }
+    
     // Show prompt if: never asked before, OR location not yet detected
     const locationAsked = localStorage.getItem('orderkro_location_asked');
     const alreadyHasLocation = !!this.locationService.currentLocation();

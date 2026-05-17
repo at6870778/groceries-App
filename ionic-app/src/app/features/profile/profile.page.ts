@@ -126,7 +126,7 @@ import { ActivityState } from '../../core/state/activity.state';
       <div class="addr-list" *ngIf="addresses().length > 0; else noAddresses">
         <div class="addr-card" *ngFor="let a of addresses()" [class.default-addr]="a.isDefault">
           <div class="addr-top">
-            <span class="addr-label">{{ a.label || 'Address' }}</span>
+            <span class="addr-label" *ngIf="a.label">{{ a.label }}</span>
             <span class="default-badge" *ngIf="a.isDefault">✓ Default</span>
           </div>
           <div class="addr-text">{{ formatAddress(a) }}</div>
@@ -172,7 +172,10 @@ import { ActivityState } from '../../core/state/activity.state';
         <p class="support-meta">Address: {{ supportContact().addressLine }}</p>
       </div>
 
-      <ion-button expand="block" color="danger" style="margin-top:24px;" (click)="logout()">Logout</ion-button>
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <ion-button expand="block" color="secondary" *ngIf="hasDeliveryToken()" (click)="switchToDelivery()">🚴 Deliver</ion-button>
+        <ion-button expand="block" color="danger" (click)="logout()">Logout</ion-button>
+      </div>
 
     </ion-content>
     <app-bottom-nav></app-bottom-nav>
@@ -777,6 +780,31 @@ export class ProfilePage implements OnInit, OnDestroy {
     this.api.delete(`/customer/profile/addresses/${id}`)
       .pipe(takeUntil(this.destroy$))
       .subscribe({ next: () => this.loadAddresses(), error: () => {} });
+  }
+
+  hasDeliveryToken(): boolean {
+    const token = localStorage.getItem('delivery_token');
+    return !!token && token !== 'undefined' && token !== 'null';
+  }
+
+  switchToDelivery() {
+    const deliveryToken = localStorage.getItem('delivery_token');
+    if (!deliveryToken || deliveryToken === 'undefined' || deliveryToken === 'null') {
+      return; // Should not happen since button is hidden if no token
+    }
+    try {
+      const payload = JSON.parse(atob(deliveryToken.split('.')[1]));
+      if (payload.exp && payload.exp * 1000 > Date.now()) {
+        // Token is valid, switch to delivery mode
+        this.auth.activeRole.set('DELIVERY_BOY');
+        localStorage.setItem('active_role', 'DELIVERY_BOY');
+        this.router.navigateByUrl('/delivery/orders', { replaceUrl: true });
+        return;
+      }
+    } catch { /* invalid token */ }
+    // Token expired, redirect to login
+    alert('Your delivery session has expired. Please login again.');
+    this.router.navigateByUrl('/login');
   }
 
   logout() {

@@ -80,7 +80,7 @@ declare global {
                  (click)="selectSavedAddress(a)">
               <span class="addr-item-icon">🏠</span>
               <div class="addr-item-body">
-                <div class="addr-item-label">{{ a.label || 'Address' }}</div>
+                <div class="addr-item-label" *ngIf="a.label">{{ a.label }}</div>
                 <div class="addr-item-line">{{ formatAddress(a) }}</div>
               </div>
               <span class="addr-tick" *ngIf="selectedAddressId() === a.id">✓</span>

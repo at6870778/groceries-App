@@ -15,7 +15,10 @@ import { AuthService } from '../../core/services/auth.service';
           <ion-title>Delivery Orders</ion-title>
           <span class="order-count">{{ orders().length }} Active</span>
         </div>
-        <button class="logout-btn" (click)="logout()">Logout</button>
+        <div class="header-buttons">
+          <button class="shop-btn" (click)="switchToShop()" title="Switch to Shop mode">🛍️ Shop</button>
+          <button class="logout-btn" (click)="logout()">Logout</button>
+        </div>
       </ion-toolbar>
 
       <div class="rider-strip">
@@ -92,7 +95,6 @@ import { AuthService } from '../../core/services/auth.service';
               </div>
             </div>
             <div class="address-block">
-              <div class="address-label">📍 Deliver To</div>
               <div class="address-line">{{ order.deliveryAddress || 'N/A' }}</div>
               <ng-container *ngIf="extractNotes(order.notes) as noteInfo">
                 <div class="notes-line" *ngIf="noteInfo.village">🏘️ {{ noteInfo.village }}</div>
@@ -173,6 +175,29 @@ import { AuthService } from '../../core/services/auth.service';
       font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.2px;
+    }
+
+    .header-buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .shop-btn {
+      border: 1px solid rgba(255,255,255,0.55);
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border-radius: 18px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .shop-btn:hover {
+      background: linear-gradient(135deg, #764ba2, #667eea);
+      transform: scale(1.05);
     }
 
     .logout-btn {
@@ -739,4 +764,23 @@ export class DeliveryOrdersPage implements OnInit {
     this.auth.clearTokens();
     this.router.navigateByUrl('/login', { replaceUrl: true });
   }
-}
+
+  switchToShop() {
+    // Check if already has customer token
+    const customerToken = localStorage.getItem('customer_token');
+    if (customerToken && customerToken !== 'undefined' && customerToken !== 'null') {
+      try {
+        const payload = JSON.parse(atob(customerToken.split('.')[1]));
+        if (payload.exp && payload.exp * 1000 > Date.now()) {
+          // Token is valid, switch to customer mode
+          this.auth.activeRole.set('CUSTOMER');
+          localStorage.setItem('active_role', 'CUSTOMER');
+          this.router.navigateByUrl('/home', { replaceUrl: true });
+          return;
+        }
+      } catch { /* invalid token, fall through to login */ }
+    }
+    // No valid customer token, redirect to login in customer mode
+    localStorage.setItem('suggested_role', 'CUSTOMER');
+    this.router.navigateByUrl('/login');
+  }

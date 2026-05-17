@@ -263,9 +263,9 @@ import { NotificationStateService } from '../../core/services/notification-state
             <h2 class="qv-name">{{ product.name }}</h2>
             <div class="qv-unit" *ngIf="product.unit">{{ product.unit }}</div>
             <div class="qv-price-row">
-              <span class="qv-price">₹{{ product.price }}</span>
-              <span class="qv-mrp" *ngIf="product.mrp && product.mrp > product.price">₹{{ product.mrp }}</span>
-              <span class="qv-discount" *ngIf="product.discount">{{ product.discount }}% OFF</span>
+              <span class="qv-price">₹{{ product.sellingPrice }}</span>
+              <span class="qv-mrp" *ngIf="product.mrp && product.mrp > product.sellingPrice">₹{{ product.mrp }}</span>
+              <span class="qv-discount" *ngIf="getDiscount(product) > 0">{{ getDiscount(product) }}% OFF</span>
             </div>
             <div class="qv-description" *ngIf="product.description">{{ product.description }}</div>
           </div>
@@ -1583,8 +1583,10 @@ export class HomePage implements OnInit, OnDestroy {
       if (this.showQuickViewModal()) {
         e.preventDefault();
         this.closeQuickView();
+        return;
       }
-      // Otherwise let app.component handle it (back or exit)
+      // If modal is closed, don't prevent default - let global handler (app.component.ts) take over
+      // This allows proper navigation back to previous page or exit on double-tap
     };
     
     // Listen to native back button event from MainActivity.java

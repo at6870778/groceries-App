@@ -326,28 +326,51 @@ import { NotificationStateService } from '../../core/services/notification-state
     .hdr-logo-wrap {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .hdr-logo-wrap:hover {
+      transform: translateY(-2px);
+    }
+    .hdr-logo-wrap:hover .logo-leaf {
+      animation: scooter-zoom 1.8s cubic-bezier(0.4,0,0.6,1) infinite;
     }
     .logo-text-wrap {
       display: flex;
       flex-direction: column;
       gap: 1px;
     }
-    /* Scooter — forward lean on motion */
+    /* Scooter — delivery motion with speed boost */
     .logo-leaf {
-      font-size: 1.35rem;
+      font-size: 1.4rem;
       line-height: 1;
       display: inline-block;
-      animation: scooter-ride 1.8s cubic-bezier(0.4,0,0.6,1) infinite;
-      transform-origin: center bottom;
+      animation: scooter-ride 2.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+      transform-origin: center center;
+      filter: drop-shadow(0 2px 4px rgba(102, 126, 234, 0));
+      transition: filter 0.3s ease;
+    }
+    .hdr-logo-wrap:hover .logo-leaf {
+      filter: drop-shadow(0 2px 8px rgba(102, 126, 234, 0.4));
     }
     @keyframes scooter-ride {
-      0%   { transform: translateX(0px) rotate(0deg)   translateY(0px); }
-      18%  { transform: translateX(3px) rotate(-5deg)  translateY(-2px); }
-      36%  { transform: translateX(0px) rotate(0deg)   translateY(0px); }
-      54%  { transform: translateX(2px) rotate(-3deg)  translateY(-1px); }
-      72%  { transform: translateX(0px) rotate(0deg)   translateY(0px); }
-      100% { transform: translateX(0px) rotate(0deg)   translateY(0px); }
+      0%   { transform: translateX(-2px) rotate(-8deg) scaleX(1); }
+      15%  { transform: translateX(2px) rotate(-4deg) scaleX(1.05); }
+      30%  { transform: translateX(4px) rotate(0deg) scaleX(1); }
+      45%  { transform: translateX(2px) rotate(4deg) scaleX(0.95); }
+      60%  { transform: translateX(0px) rotate(8deg) scaleX(1.02); }
+      75%  { transform: translateX(-2px) rotate(4deg) scaleX(1); }
+      100% { transform: translateX(-2px) rotate(-8deg) scaleX(1); }
+    }
+    @keyframes scooter-zoom {
+      0%   { transform: translateX(-2px) rotate(-8deg) scaleX(1) scale(1); }
+      15%  { transform: translateX(2px) rotate(-4deg) scaleX(1.05) scale(1.1); }
+      30%  { transform: translateX(4px) rotate(0deg) scaleX(1) scale(1.12); }
+      45%  { transform: translateX(2px) rotate(4deg) scaleX(0.95) scale(1.08); }
+      60%  { transform: translateX(0px) rotate(8deg) scaleX(1.02) scale(1.1); }
+      75%  { transform: translateX(-2px) rotate(4deg) scaleX(1) scale(1.06); }
+      100% { transform: translateX(-2px) rotate(-8deg) scaleX(1) scale(1); }
     }
     /* "OrderKro" text */
     .logo-text {
@@ -355,26 +378,40 @@ import { NotificationStateService } from '../../core/services/notification-state
       font-weight: 900;
       letter-spacing: -0.6px;
       line-height: 1.1;
+      background: linear-gradient(135deg, #111827 0%, #667eea 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: text-gradient-shift 4s ease-in-out infinite;
     }
-    /* "Order" — sweeps dark→purple→dark */
+    @keyframes text-gradient-shift {
+      0%, 100% { background: linear-gradient(135deg, #111827 0%, #667eea 100%); }
+      50% { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    }
+    /* "Order" — dynamic gradient sweep */
     .logo-o {
       display: inline-block;
-      color: #111827;
       animation: order-sweep 3.5s ease-in-out infinite;
+      font-weight: 900;
     }
     @keyframes order-sweep {
-      0%, 100% { color: #111827; }
-      50%       { color: #667eea; }
+      0%, 100% { color: #111827; text-shadow: none; }
+      50% { color: #667eea; text-shadow: 0 0 8px rgba(102, 126, 234, 0.4); }
     }
-    /* "Kro" — glowing purple pulse */
+    /* "Kro" — glowing purple pulse with enhanced effects */
     .logo-k {
       display: inline-block;
       color: #667eea;
-      animation: kro-glow 2.2s ease-in-out infinite alternate;
+      animation: kro-glow 2.2s ease-in-out infinite alternate, kro-bounce 2.2s ease-in-out infinite alternate;
+      font-weight: 900;
     }
     @keyframes kro-glow {
-      from { color: #667eea; text-shadow: 0 0 4px rgba(108,71,255,0.2); transform: scale(1); }
-      to   { color: #9c6fff; text-shadow: 0 0 14px rgba(108,71,255,0.7), 0 0 28px rgba(108,71,255,0.3); transform: scale(1.06); }
+      from { color: #667eea; text-shadow: 0 0 4px rgba(102, 126, 234, 0.3); }
+      to   { color: #764ba2; text-shadow: 0 0 12px rgba(118, 75, 162, 0.6), 0 0 24px rgba(102, 126, 234, 0.3); }
+    }
+    @keyframes kro-bounce {
+      from { transform: scale(1) translateY(0px); }
+      to   { transform: scale(1.08) translateY(-1px); }
     }
     /* Tagline */
     .logo-tagline {
@@ -382,19 +419,26 @@ import { NotificationStateService } from '../../core/services/notification-state
       font-weight: 700;
       letter-spacing: 0.06em;
       line-height: 1;
-      color: #6b7280;
+      color: #667eea;
       display: flex;
       align-items: center;
-      gap: 2px;
+      gap: 3px;
+      animation: tagline-pulse 3s ease-in-out infinite;
+    }
+    @keyframes tagline-pulse {
+      0%, 100% { color: #667eea; opacity: 0.9; }
+      50% { color: #764ba2; opacity: 1; }
     }
     .tagline-zap {
-      font-size: 0.6rem;
-      animation: zap-flash 1.6s ease-in-out infinite;
+      font-size: 0.65rem;
+      animation: zap-flash 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+      display: inline-block;
     }
     @keyframes zap-flash {
-      0%, 100% { opacity: 1;   transform: scale(1);    }
-      45%      { opacity: 0.4; transform: scale(0.85); }
-      55%      { opacity: 1;   transform: scale(1.2);  }
+      0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
+      25% { opacity: 0.5; transform: scale(1.1) rotate(-8deg); }
+      50% { opacity: 1; transform: scale(1.3) rotate(0deg); }
+      75% { opacity: 0.6; transform: scale(0.9) rotate(8deg); }
     }
     .hdr-deliver {
       display: flex;

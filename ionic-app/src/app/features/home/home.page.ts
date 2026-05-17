@@ -256,6 +256,19 @@ import { NotificationStateService } from '../../core/services/notification-state
           <div class="qv-image-wrap" [style.background]="productBg(product)">
             <img *ngIf="product.imageUrl" class="qv-image" [src]="product.imageUrl" [alt]="product.name">
           </div>
+          <div class="qv-actions">
+            <button class="qv-cancel-btn" (click)="closeQuickView()">Continue Shopping</button>
+            <ng-container *ngIf="cartQty(product.id) === 0; else qvStep">
+              <button class="qv-add-btn" (click)="addToCartFromModal(product)">+ Add to Cart</button>
+            </ng-container>
+            <ng-template #qvStep>
+              <div class="qv-stepper">
+                <button class="qv-step-btn" (click)="removeFromCart(product)">−</button>
+                <span class="qv-qty">{{ cartQty(product.id) }}</span>
+                <button class="qv-step-btn" (click)="addToCart(product)">+</button>
+              </div>
+            </ng-template>
+          </div>
         </div>
       </div>
     </div>
@@ -1098,7 +1111,6 @@ import { NotificationStateService } from '../../core/services/notification-state
     .modal-content {
       width: 100%;
       max-height: 90vh;
-      height: 90vh;
       background: #fff;
       border-radius: 28px 28px 0 0;
       animation: slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1141,174 +1153,124 @@ import { NotificationStateService } from '../../core/services/notification-state
     .quick-view-product {
       padding: 0;
       margin: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex: 1;
+      display: block;
       width: 100%;
     }
     .qv-image-wrap {
       width: 100%;
-      height: 100%;
+      height: 350px;
       border-radius: 0;
       overflow: hidden;
-      margin-bottom: 0;
+      margin-bottom: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
       background: #f8f9f0 !important;
     }
-    .qv-image { width: 100%; height: 100%; object-fit: contain; padding: 20px; background: #f8f9f0; }
-    .qv-category {
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: #667eea;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-      margin-bottom: 3px;
+    .qv-image { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: contain; 
+      padding: 30px;
+      background: #f8f9f0;
     }
-    .qv-name {
-      margin: 0 0 4px;
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: #1a1a1a;
-      line-height: 1.2;
-    }
-    .qv-description {
-      margin: 0 0 4px;
-      font-size: 0.8rem;
-      color: #666;
-      line-height: 1.3;
-    }
-    .qv-unit {
-      font-size: 0.75rem;
-      color: #999;
-      margin-bottom: 4px;
-      font-weight: 500;
-    }
-    .qv-price-row {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      margin-bottom: 6px;
-    }
-    .qv-mrp {
-      text-decoration: line-through;
-      color: #bbb;
-      font-size: 0.85rem;
-    }
-    .qv-price {
-      font-weight: 800;
-      font-size: 1.2rem;
-      color: #1a1a1a;
-    }
-    .qv-discount {
-      background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
-      color: #fff;
-      font-size: 0.7rem;
-      font-weight: 800;
-      padding: 3px 7px;
-      border-radius: 5px;
-      margin-left: auto;
-    }
-    .qv-stock {
-      font-size: 0.75rem;
-      color: #16a34a;
-      font-weight: 600;
-      margin-bottom: 8px;
-      padding: 6px 8px;
-      background: #f0fdf4;
-      border-radius: 6px;
-    }
-    .qv-stock.low-stock { color: #ea580c; background: #fff7ed; }
-    .qv-stock .out-of-stock { color: #dc2626; background: #fef2f2; }
     
-    .qv-body { margin: 0; }
     .qv-actions {
       display: flex;
-      gap: 8px;
-      margin: 8px 0 0 0;
-      padding: 12px 14px 14px;
+      gap: 10px;
+      margin: 0;
+      padding: 16px 16px 20px;
       border-top: 1px solid #f0f0f0;
       background: #fff;
-      box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
-      box-sizing: border-box;
+      flex-wrap: wrap;
+      justify-content: space-between;
     }
+    
     .qv-cancel-btn {
       flex: 1;
-      padding: 9px 12px;
-      background: #f5f6fa;
-      border: 1.5px solid #e8ecf4;
-      border-radius: 9px;
-      font-weight: 700;
-      color: #667eea;
+      min-width: 120px;
+      padding: 12px 16px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      color: #1a1a1a;
       cursor: pointer;
-      transition: all 0.2s ease;
-      font-size: 0.9rem;
+      transition: all 0.3s ease;
     }
+    .qv-cancel-btn:hover {
+      background: #efefef;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
     .qv-add-btn {
       flex: 1;
-      padding: 9px 12px;
+      min-width: 120px;
+      padding: 12px 16px;
       background: linear-gradient(135deg, #667eea, #764ba2);
-      border: none;
-      border-radius: 9px;
-      font-weight: 700;
       color: #fff;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
       cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      font-size: 0.9rem;
+      transition: all 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
+      gap: 6px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
     }
     .qv-add-btn:hover {
-      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
       transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
     }
     .qv-add-btn:active {
       transform: translateY(0);
     }
-    .qv-add-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    .add-icon { font-size: 0.95rem; }
     
     .qv-stepper {
-      display: flex;
-      align-items: stretch;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      border-radius: 9px;
-      overflow: hidden;
-      height: 40px;
       flex: 1;
-    }
-    .qv-step-btn {
-      background: transparent;
-      border: none;
-      color: #fff;
-      font-size: 1.2rem;
-      font-weight: 700;
-      width: 40px;
-      cursor: pointer;
+      min-width: 120px;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 0;
-      transition: all 0.2s ease;
+      gap: 8px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 10px;
+      padding: 0 12px;
+      height: 44px;
     }
-    .qv-step-btn:active { transform: scale(0.9); }
+    
+    .qv-step-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: rgba(255, 255, 255, 0.3);
+      color: #fff;
+      border-radius: 6px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+    .qv-step-btn:hover {
+      background: rgba(255, 255, 255, 0.5);
+    }
+    
     .qv-qty {
       color: #fff;
       font-weight: 700;
-      font-size: 0.95rem;
-      flex: 1;
+      font-size: 1rem;
+      min-width: 20px;
       text-align: center;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
+
 
     /* ══════════════════════════════════════
        RESTAURANT CARDS

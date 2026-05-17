@@ -378,15 +378,7 @@ import { NotificationStateService } from '../../core/services/notification-state
       font-weight: 900;
       letter-spacing: -0.6px;
       line-height: 1.1;
-      background: linear-gradient(135deg, #111827 0%, #667eea 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      animation: text-gradient-shift 4s ease-in-out infinite;
-    }
-    @keyframes text-gradient-shift {
-      0%, 100% { background: linear-gradient(135deg, #111827 0%, #667eea 100%); }
-      50% { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+      display: inline-block;
     }
     /* "Order" — dynamic gradient sweep */
     .logo-o {

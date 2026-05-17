@@ -1103,6 +1103,7 @@ import { NotificationStateService } from '../../core/services/notification-state
       align-items: flex-end;
       z-index: 1000;
       animation: fade-in 0.3s ease;
+      overflow: hidden;
     }
     @keyframes fade-in {
       from { opacity: 0; backdrop-filter: blur(0px); }
@@ -1120,7 +1121,9 @@ import { NotificationStateService } from '../../core/services/notification-state
       overflow-x: hidden;
       box-sizing: border-box;
       padding-bottom: env(safe-area-inset-bottom, 16px);
-      display: block;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
     }
     .modal-content::-webkit-scrollbar { width: 5px; }
     .modal-content::-webkit-scrollbar-track { background: transparent; }
@@ -1154,6 +1157,7 @@ import { NotificationStateService } from '../../core/services/notification-state
       margin: 0;
       display: block;
       width: 100%;
+      min-height: 0;
     }
     .qv-image-wrap {
       width: 100%;

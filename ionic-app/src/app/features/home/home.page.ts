@@ -1527,7 +1527,7 @@ export class HomePage implements OnInit, OnDestroy {
     let greeting = '🌅 Good Morning';
     if (hour >= 12 && hour < 18) greeting = '🌤️ Good Afternoon';
     else if (hour >= 18) greeting = '🌙 Good Evening';
-    return `${greeting}, ${name}!`;
+    return `${greeting}, ${name} ji!`;
   });
 
   /** Quick-view modal state */

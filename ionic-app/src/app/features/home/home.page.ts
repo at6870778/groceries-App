@@ -326,6 +326,8 @@ import { NotificationStateService } from '../../core/services/notification-state
       gap: 6px;
       cursor: pointer;
       transition: all 0.3s ease;
+      min-width: 0; /* Prevent flex children from overflowing */
+      flex-shrink: 1; /* Allow shrinking on narrow screens */
     }
     .hdr-logo-wrap:hover {
       transform: translateY(-2px);
@@ -335,8 +337,26 @@ import { NotificationStateService } from '../../core/services/notification-state
     }
     .logo-text-wrap {
       display: flex;
-      flex-direction: column;
-      gap: 1px;
+      flex-direction: row;
+      align-items: baseline;
+      gap: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0; /* Ensure flex children shrink properly */
+      flex-shrink: 1;
+    }
+    /* On narrow screens, reduce logo font size */
+    @media (max-width: 374px) {
+      .logo-text-wrap {
+        width: 100%;
+      }
+      .logo-text {
+        font-size: 1.1rem !important;
+      }
+      .logo-leaf {
+        font-size: 1.2rem !important;
+      }
     }
     /* Scooter — delivery motion with speed boost */
     .logo-leaf {
@@ -371,11 +391,12 @@ import { NotificationStateService } from '../../core/services/notification-state
     }
     /* "OrderKro" text */
     .logo-text {
-      font-size: 1.5rem;
+      font-size: 1.3rem;
       font-weight: 900;
-      letter-spacing: -0.6px;
-      line-height: 1.1;
+      letter-spacing: -0.5px;
+      line-height: 1;
       display: inline-block;
+      white-space: nowrap;
     }
     /* "Order" — dynamic gradient sweep */
     .logo-o {

@@ -260,13 +260,18 @@ import { SyncService } from '../../core/services/sync.service';
     .banner-wrap {
       position: relative;
       overflow: hidden;
-      height: 120px;
+      height: auto;
+      min-height: 100px;
       flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      width: 100%;
     }
 
     .banner-track {
       display: flex;
       height: 100%;
+      width: 100%;
       transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
 
@@ -276,13 +281,17 @@ import { SyncService } from '../../core/services/sync.service';
       flex-direction: row;
       align-items: center;
       justify-content: center;
-      padding: 0 24px;
-      gap: 16px;
+      padding: 16px 12px;
+      gap: 12px;
+      min-height: 100px;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .banner-img {
-      width: 72px;
-      height: 72px;
+      width: 60px;
+      height: 60px;
+      flex-shrink: 0;
       object-fit: contain;
       filter: drop-shadow(0 4px 12px rgba(0,0,0,0.25));
       animation: floatAnim 3s ease-in-out infinite;
@@ -296,20 +305,52 @@ import { SyncService } from '../../core/services/sync.service';
     .banner-text {
       text-align: center;
       color: #fff;
+      flex: 1;
+      min-width: 0;
     }
 
     .banner-title {
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 800;
-      letter-spacing: -0.3px;
+      letter-spacing: -0.2px;
       text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      line-height: 1.2;
+      word-wrap: break-word;
     }
 
     .banner-sub {
-      font-size: 12px;
+      font-size: 11px;
       opacity: 0.9;
+      line-height: 1.2;
       margin-top: 2px;
       text-shadow: 0 1px 4px rgba(0,0,0,0.15);
+      word-wrap: break-word;
+    }
+
+    /* Fix banner on narrow phones like OnePlus */
+    @media (max-width: 374px) {
+      .banner-wrap {
+        min-height: 110px;
+      }
+      
+      .banner-slide {
+        padding: 12px 8px;
+        gap: 8px;
+        min-height: 110px;
+      }
+      
+      .banner-img {
+        width: 50px;
+        height: 50px;
+      }
+      
+      .banner-title {
+        font-size: 14px;
+      }
+      
+      .banner-sub {
+        font-size: 10px;
+      }
     }
 
     .slider-dots {

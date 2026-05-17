@@ -19,3 +19,89 @@
 html, body {
   height: 100%;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN SYSTEM - Works consistently across all phones
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Base font size for rem calculations */
+  font-size: 16px;
+  
+  /* Responsive breakpoints */
+  --breakpoint-xs: 320px;   /* Small phones (iPhone SE, Galaxy A21) */
+  --breakpoint-sm: 375px;   /* Standard phones (iPhone 12, OnePlus 9) */
+  --breakpoint-md: 425px;   /* Medium phones (Galaxy S21, OnePlus 10) */
+  --breakpoint-lg: 768px;   /* Tablets */
+  
+  /* Safe areas for notches */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE TYPOGRAPHY
+   ═══════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 374px) {
+  :root {
+    font-size: 14px; /* Smaller phones get slightly smaller base font */
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   UNIVERSAL RESPONSIVE CLASSES
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Prevent text wrapping in headers - use nowrap-text class */
+.nowrap-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Flexible grid layout that adapts to screen size */
+.flex-responsive {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(8px, 2vw, 16px);
+  width: 100%;
+}
+
+/* Safe padding that respects notches and system UI */
+.safe-padding {
+  padding-top: var(--safe-area-top);
+  padding-bottom: var(--safe-area-bottom);
+  padding-left: var(--safe-area-left);
+  padding-right: var(--safe-area-right);
+}
+
+/* Content with safe bottom spacing for home indicator */
+.content-safe-bottom {
+  padding-bottom: max(16px, var(--safe-area-bottom));
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PHONE-SPECIFIC FIXES
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* OnePlus and other high-aspect-ratio phones */
+@media (max-width: 374px) {
+  /* Reduce padding on compact screens */
+  .ion-padding {
+    --ion-padding: 12px !important;
+  }
+  
+  /* Reduce margin on headers */
+  h1, h2, h3, h4, h5, h6 {
+    margin: 4px 0 8px 0;
+  }
+  
+  /* Ensure text stays on one line in headers */
+  .logo-text-wrap {
+    width: 100%;
+    min-width: 0;
+  }
+}

@@ -1127,7 +1127,7 @@ import { NotificationStateService } from '../../core/services/notification-state
     }
     .modal-content {
       width: 100%;
-      max-height: 95vh;
+      max-height: 90vh;
       background: #fff;
       border-radius: 28px 28px 0 0;
       animation: slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1147,14 +1147,14 @@ import { NotificationStateService } from '../../core/services/notification-state
     }
     .modal-close {
       position: absolute;
-      top: 10px;
-      right: 10px;
-      width: 30px;
-      height: 30px;
+      top: 12px;
+      right: 12px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       background: rgba(0, 0, 0, 0.08);
       border: none;
-      font-size: 1.2rem;
+      font-size: 1.3rem;
       color: #1a1a1a;
       cursor: pointer;
       z-index: 10;
@@ -1166,81 +1166,81 @@ import { NotificationStateService } from '../../core/services/notification-state
     .modal-close:hover { background: rgba(0, 0, 0, 0.15); transform: scale(1.1); }
     
     .quick-view-product {
-      padding: 8px 10px 0;
+      padding: 14px 14px 10px;
       margin: 0;
       display: block;
     }
     .qv-image-wrap {
       width: 100%;
-      height: 200px;
-      border-radius: 12px;
+      height: 150px;
+      border-radius: 14px;
       overflow: hidden;
-      margin-bottom: 4px;
+      margin-bottom: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .qv-image { width: 100%; height: 100%; object-fit: contain; padding: 12px; }
     .qv-category {
-      font-size: 0.6rem;
+      font-size: 0.7rem;
       font-weight: 700;
       color: #667eea;
       text-transform: uppercase;
-      letter-spacing: 0.2px;
-      margin-bottom: 1px;
+      letter-spacing: 0.3px;
+      margin-bottom: 3px;
     }
     .qv-name {
-      margin: 0 0 2px;
-      font-size: 1rem;
+      margin: 0 0 4px;
+      font-size: 1.1rem;
       font-weight: 800;
       color: #1a1a1a;
-      line-height: 1.1;
-    }
-    .qv-description {
-      margin: 0 0 2px;
-      font-size: 0.75rem;
-      color: #666;
       line-height: 1.2;
     }
+    .qv-description {
+      margin: 0 0 4px;
+      font-size: 0.8rem;
+      color: #666;
+      line-height: 1.3;
+    }
     .qv-unit {
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       color: #999;
-      margin-bottom: 2px;
+      margin-bottom: 4px;
       font-weight: 500;
     }
     .qv-price-row {
       display: flex;
       align-items: center;
-      gap: 3px;
-      margin-bottom: 4px;
+      gap: 4px;
+      margin-bottom: 6px;
     }
     .qv-mrp {
       text-decoration: line-through;
       color: #bbb;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
     }
     .qv-price {
       font-weight: 800;
-      font-size: 1.1rem;
+      font-size: 1.2rem;
       color: #1a1a1a;
     }
     .qv-discount {
       background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
       color: #fff;
-      font-size: 0.65rem;
+      font-size: 0.7rem;
       font-weight: 800;
-      padding: 2px 6px;
-      border-radius: 4px;
+      padding: 3px 7px;
+      border-radius: 5px;
       margin-left: auto;
     }
     .qv-stock {
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       color: #16a34a;
       font-weight: 600;
-      margin-bottom: 4px;
-      padding: 4px 6px;
+      margin-bottom: 8px;
+      padding: 6px 8px;
       background: #f0fdf4;
-      border-radius: 4px;
+      border-radius: 6px;
     }
     .qv-stock.low-stock { color: #ea580c; background: #fff7ed; }
     .qv-stock .out-of-stock { color: #dc2626; background: #fef2f2; }
@@ -1248,9 +1248,9 @@ import { NotificationStateService } from '../../core/services/notification-state
     .qv-body { margin: 0; }
     .qv-actions {
       display: flex;
-      gap: 6px;
-      margin: 4px 0 0 0;
-      padding: 8px 10px 10px;
+      gap: 8px;
+      margin: 8px 0 0 0;
+      padding: 12px 14px 14px;
       border-top: 1px solid #f0f0f0;
       background: #fff;
       box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
@@ -1258,31 +1258,31 @@ import { NotificationStateService } from '../../core/services/notification-state
     }
     .qv-cancel-btn {
       flex: 1;
-      padding: 8px 10px;
+      padding: 9px 12px;
       background: #f5f6fa;
       border: 1.5px solid #e8ecf4;
-      border-radius: 8px;
+      border-radius: 9px;
       font-weight: 700;
       color: #667eea;
       cursor: pointer;
       transition: all 0.2s ease;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
     }
     .qv-add-btn {
       flex: 1;
-      padding: 8px 10px;
+      padding: 9px 12px;
       background: linear-gradient(135deg, #667eea, #764ba2);
       border: none;
-      border-radius: 8px;
+      border-radius: 9px;
       font-weight: 700;
       color: #fff;
       cursor: pointer;
       transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 3px;
+      gap: 4px;
     }
     .qv-add-btn:hover {
       box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
@@ -1295,24 +1295,24 @@ import { NotificationStateService } from '../../core/services/notification-state
       opacity: 0.5;
       cursor: not-allowed;
     }
-    .add-icon { font-size: 0.8rem; }
+    .add-icon { font-size: 0.95rem; }
     
     .qv-stepper {
       display: flex;
       align-items: stretch;
       background: linear-gradient(135deg, #667eea, #764ba2);
-      border-radius: 8px;
+      border-radius: 9px;
       overflow: hidden;
-      height: 36px;
+      height: 40px;
       flex: 1;
     }
     .qv-step-btn {
       background: transparent;
       border: none;
       color: #fff;
-      font-size: 1.1rem;
+      font-size: 1.2rem;
       font-weight: 700;
-      width: 36px;
+      width: 40px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -1324,7 +1324,7 @@ import { NotificationStateService } from '../../core/services/notification-state
     .qv-qty {
       color: #fff;
       font-weight: 700;
-      font-size: 0.85rem;
+      font-size: 0.95rem;
       flex: 1;
       text-align: center;
       display: flex;

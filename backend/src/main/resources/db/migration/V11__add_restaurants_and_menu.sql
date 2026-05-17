@@ -11,12 +11,31 @@ CREATE TABLE IF NOT EXISTS restaurants (
     is_active         BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- Add restaurant_id to products
-ALTER TABLE products ADD COLUMN restaurant_id BIGINT;
+-- Add restaurant_id to products (idempotent)
+SET @sql = IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS 
+     WHERE TABLE_NAME = 'products' 
+     AND COLUMN_NAME = 'restaurant_id' 
+     AND TABLE_SCHEMA = DATABASE()) = 0,
+    'ALTER TABLE products ADD COLUMN restaurant_id BIGINT',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
--- Add FK constraint
-ALTER TABLE products ADD CONSTRAINT fk_products_restaurant
-  FOREIGN KEY (restaurant_id) REFERENCES restaurants(id);
+-- Add FK constraint (idempotent)
+SET @sql = IF(
+    (SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS 
+     WHERE TABLE_NAME = 'products' 
+     AND CONSTRAINT_NAME = 'fk_products_restaurant' 
+     AND TABLE_SCHEMA = DATABASE()) = 0,
+    'ALTER TABLE products ADD CONSTRAINT fk_products_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- Seed restaurants (skip if already inserted)
 INSERT INTO restaurants (name, cuisine_type, address, phone, rating, delivery_time_min)

@@ -1098,59 +1098,70 @@ import { NotificationStateService } from '../../core/services/notification-state
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.6);
       display: flex;
-      align-items: flex-end;
+      align-items: center;
+      justify-content: center;
       z-index: 1000;
       animation: fade-in 0.3s ease;
       overflow: hidden;
+      padding: 16px;
     }
     @keyframes fade-in {
       from { opacity: 0; backdrop-filter: blur(0px); }
-      to { opacity: 1; backdrop-filter: blur(4px); }
+      to { opacity: 1; backdrop-filter: blur(6px); }
     }
     .modal-content {
       width: 100%;
+      max-width: 450px;
       max-height: 90vh;
       background: #fff;
-      border-radius: 28px 28px 0 0;
-      animation: slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border-radius: 20px;
+      animation: zoom-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
       position: relative;
-      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
       overflow-y: auto;
       overflow-x: hidden;
       box-sizing: border-box;
-      padding-bottom: env(safe-area-inset-bottom, 16px);
       display: flex;
       flex-direction: column;
       min-height: 0;
     }
-    .modal-content::-webkit-scrollbar { width: 5px; }
+    .modal-content::-webkit-scrollbar { width: 6px; }
     .modal-content::-webkit-scrollbar-track { background: transparent; }
-    .modal-content::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
-    @keyframes slide-up {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
+    .modal-content::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+    @keyframes zoom-in {
+      from { 
+        transform: scale(0.8) translateY(20px);
+        opacity: 0;
+      }
+      to { 
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
     }
     .modal-close {
       position: absolute;
-      top: 12px;
-      right: 12px;
-      width: 32px;
-      height: 32px;
+      top: 10px;
+      right: 10px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
-      background: rgba(0, 0, 0, 0.08);
+      background: rgba(0, 0, 0, 0.7);
       border: none;
-      font-size: 1.3rem;
-      color: #1a1a1a;
+      font-size: 1.4rem;
+      color: #fff;
       cursor: pointer;
-      z-index: 10;
+      z-index: 20;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: all 0.2s ease;
     }
-    .modal-close:hover { background: rgba(0, 0, 0, 0.15); transform: scale(1.1); }
+    .modal-close:hover { 
+      background: rgba(0, 0, 0, 0.85);
+      transform: scale(1.15);
+    }
     
     .quick-view-product {
       padding: 0;
@@ -1161,9 +1172,9 @@ import { NotificationStateService } from '../../core/services/notification-state
     }
     .qv-image-wrap {
       width: 100%;
-      height: 350px;
-      border-radius: 0;
-      overflow: hidden;
+      height: 300px;
+      border-radius: 16px 16px 0 0;
+      overflow: auto;
       margin: 0;
       margin-bottom: 0;
       display: flex;
@@ -1171,67 +1182,78 @@ import { NotificationStateService } from '../../core/services/notification-state
       justify-content: center;
       background: #f8f9f0 !important;
       flex-shrink: 0;
+      position: relative;
     }
     .qv-image { 
       width: 100%; 
       height: 100%; 
       object-fit: contain; 
-      padding: 20px;
+      padding: 16px;
       background: #f8f9f0;
+      cursor: zoom-in;
+      transition: transform 0.3s ease;
+      touch-action: manipulation;
+    }
+    .qv-image:hover {
+      transform: scale(1.05);
     }
     
     .qv-actions {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       margin: 0;
-      padding: 14px 16px;
+      padding: 16px;
       background: #fff;
       flex-wrap: wrap;
       justify-content: space-between;
-      border-top: none;
+      border-top: 1px solid #f0f0f0;
       flex-shrink: 0;
+      border-radius: 0 0 16px 16px;
     }
     
     .qv-cancel-btn {
       flex: 1;
-      min-width: 100px;
-      padding: 10px 14px;
-      font-size: 0.9rem;
+      min-width: 110px;
+      padding: 11px 16px;
+      font-size: 0.92rem;
       font-weight: 600;
       background: #f5f5f5;
-      border: 1px solid #ddd;
-      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
       color: #1a1a1a;
       cursor: pointer;
       transition: all 0.3s ease;
     }
     .qv-cancel-btn:hover {
       background: #efefef;
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+    .qv-cancel-btn:active {
+      transform: translateY(0);
     }
     
     .qv-add-btn {
       flex: 1;
-      min-width: 100px;
-      padding: 10px 14px;
+      min-width: 110px;
+      padding: 11px 16px;
       background: linear-gradient(135deg, #667eea, #764ba2);
       color: #fff;
-      font-size: 0.9rem;
+      font-size: 0.92rem;
       font-weight: 700;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
       transition: all 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+      gap: 5px;
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.35);
     }
     .qv-add-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.55);
     }
     .qv-add-btn:active {
       transform: translateY(0);
@@ -1239,15 +1261,15 @@ import { NotificationStateService } from '../../core/services/notification-state
     
     .qv-stepper {
       flex: 1;
-      min-width: 100px;
+      min-width: 110px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 8px;
       background: linear-gradient(135deg, #667eea, #764ba2);
-      border-radius: 8px;
-      padding: 0 10px;
-      height: 40px;
+      border-radius: 10px;
+      padding: 0 12px;
+      height: 44px;
     }
     
     .qv-step-btn {

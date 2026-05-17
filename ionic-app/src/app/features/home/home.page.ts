@@ -96,10 +96,6 @@ import { NotificationStateService } from '../../core/services/notification-state
           <h2 class="welcome-greeting">{{ welcomeGreeting() }}</h2>
           <p class="welcome-sub">Your groceries in 15 minutes</p>
         </div>
-        <svg class="welcome-decoration" width="48" height="48" viewBox="0 0 48 48" fill="none">
-          <circle cx="24" cy="24" r="20" fill="rgba(102,126,234,0.1)" stroke="#667eea" stroke-width="1.5"/>
-          <path d="M24 14v20M14 24h20" stroke="#667eea" stroke-width="2" stroke-linecap="round"/>
-        </svg>
       </div>
 
       <!-- ═══════════════════════════════════════
@@ -966,32 +962,71 @@ import { NotificationStateService } from '../../core/services/notification-state
     @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
     
     /* ══════════════════════════════════════
-       WELCOME BANNER — PERSONALIZATION
+       WELCOME BANNER — PERSONALIZATION (PREMIUM ANIMATIONS)
     ══════════════════════════════════════ */
     .welcome-banner {
-      margin: 12px 14px 16px;
-      padding: 16px 16px;
+      margin: 10px 14px 12px;
+      padding: 10px 14px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 18px;
+      background-size: 200% 200%;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
-      animation: slide-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.25);
+      animation: slide-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), gradient-shift 6s ease-in-out infinite, glow-pulse 4s ease-in-out infinite;
+      position: relative;
+      overflow: hidden;
     }
-    .welcome-content { flex: 1; }
+    .welcome-banner::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.05) 100%);
+      animation: shimmer-shine 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes gradient-shift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes glow-pulse {
+      0%, 100% { box-shadow: 0 4px 16px rgba(102, 126, 234, 0.25), 0 0 20px rgba(102, 126, 234, 0); }
+      50% { box-shadow: 0 4px 16px rgba(102, 126, 234, 0.35), 0 0 28px rgba(102, 126, 234, 0.15); }
+    }
+    @keyframes shimmer-shine {
+      0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+      100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    }
+    .welcome-content {
+      flex: 1;
+      position: relative;
+      z-index: 1;
+    }
     .welcome-greeting {
       margin: 0;
-      font-size: 1.2rem;
+      font-size: 1rem;
       font-weight: 800;
       color: #fff;
-      line-height: 1.3;
+      line-height: 1.2;
+      animation: text-fade-in 0.8s ease-out 0.2s both;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
     .welcome-sub {
-      margin: 4px 0 0;
-      font-size: 0.8rem;
+      margin: 2px 0 0;
+      font-size: 0.75rem;
       color: rgba(255,255,255,0.85);
       font-weight: 500;
+      animation: text-fade-in 0.8s ease-out 0.4s both;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    @keyframes text-fade-in {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     .welcome-decoration {
       animation: float-bounce 3s ease-in-out infinite;
@@ -1446,7 +1481,14 @@ export class HomePage implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.backButtonListener = App.addListener('backButton', () => App.exitApp());
+    this.backButtonListener = App.addListener('backButton', () => {
+      // If modal is open, close it first instead of exiting app
+      if (this.showQuickViewModal()) {
+        this.closeQuickView();
+      } else {
+        App.exitApp();
+      }
+    });
     this.notifState.load();
 
     // Load current user for personalization

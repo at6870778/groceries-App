@@ -280,11 +280,20 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
     <!-- ══ Product list ══ -->
     <section class="metric-card">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
-        <mat-form-field appearance="outline" style="max-width:300px;margin-bottom:-22px;">
-          <mat-label>Search products</mat-label>
-          <mat-icon matPrefix>search</mat-icon>
-          <input matInput [value]="searchQuery()" (input)="onSearch(($any($event.target)).value)" />
-        </mat-form-field>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <mat-form-field appearance="outline" style="width:200px;margin-bottom:-22px;">
+            <mat-label>Filter by Category</mat-label>
+            <mat-select [value]="selectedCategoryId()" (selectionChange)="onCategoryFilter($any($event.value))">
+              <mat-option [value]="null">All Categories</mat-option>
+              <mat-option *ngFor="let c of categories()" [value]="c.id">{{ c.name }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" style="max-width:300px;margin-bottom:-22px;">
+            <mat-label>Search products</mat-label>
+            <mat-icon matPrefix>search</mat-icon>
+            <input matInput [value]="searchQuery()" (input)="onSearch(($any($event.target)).value)" />
+          </mat-form-field>
+        </div>
         <span style="font-size:13px;color:#888;">{{ products().length }} item(s) on this page</span>
       </div>
 
@@ -379,6 +388,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
   readonly products = signal<any[]>([]);
   readonly categories = signal<any[]>([]);
   readonly editingProductId = signal<number | null>(null);
+  readonly selectedCategoryId = signal<number | null>(null);
   readonly currentPage = signal(0);
   readonly totalPages = signal(1);
   readonly searchQuery = signal('');
@@ -457,11 +467,22 @@ export class ProductsComponent implements OnInit, OnDestroy {
   }
 
   loadProducts(page = this.currentPage()) {
-    this.api.get<any>('/catalog/products', { page, size: 20, query: this.searchQuery() }).subscribe((res) => {
+    const categoryId = this.selectedCategoryId();
+    const params: any = { page, size: 20, query: this.searchQuery() };
+    if (categoryId) {
+      params.categoryId = categoryId;
+    }
+    this.api.get<any>('/catalog/products', params).subscribe((res) => {
       this.currentPage.set(res.number ?? page);
       this.totalPages.set(res.totalPages || 1);
       this.products.set(res.content || []);
     });
+  }
+
+  onCategoryFilter(categoryId: number | null) {
+    this.selectedCategoryId.set(categoryId);
+    this.currentPage.set(0);
+    this.loadProducts(0);
   }
 
   onSearch(query: string) {

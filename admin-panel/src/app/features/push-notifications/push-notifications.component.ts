@@ -208,11 +208,12 @@ export class PushNotificationsComponent implements OnInit {
   constructor(private api: ApiService) {}
 
   ngOnInit() {
-    this.api.get<any>('/admin/customers', { page: 0, size: 200 }).subscribe({
+    // Fetch all customers for search
+    this.api.get<any>('/api/admin/notifications/users').subscribe({
       next: (res) => {
-        this.allUsers = (res?.content || []).map((user: any) => ({
+        this.allUsers = (Array.isArray(res) ? res : []).map((user: any) => ({
           id: Number(user?.id),
-          name: String(user?.fullName || '').trim(),
+          name: String(user?.name || '').trim(),
           phone: String(user?.phone || '').trim()
         }));
 
@@ -256,8 +257,8 @@ export class PushNotificationsComponent implements OnInit {
     this.successMsg = '';
 
     const url = this.target === 'all'
-      ? '/admin/notifications/send-to-all'
-      : '/admin/notifications/send-to-user';
+      ? '/api/admin/notifications/send-to-all'
+      : '/api/admin/notifications/send-to-user';
 
     const payload: any = { title, body };
     if (this.target === 'user') payload.userId = this.selectedUser!.id;

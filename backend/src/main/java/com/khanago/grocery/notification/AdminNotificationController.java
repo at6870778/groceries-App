@@ -105,4 +105,25 @@ public class AdminNotificationController {
         )).toList();
         return ResponseEntity.ok(result);
     }
+
+    /**
+     * Search customers by name or phone number.
+     * Query params: ?q=searchTerm
+     */
+    @GetMapping("/users/search")
+    public ResponseEntity<List<Map<String, Object>>> searchCustomers(@RequestParam(name = "q") String searchTerm) {
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(List.of());
+        }
+
+        List<User> customers = userRepository.searchCustomers(RoleName.CUSTOMER, searchTerm.trim());
+        List<Map<String, Object>> result = customers.stream()
+                .limit(20) // Limit to 20 results
+                .map(u -> Map.<String, Object>of(
+                        "id", u.getId(),
+                        "name", u.getFullName() != null ? u.getFullName() : "",
+                        "phone", u.getPhone() != null ? u.getPhone() : ""
+                )).toList();
+        return ResponseEntity.ok(result);
+    }
 }

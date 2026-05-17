@@ -1311,6 +1311,8 @@ import { NotificationStateService } from '../../core/services/notification-state
       border-top: none;
       flex-shrink: 0;
       border-radius: 0 0 16px 16px;
+      width: 100%;
+      box-sizing: border-box;
     }
     
     .qv-cancel-btn {
@@ -1325,6 +1327,9 @@ import { NotificationStateService } from '../../core/services/notification-state
       color: #fff;
       cursor: pointer;
       transition: all 0.3s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .qv-cancel-btn:hover {
       transform: translateY(-2px);
@@ -1487,12 +1492,17 @@ import { NotificationStateService } from '../../core/services/notification-state
       }
       .qv-actions {
         gap: 6px;
-        padding: 10px;
+        padding: 12px 12px;
+        flex-direction: column;
       }
       .qv-cancel-btn, .qv-add-btn {
-        padding: 8px 10px;
-        font-size: 0.8rem;
+        padding: 10px 12px;
+        font-size: 0.85rem;
         height: 40px;
+        min-width: unset;
+        flex: 1 1 100%;
+        white-space: normal;
+        text-overflow: clip;
       }
       .qv-stepper {
         min-width: 100px;

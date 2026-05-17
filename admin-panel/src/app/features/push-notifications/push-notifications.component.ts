@@ -209,7 +209,7 @@ export class PushNotificationsComponent implements OnInit {
 
   ngOnInit() {
     // Fetch all customers for search
-    this.api.get<any>('/api/admin/notifications/users').subscribe({
+    this.api.get<any>('/admin/notifications/users').subscribe({
       next: (res) => {
         this.allUsers = (Array.isArray(res) ? res : []).map((user: any) => ({
           id: Number(user?.id),
@@ -230,13 +230,20 @@ export class PushNotificationsComponent implements OnInit {
   filterUsers() {
     const term = this.searchTerm.toLowerCase().trim();
     if (!term || term.length < 2) { this.filteredUsers = []; return; }
-    this.filteredUsers = this.allUsers
-      .filter(u => {
-        const name = String(u?.name || '').toLowerCase();
-        const phone = String(u?.phone || '').toLowerCase();
-        return name.includes(term) || phone.includes(term);
-      })
-      .slice(0, 10);
+    
+    // Use server-side search for better performance
+    this.api.get<any>('/admin/notifications/users/search', { q: term }).subscribe({
+      next: (res) => {
+        this.filteredUsers = (Array.isArray(res) ? res : []).map((user: any) => ({
+          id: Number(user?.id),
+          name: String(user?.name || '').trim(),
+          phone: String(user?.phone || '').trim()
+        }));
+      },
+      error: () => {
+        this.filteredUsers = [];
+      }
+    });
   }
 
   selectUser(u: Customer) {
@@ -257,8 +264,8 @@ export class PushNotificationsComponent implements OnInit {
     this.successMsg = '';
 
     const url = this.target === 'all'
-      ? '/api/admin/notifications/send-to-all'
-      : '/api/admin/notifications/send-to-user';
+      ? '/admin/notifications/send-to-all'
+      : '/admin/notifications/send-to-user';
 
     const payload: any = { title, body };
     if (this.target === 'user') payload.userId = this.selectedUser!.id;

@@ -3,6 +3,13 @@ spring:
     url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=true&serverTimezone=UTC
     username: ${DB_USER}
     password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      auto-commit: true
   jpa:
     open-in-view: false
     hibernate:
@@ -11,8 +18,10 @@ spring:
       hibernate:
         jdbc:
           batch_size: 25
+          fetch_size: 50
         order_updates: true
         order_inserts: true
+        format_sql: false
   flyway:
     enabled: true
 

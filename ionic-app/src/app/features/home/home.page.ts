@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonContent, IonHeader, IonToolbar } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { CartState } from '../../core/state/cart.state';
 import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component';
 import { ActivityState } from '../../core/state/activity.state';
@@ -15,7 +15,7 @@ import { NotificationStateService } from '../../core/services/notification-state
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, IonContent, IonHeader, IonToolbar, BottomNavComponent],
+  imports: [CommonModule, IonContent, IonHeader, IonToolbar, BottomNavComponent],
   template: `
     <!-- ═══════════════════════════════════════
          STICKY HEADER

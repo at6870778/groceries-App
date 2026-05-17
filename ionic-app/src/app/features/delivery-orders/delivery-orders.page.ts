@@ -785,3 +785,4 @@ export class DeliveryOrdersPage implements OnInit {
     localStorage.setItem('suggested_role', 'CUSTOMER');
     this.router.navigateByUrl('/login');
   }
+}

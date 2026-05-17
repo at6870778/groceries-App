@@ -94,7 +94,7 @@ import { NotificationStateService } from '../../core/services/notification-state
       <div class="welcome-banner">
         <div class="welcome-content">
           <h2 class="welcome-greeting">{{ welcomeGreeting() }}</h2>
-          <p class="welcome-sub">Your groceries in 15 minutes</p>
+          <p class="welcome-sub">Everything fresh in 15-30 minutes</p>
         </div>
       </div>
 
@@ -1130,10 +1130,12 @@ import { NotificationStateService } from '../../core/services/notification-state
       max-height: 85vh;
       background: #fff;
       border-radius: 28px 28px 0 0;
-      overflow-y: auto;
+      overflow: hidden;
       animation: slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       position: relative;
       box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
+      display: flex;
+      flex-direction: column;
     }
     @keyframes slide-up {
       from { transform: translateY(100%); }
@@ -1159,18 +1161,28 @@ import { NotificationStateService } from '../../core/services/notification-state
     }
     .modal-close:hover { background: rgba(0, 0, 0, 0.15); transform: scale(1.1); }
     
-    .quick-view-product { padding: 24px 16px 24px; }
+    .quick-view-product {
+      padding: 24px 16px 0;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .quick-view-product::-webkit-scrollbar { width: 4px; }
+    .quick-view-product::-webkit-scrollbar-track { background: transparent; }
+    .quick-view-product::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
     .qv-image-wrap {
       width: 100%;
-      height: 280px;
-      border-radius: 20px;
+      height: 220px;
+      border-radius: 16px;
       overflow: hidden;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
     }
-    .qv-image { width: 100%; height: 100%; object-fit: contain; padding: 16px; }
+    .qv-image { width: 100%; height: 100%; object-fit: contain; padding: 12px; }
     .qv-category {
       font-size: 0.75rem;
       font-weight: 700;
@@ -1235,10 +1247,17 @@ import { NotificationStateService } from '../../core/services/notification-state
     .qv-stock.low-stock { color: #ea580c; background: #fff7ed; }
     .qv-stock .out-of-stock { color: #dc2626; background: #fef2f2; }
     
+    .qv-body { flex-shrink: 0; }
     .qv-actions {
       display: flex;
       gap: 10px;
-      margin-top: 20px;
+      margin-top: 12px;
+      padding: 12px 16px 16px;
+      border-top: 1px solid #f0f0f0;
+      position: sticky;
+      bottom: 0;
+      background: #fff;
+      z-index: 5;
     }
     .qv-cancel-btn {
       flex: 1;
@@ -1542,16 +1561,22 @@ export class HomePage implements OnInit, OnDestroy {
     window.addEventListener('online', () => this.onOnline());
     window.addEventListener('offline', () => this.onOffline());
 
+    // Load dismissed announcements from localStorage at startup
+    this.dismissedMessage = localStorage.getItem('dismissed_announcement')?.trim() || '';
+
     this.api.get<any>('/public/announcement')
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
           this.announcementBanner.set(res);
-          // If the message changed since last dismiss, show it again
-          if (res?.message && res.message !== this.dismissedMessage) {
-            this.bannerDismissed.set(false);
-          } else if (res?.message && res.message === this.dismissedMessage) {
+          // Check if announcement is dismissed
+          const msg = res?.message?.trim() || '';
+          if (msg && msg === this.dismissedMessage) {
+            // Announcement was previously dismissed - keep it hidden
             this.bannerDismissed.set(true);
+          } else if (msg) {
+            // New or different announcement - show it
+            this.bannerDismissed.set(false);
           }
         }
       });
@@ -1597,15 +1622,16 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   ionViewWillEnter(): void {
-    // Refresh saved addresses every time the home page is navigated to,
-    // so "Deliver To" always reflects the latest saved address.
+    // Refresh saved addresses every time the home page is navigated to
     this.loadSavedAddresses();
     
-    // Refresh dismissed announcement status from localStorage
+    // Refresh dismissed announcement status from localStorage FIRST
     this.refreshAnnouncementStatus();
     
-    // Check for new announcements
-    this.loadLatestAnnouncement();
+    // Only check for new announcements if none currently loaded
+    if (!this.announcementBanner()) {
+      this.loadLatestAnnouncement();
+    }
   }
 
   private loadSavedAddresses(): void {
@@ -1620,23 +1646,40 @@ export class HomePage implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.announcementBanner.set(res);
-          // After fetching, check if it should be hidden
-          this.refreshAnnouncementStatus();
+          // Check against dismissed list AFTER setting banner
+          this.checkAndUpdateDismissedStatus();
         }
       });
   }
 
-  private refreshAnnouncementStatus(): void {
-    // Read latest dismissed_announcement from localStorage
-    this.dismissedMessage = localStorage.getItem('dismissed_announcement') || '';
+  private checkAndUpdateDismissedStatus(): void {
+    const currentMsg = this.announcementBanner()?.message?.trim() || '';
+    const dismissedMsg = localStorage.getItem('dismissed_announcement')?.trim() || '';
     
-    const currentMsg = this.announcementBanner()?.message || '';
-    
-    // If current banner message matches dismissed one, hide it
-    // If different or no message is dismissed, show it (if active)
-    if (currentMsg && currentMsg === this.dismissedMessage) {
+    // If current message matches dismissed message, keep it hidden
+    if (currentMsg && dismissedMsg && currentMsg === dismissedMsg) {
       this.bannerDismissed.set(true);
-    } else if (currentMsg && currentMsg !== this.dismissedMessage) {
+    } else if (currentMsg) {
+      // New or different announcement - show it
+      this.bannerDismissed.set(false);
+    }
+  }
+
+  private refreshAnnouncementStatus(): void {
+    // Load dismissed message from localStorage
+    this.dismissedMessage = localStorage.getItem('dismissed_announcement')?.trim() || '';
+    
+    // If there's a currently loaded announcement, check if it should be hidden
+    const currentMsg = this.announcementBanner()?.message?.trim() || '';
+    
+    if (currentMsg && this.dismissedMessage && currentMsg === this.dismissedMessage) {
+      // Message matches dismissed one - keep hidden
+      this.bannerDismissed.set(true);
+    } else if (!currentMsg) {
+      // No announcement loaded - nothing to show
+      this.bannerDismissed.set(true);
+    } else {
+      // New or different announcement - show it
       this.bannerDismissed.set(false);
     }
   }
@@ -1657,7 +1700,7 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   dismissBanner(): void {
-    const msg = this.announcementBanner()?.message || '';
+    const msg = this.announcementBanner()?.message?.trim() || '';
     this.dismissedMessage = msg;
     localStorage.setItem('dismissed_announcement', msg);
     this.bannerDismissed.set(true);

@@ -270,22 +270,22 @@ import { NotificationStateService } from '../../core/services/notification-state
               <span *ngIf="product.stockQty > 0">{{ product.stockQty }} items in stock</span>
               <span *ngIf="product.stockQty === 0" class="out-of-stock">Out of stock</span>
             </div>
-            <div class="qv-actions">
-              <button class="qv-cancel-btn" (click)="closeQuickView()">Continue Shopping</button>
-              <ng-container *ngIf="cartQty(product.id) === 0; else qvStep">
-                <button class="qv-add-btn" (click)="addToCartFromModal(product)" [disabled]="product.stockQty === 0">
-                  <span class="add-icon">+</span> Add to Cart
-                </button>
-              </ng-container>
-              <ng-template #qvStep>
-                <div class="qv-stepper">
-                  <button class="qv-step-btn" (click)="removeFromCart(product)">−</button>
-                  <span class="qv-qty">{{ cartQty(product.id) }}</span>
-                  <button class="qv-step-btn" (click)="addToCart(product)">+</button>
-                </div>
-              </ng-template>
-            </div>
           </div>
+        </div>
+        <div *ngIf="selectedProductForModal() as product" class="qv-actions">
+          <button class="qv-cancel-btn" (click)="closeQuickView()">Continue Shopping</button>
+          <ng-container *ngIf="cartQty(product.id) === 0; else qvStep">
+            <button class="qv-add-btn" (click)="addToCartFromModal(product)" [disabled]="product.stockQty === 0">
+              <span class="add-icon">+</span> Add to Cart
+            </button>
+          </ng-container>
+          <ng-template #qvStep>
+            <div class="qv-stepper">
+              <button class="qv-step-btn" (click)="removeFromCart(product)">−</button>
+              <span class="qv-qty">{{ cartQty(product.id) }}</span>
+              <button class="qv-step-btn" (click)="addToCart(product)">+</button>
+            </div>
+          </ng-template>
         </div>
       </div>
     </div>
@@ -1162,7 +1162,7 @@ import { NotificationStateService } from '../../core/services/notification-state
     .modal-close:hover { background: rgba(0, 0, 0, 0.15); transform: scale(1.1); }
     
     .quick-view-product {
-      padding: 24px 16px 0;
+      padding: 24px 16px 12px;
       overflow-y: auto;
       flex: 1;
       display: flex;
@@ -1247,17 +1247,16 @@ import { NotificationStateService } from '../../core/services/notification-state
     .qv-stock.low-stock { color: #ea580c; background: #fff7ed; }
     .qv-stock .out-of-stock { color: #dc2626; background: #fef2f2; }
     
-    .qv-body { flex-shrink: 0; }
+    .qv-body { flex-shrink: 0; margin-bottom: 0; }
     .qv-actions {
       display: flex;
       gap: 10px;
-      margin-top: 12px;
+      margin: 0;
       padding: 12px 16px 16px;
       border-top: 1px solid #f0f0f0;
-      position: sticky;
-      bottom: 0;
       background: #fff;
       z-index: 5;
+      flex-shrink: 0;
     }
     .qv-cancel-btn {
       flex: 1;
@@ -1536,13 +1535,15 @@ export class HomePage implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.backButtonListener = App.addListener('backButton', () => {
+    App.addListener('backButton', async () => {
       // If modal is open, close it first instead of exiting app
       if (this.showQuickViewModal()) {
         this.closeQuickView();
       } else {
         App.exitApp();
       }
+    }).then((listener) => {
+      this.backButtonListener = listener;
     });
     this.notifState.load();
 
@@ -1685,7 +1686,7 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.backButtonListener?.then((h: any) => h.remove());
+    this.backButtonListener?.remove();
     window.removeEventListener('online', () => this.onOnline());
     window.removeEventListener('offline', () => this.onOffline());
     this.destroy$.next();

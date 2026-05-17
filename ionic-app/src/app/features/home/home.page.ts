@@ -335,9 +335,9 @@ import { NotificationStateService } from '../../core/services/notification-state
     }
     .logo-text-wrap {
       display: flex;
-      flex-direction: row;
-      align-items: baseline;
-      gap: 0;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;

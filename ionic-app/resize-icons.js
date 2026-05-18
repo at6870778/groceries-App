@@ -27,45 +27,75 @@ async function resizeIcons() {
         console.log(`📁 Created directory: ${dir}`);
       }
       
-      // Generate ic_launcher.png
+      // Generate ic_launcher.png with padding for visibility
+      // Adaptive icon safe zone is 66dp, but we add 20% padding to ensure full visibility
       const launcherPath = path.join(dirPath, 'ic_launcher.png');
-      await sharp(sourceIcon)
-        .resize(size, size, {
-          fit: 'contain',
-          background: { r: 255, g: 255, b: 255, alpha: 1 }
+      const paddedSize = Math.floor(size * 0.75);  // 75% of size = 25% padding
+      const paddedImage = await sharp(sourceIcon)
+        .resize(paddedSize, paddedSize, {
+          fit: 'inside',
+          withoutEnlargement: true
         })
+        .toBuffer();
+      
+      await sharp({
+        create: {
+          width: size,
+          height: size,
+          channels: 4,
+          background: { r: 255, g: 255, b: 255, alpha: 255 }
+        }
+      })
+        .composite([{
+          input: paddedImage,
+          top: Math.floor((size - paddedSize) / 2),
+          left: Math.floor((size - paddedSize) / 2)
+        }])
         .png()
         .toFile(launcherPath);
-      console.log(`✅ ${dir}: ic_launcher.png (${size}x${size})`);
+      console.log(`✅ ${dir}: ic_launcher.png (${size}x${size}) - padded for visibility`);
       
-      // Generate ic_launcher_foreground.png (used by adaptive icon on Android 8.0+)
-      // Use 'cover' to fill the safe zone better, and transparent background
-      // This makes the logo visible in the center 66dp safe zone of the adaptive icon
+      // Generate ic_launcher_foreground.png (same as ic_launcher but transparent background)
+      // This ensures the full logo is visible in adaptive icon
       const foregroundPath = path.join(dirPath, 'ic_launcher_foreground.png');
-      await sharp(sourceIcon)
-        .resize(size, size, {
-          fit: 'cover',
-          position: 'center',
-          background: { r: 0, g: 0, b: 0, alpha: 0 }  // Transparent background
-        })
+      await sharp({
+        create: {
+          width: size,
+          height: size,
+          channels: 4,
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
+        }
+      })
+        .composite([{
+          input: paddedImage,
+          top: Math.floor((size - paddedSize) / 2),
+          left: Math.floor((size - paddedSize) / 2)
+        }])
         .png()
         .toFile(foregroundPath);
-      console.log(`✅ ${dir}: ic_launcher_foreground.png (${size}x${size}) - cover fit, transparent`);
+      console.log(`✅ ${dir}: ic_launcher_foreground.png (${size}x${size}) - padded, transparent`);
       
-      // Generate ic_launcher_round.png (used for round icon display)
-      // Use transparent background to match adaptive icon behavior
+      // Generate ic_launcher_round.png (rounded icon)
       const roundPath = path.join(dirPath, 'ic_launcher_round.png');
-      await sharp(sourceIcon)
-        .resize(size, size, {
-          fit: 'contain',
-          background: { r: 0, g: 0, b: 0, alpha: 0 }  // Transparent background
-        })
+      await sharp({
+        create: {
+          width: size,
+          height: size,
+          channels: 4,
+          background: { r: 255, g: 255, b: 255, alpha: 255 }
+        }
+      })
+        .composite([{
+          input: paddedImage,
+          top: Math.floor((size - paddedSize) / 2),
+          left: Math.floor((size - paddedSize) / 2)
+        }])
         .png()
         .toFile(roundPath);
-      console.log(`✅ ${dir}: ic_launcher_round.png (${size}x${size}) - transparent`);
+      console.log(`✅ ${dir}: ic_launcher_round.png (${size}x${size}) - padded, rounded`);
     }
     
-    console.log('\n✨ All icons (ic_launcher, ic_launcher_foreground, ic_launcher_round) generated successfully!');
+    console.log('\n✨ All icons generated with 25% padding for full visibility!');
   } catch (err) {
     console.error('❌ Error generating icons:', err);
     process.exit(1);

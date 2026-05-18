@@ -27,20 +27,41 @@ async function resizeIcons() {
         console.log(`📁 Created directory: ${dir}`);
       }
       
-      // Resize and save icon
-      const outputPath = path.join(dirPath, 'ic_launcher.png');
+      // Generate ic_launcher.png
+      const launcherPath = path.join(dirPath, 'ic_launcher.png');
       await sharp(sourceIcon)
         .resize(size, size, {
           fit: 'contain',
           background: { r: 255, g: 255, b: 255, alpha: 1 }
         })
         .png()
-        .toFile(outputPath);
+        .toFile(launcherPath);
+      console.log(`✅ ${dir}: ic_launcher.png (${size}x${size})`);
       
-      console.log(`✅ ${dir}: ${size}x${size} → ${outputPath}`);
+      // Generate ic_launcher_foreground.png (used by adaptive icon on Android 8.0+)
+      const foregroundPath = path.join(dirPath, 'ic_launcher_foreground.png');
+      await sharp(sourceIcon)
+        .resize(size, size, {
+          fit: 'contain',
+          background: { r: 255, g: 255, b: 255, alpha: 1 }
+        })
+        .png()
+        .toFile(foregroundPath);
+      console.log(`✅ ${dir}: ic_launcher_foreground.png (${size}x${size})`);
+      
+      // Generate ic_launcher_round.png (used for round icon display)
+      const roundPath = path.join(dirPath, 'ic_launcher_round.png');
+      await sharp(sourceIcon)
+        .resize(size, size, {
+          fit: 'contain',
+          background: { r: 255, g: 255, b: 255, alpha: 1 }
+        })
+        .png()
+        .toFile(roundPath);
+      console.log(`✅ ${dir}: ic_launcher_round.png (${size}x${size})`);
     }
     
-    console.log('\n✨ All icons generated successfully!');
+    console.log('\n✨ All icons (ic_launcher, ic_launcher_foreground, ic_launcher_round) generated successfully!');
   } catch (err) {
     console.error('❌ Error generating icons:', err);
     process.exit(1);

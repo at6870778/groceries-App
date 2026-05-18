@@ -39,16 +39,18 @@ async function resizeIcons() {
       console.log(`✅ ${dir}: ic_launcher.png (${size}x${size})`);
       
       // Generate ic_launcher_foreground.png (used by adaptive icon on Android 8.0+)
-      // Use transparent background so Android's adaptive icon mask doesn't crop the logo
+      // Use 'cover' to fill the safe zone better, and transparent background
+      // This makes the logo visible in the center 66dp safe zone of the adaptive icon
       const foregroundPath = path.join(dirPath, 'ic_launcher_foreground.png');
       await sharp(sourceIcon)
         .resize(size, size, {
-          fit: 'contain',
+          fit: 'cover',
+          position: 'center',
           background: { r: 0, g: 0, b: 0, alpha: 0 }  // Transparent background
         })
         .png()
         .toFile(foregroundPath);
-      console.log(`✅ ${dir}: ic_launcher_foreground.png (${size}x${size}) - transparent`);
+      console.log(`✅ ${dir}: ic_launcher_foreground.png (${size}x${size}) - cover fit, transparent`);
       
       // Generate ic_launcher_round.png (used for round icon display)
       // Use transparent background to match adaptive icon behavior

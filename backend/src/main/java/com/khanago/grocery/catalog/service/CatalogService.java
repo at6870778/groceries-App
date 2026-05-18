@@ -45,6 +45,18 @@ public class CatalogService {
         return productRepository.findByActiveTrueAndRestaurantIdIsNull(pageable).map(this::toProductDto);
     }
 
+    // Admin product listing - shows all products (active + inactive)
+    public Page<ProductDto> listAdminProducts(int page, int size, Long categoryId, String query) {
+        PageRequest pageable = PageRequest.of(page, size);
+        if (query != null && !query.isBlank()) {
+            return productRepository.findByNameContainingIgnoreCase(query, pageable).map(this::toProductDto);
+        }
+        if (categoryId != null) {
+            return productRepository.findByCategoryId(categoryId, pageable).map(this::toProductDto);
+        }
+        return productRepository.findAll(pageable).map(this::toProductDto);
+    }
+
     public List<RestaurantDto> getNearbyRestaurants(Double lat, Double lng, double radiusKm) {
         List<Restaurant> list = (lat != null && lng != null)
                 ? restaurantRepository.findNearby(lat, lng, radiusKm)

@@ -22,6 +22,15 @@ public class AdminCatalogController {
     private final CatalogService catalogService;
     private final CloudinaryService cloudinaryService;
 
+    @GetMapping("/products")
+    public org.springframework.data.domain.Page<ProductDto> listProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String query) {
+        return catalogService.listAdminProducts(page, size, categoryId, query);
+    }
+
     @GetMapping("/categories")
     public List<CategoryDto> listCategories() {
         return catalogService.getAllCategories();

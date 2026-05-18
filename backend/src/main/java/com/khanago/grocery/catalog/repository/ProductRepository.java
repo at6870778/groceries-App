@@ -24,6 +24,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @EntityGraph(attributePaths = {"category"})
     Page<Product> findByNameContainingIgnoreCaseAndActiveTrue(String query, Pageable pageable);
 
+    // Admin endpoints - show all products regardless of active status
+    @EntityGraph(attributePaths = {"category"})
+    Page<Product> findByCategoryId(Long categoryId, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"category"})
+    Page<Product> findByNameContainingIgnoreCase(String query, Pageable pageable);
+
     @Override
     @EntityGraph(attributePaths = {"category"})
     Optional<Product> findById(Long id);

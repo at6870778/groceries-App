@@ -472,7 +472,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
     if (categoryId) {
       params.categoryId = categoryId;
     }
-    this.api.get<any>('/catalog/products', params).subscribe((res) => {
+    this.api.get<any>('/admin/catalog/products', params).subscribe((res) => {
       this.currentPage.set(res.number ?? page);
       this.totalPages.set(res.totalPages || 1);
       this.products.set(res.content || []);

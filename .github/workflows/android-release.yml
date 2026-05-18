@@ -44,6 +44,34 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Clear Gradle build cache (force resource rebuild)
+        shell: bash
+        run: |
+          rm -rf ~/.gradle/build-cache-* || true
+          rm -rf ~/.gradle/caches/build-cache-* || true
+
+      - name: Verify app icons exist
+        shell: bash
+        working-directory: ionic-app
+        run: |
+          echo "=== Checking icon files ==="
+          for dir in android/app/src/main/res/mipmap-*/; do
+            icon="$dir/ic_launcher.png"
+            if [ -f "$icon" ]; then
+              size=$(stat -f%z "$icon" 2>/dev/null || stat -c%s "$icon" 2>/dev/null)
+              echo "✓ $(basename $(dirname "$icon"))/ic_launcher.png: $size bytes"
+            else
+              echo "✗ $(basename $(dirname "$icon"))/ic_launcher.png: MISSING"
+            fi
+          done
+          echo "=== Checking source icon ==="
+          if [ -f "resources/icon.png" ]; then
+            size=$(stat -f%z "resources/icon.png" 2>/dev/null || stat -c%s "resources/icon.png" 2>/dev/null)
+            echo "✓ resources/icon.png: $size bytes"
+          else
+            echo "✗ resources/icon.png: MISSING"
+          fi
+
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 

@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -46,6 +47,7 @@ public class CatalogService {
     }
 
     // Admin product listing - shows all products (active + inactive)
+    @Transactional(readOnly = true)
     public Page<ProductDto> listAdminProducts(int page, int size, Long categoryId, String query) {
         PageRequest pageable = PageRequest.of(page, size);
         if (query != null && !query.isBlank()) {

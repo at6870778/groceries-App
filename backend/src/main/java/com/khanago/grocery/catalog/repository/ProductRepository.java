@@ -31,6 +31,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @EntityGraph(attributePaths = {"category"})
     Page<Product> findByNameContainingIgnoreCase(String query, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"category"})
+    @Override
+    Page<Product> findAll(Pageable pageable);
+
     @Override
     @EntityGraph(attributePaths = {"category"})
     Optional<Product> findById(Long id);

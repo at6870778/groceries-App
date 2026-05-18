@@ -39,26 +39,28 @@ async function resizeIcons() {
       console.log(`✅ ${dir}: ic_launcher.png (${size}x${size})`);
       
       // Generate ic_launcher_foreground.png (used by adaptive icon on Android 8.0+)
+      // Use transparent background so Android's adaptive icon mask doesn't crop the logo
       const foregroundPath = path.join(dirPath, 'ic_launcher_foreground.png');
       await sharp(sourceIcon)
         .resize(size, size, {
           fit: 'contain',
-          background: { r: 255, g: 255, b: 255, alpha: 1 }
+          background: { r: 0, g: 0, b: 0, alpha: 0 }  // Transparent background
         })
         .png()
         .toFile(foregroundPath);
-      console.log(`✅ ${dir}: ic_launcher_foreground.png (${size}x${size})`);
+      console.log(`✅ ${dir}: ic_launcher_foreground.png (${size}x${size}) - transparent`);
       
       // Generate ic_launcher_round.png (used for round icon display)
+      // Use transparent background to match adaptive icon behavior
       const roundPath = path.join(dirPath, 'ic_launcher_round.png');
       await sharp(sourceIcon)
         .resize(size, size, {
           fit: 'contain',
-          background: { r: 255, g: 255, b: 255, alpha: 1 }
+          background: { r: 0, g: 0, b: 0, alpha: 0 }  // Transparent background
         })
         .png()
         .toFile(roundPath);
-      console.log(`✅ ${dir}: ic_launcher_round.png (${size}x${size})`);
+      console.log(`✅ ${dir}: ic_launcher_round.png (${size}x${size}) - transparent`);
     }
     
     console.log('\n✨ All icons (ic_launcher, ic_launcher_foreground, ic_launcher_round) generated successfully!');

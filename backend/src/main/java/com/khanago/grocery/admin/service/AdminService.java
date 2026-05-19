@@ -54,6 +54,23 @@ public class AdminService {
         return userRepository.findByRoles_Name(RoleName.DELIVERY_BOY, PageRequest.of(page, size)).map(this::toDto);
     }
 
+    public Page<AdminUserDto> listAllUsers(int page, int size) {
+        return userRepository.findAll(PageRequest.of(page, size)).map(this::toDto);
+    }
+
+    public List<AdminUserDto> searchUsers(String searchTerm) {
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            return List.of();
+        }
+        String term = searchTerm.toLowerCase().trim();
+        // Find all users matching name or phone (case-insensitive)
+        return userRepository.findAll().stream()
+                .filter(u -> (u.getFullName() != null && u.getFullName().toLowerCase().contains(term))
+                        || u.getPhone().toLowerCase().contains(term))
+                .map(this::toDto)
+                .toList();
+    }
+
     public ReportDto report() {
         long totalOrders = orderRepository.count();
         long deliveredOrders = orderRepository.countByStatus(OrderStatus.DELIVERED);

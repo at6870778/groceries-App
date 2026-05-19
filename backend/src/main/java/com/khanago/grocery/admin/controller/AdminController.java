@@ -45,6 +45,17 @@ public class AdminController {
         return adminService.listDeliveryBoys(page, size);
     }
 
+    @GetMapping("/users")
+    public Page<AdminUserDto> allUsers(@RequestParam(defaultValue = "0") int page,
+                                       @RequestParam(defaultValue = "20") int size) {
+        return adminService.listAllUsers(page, size);
+    }
+
+    @GetMapping("/users/search")
+    public java.util.List<AdminUserDto> searchUsers(@RequestParam String query) {
+        return adminService.searchUsers(query);
+    }
+
     @GetMapping("/reports")
     public ReportDto reports() {
         return adminService.report();

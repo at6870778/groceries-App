@@ -1,22 +1,35 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../core/services/auth.service';
+import { SessionTimeoutService } from '../core/services/session-timeout.service';
 
 @Component({
   standalone: true,
   selector: 'app-admin-layout',
-  imports: [CommonModule, RouterOutlet, RouterLink, MatToolbarModule, MatButtonModule, MatIconModule, MatSidenavModule],
+  imports: [CommonModule, RouterOutlet, RouterLink, MatToolbarModule, MatButtonModule, MatIconModule, MatSidenavModule, MatSnackBarModule],
   styles: [`
     .shell { height: 100vh; }
     .content { padding: 16px; }
     .menu { width: 220px; padding: 12px; background: #f3f8f1; }
     .menu a { display: block; margin-bottom: 8px; text-decoration: none; color: #133226; font-weight: 700; }
     .brand { font-family: "Fraunces", serif; letter-spacing: 0.2px; }
+    .session-warning {
+      background: #fff3cd;
+      color: #856404;
+      padding: 12px 16px;
+      border-bottom: 2px solid #ffc107;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      font-weight: 600;
+    }
   `],
   template: `
     <mat-sidenav-container class="shell">
@@ -35,6 +48,12 @@ import { AuthService } from '../core/services/auth.service';
         <a routerLink="/support-contact">🛟 Support Contact</a>
       </mat-sidenav>
       <mat-sidenav-content>
+        <!-- Session Warning Banner -->
+        <div *ngIf="sessionTimeout.isWarningVisible" class="session-warning">
+          <span>⏱️ {{ sessionTimeout.warningMessage }}</span>
+          <button mat-button (click)="sessionTimeout.dismissWarning()" style="color:#856404;">Dismiss</button>
+        </div>
+        
         <mat-toolbar color="primary">
           <span>Operations Console</span>
           <span style="flex: 1 1 auto"></span>
@@ -48,9 +67,10 @@ import { AuthService } from '../core/services/auth.service';
   `
 })
 export class AdminLayoutComponent {
-  constructor(private authService: AuthService) {}
+  readonly sessionTimeout = inject(SessionTimeoutService);
+  private authService = inject(AuthService);
 
-  logout() {
+  logout(): void {
     this.authService.logout();
   }
 }

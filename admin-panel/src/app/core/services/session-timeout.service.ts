@@ -32,7 +32,7 @@ export class SessionTimeoutService {
 
   private startSessionMonitoring(): void {
     this.stopAllTimers(); // Clear any existing timers
-    this.setupInactivityTimer();
+    this.resetInactivityTimer();
     this.setupTokenExpiryTimer();
     this.setupActivityListeners();
   }

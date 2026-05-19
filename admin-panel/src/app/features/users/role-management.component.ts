@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -28,6 +28,7 @@ interface UserRoles {
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     MatSnackBarModule,
     MatFormFieldModule,
     MatInputModule,

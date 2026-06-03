@@ -100,7 +100,21 @@ public class OtpAuthService {
 
         String requestId;
         if (widgetEnabled) {
-            requestId = msg91SmsService.sendWidgetOtp(phone);
+            try {
+                requestId = msg91SmsService.sendWidgetOtp(phone);
+            } catch (Exception widgetException) {
+                // Widget failed (credentials invalid, region not supported, etc.)
+                // Fall back to regular SMS API with template
+                log.warn("MSG91 widget OTP failed for +{}, falling back to regular SMS API: {}", 
+                        phone, widgetException.getMessage());
+                try {
+                    msg91SmsService.sendOtp(phone, placeholderOtp);
+                    requestId = "FALLBACK-API-OTP";
+                } catch (Exception apiException) {
+                    log.error("Both widget and regular SMS API failed for +{}", phone);
+                    throw new ApiException("Unable to send OTP. Both delivery methods failed. Please try again.");
+                }
+            }
         } else {
             msg91SmsService.sendOtp(phone, placeholderOtp);
             requestId = "LOCAL-OTP";
@@ -187,7 +201,13 @@ public class OtpAuthService {
         }
 
         // ── Verify using MSG91 widget OTP if widget is configured ─────────────────
-        if (widgetEnabled && request.reqId() != null && !request.reqId().isBlank()) {
+        // Skip widget verification if using fallback APIs (FALLBACK-API-OTP, LOCAL-OTP)
+        boolean isWidgetRequestId = widgetEnabled && request.reqId() != null 
+                && !request.reqId().isBlank() 
+                && !request.reqId().startsWith("FALLBACK-") 
+                && !request.reqId().startsWith("LOCAL-");
+        
+        if (isWidgetRequestId) {
             if (!msg91SmsService.verifyWidgetOtp(request.reqId(), request.otp())) {
                 if (record != null) {
                     record.setAttemptCount(record.getAttemptCount() + 1);

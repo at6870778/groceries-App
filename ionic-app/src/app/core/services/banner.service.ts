@@ -16,7 +16,7 @@ export interface Banner {
   providedIn: 'root'
 })
 export class BannerService {
-  private readonly API_URL = `${environment.apiUrl}/banners`;
+  private readonly API_URL = `${environment.apiUrl}/v1/banners`;
   
   constructor(private http: HttpClient) {}
   

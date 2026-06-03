@@ -1974,20 +1974,15 @@ export class HomePage implements OnInit, OnDestroy {
         }
       });
 
-    // Load banners from API
-    this.bannerService.getActiveBanners()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (banners) => {
-          this.bannerImages.set(banners);
-          this.startBannerAutoSlide();
-        },
-        error: (err) => {
-          console.error('Failed to load banners:', err);
-          // Fallback to empty banners - user won't see carousel
-          this.bannerImages.set([]);
-        }
-      });
+    // Load static banners from assets (no API call - better performance)
+    const staticBanners: Banner[] = [
+      { id: 1, imageUrl: '/assets/banner-chai-pohaa.png', displayOrder: 1, isActive: true, title: 'Chai & Snacks' },
+      { id: 2, imageUrl: '/assets/banner-fruits-veggies.png', displayOrder: 2, isActive: true, title: 'Fresh Fruits' },
+      { id: 3, imageUrl: '/assets/banner-kirana.png', displayOrder: 3, isActive: true, title: 'Groceries' },
+      { id: 4, imageUrl: '/assets/banner-foods.png', displayOrder: 4, isActive: true, title: 'Foods' }
+    ];
+    this.bannerImages.set(staticBanners);
+    this.startBannerAutoSlide();
 
     this.loadSavedAddresses();
 

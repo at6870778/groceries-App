@@ -1840,6 +1840,13 @@ export class CartPage implements OnInit, OnDestroy {
     }
     if (this.paymentMode() === 'COD') {
       this.confirmingCod.set(true);
+      // Scroll COD confirmation card into view
+      setTimeout(() => {
+        const codCard = document.querySelector('.cod-confirm-card');
+        if (codCard) {
+          codCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
       return;
     }
     this.placeOrderAfterPayment();

@@ -163,9 +163,15 @@ public class Msg91SmsService {
             boolean success = "success".equalsIgnoreCase(root.path("type").asText());
             String requestId = root.path("message").asText(null);
 
-            if (!success || requestId == null || requestId.isBlank()) {
+            if (!success) {
                 log.error("MSG91 widget sendOtp for +{} returned non-success body: {}", fullPhone, responseBody);
                 throw new RuntimeException("Unable to send OTP. MSG91 widget did not confirm delivery.");
+            }
+
+            // If MSG91 doesn't provide requestId, generate one ourselves since OTP was successfully sent
+            if (requestId == null || requestId.isBlank()) {
+                requestId = UUID.randomUUID().toString();
+                log.info("MSG91 widget sent OTP successfully but without explicit requestId. Generated fallback: {} for +{}", requestId, fullPhone);
             }
 
             log.info("Widget OTP dispatched via MSG91 to +{} with reqId {} and response: {}", fullPhone, requestId, responseBody);

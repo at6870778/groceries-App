@@ -23,7 +23,7 @@ import { SyncService } from '../../core/services/sync.service';
       </div>
     </div>
 
-    <ion-content [fullscreen]="false" class="main-content">
+    <ion-content [fullscreen]="false" class="main-content" style="--padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px))">
 
       <!-- ========== STEP 1: PHONE ========== -->
       <div *ngIf="!otpSent" class="page-wrapper">
@@ -158,6 +158,9 @@ import { SyncService } from '../../core/services/sync.service';
       </div>
 
     </ion-content>
+
+    <!-- Safe area background — covers notch/safe area at bottom with black -->
+    <div style="position:fixed;bottom:0;left:0;right:0;height:env(safe-area-inset-bottom,0px);background:#111;z-index:999;pointer-events:none;"></div>
   `,
   styles: [`
     /* === LOCATION OVERLAY === */

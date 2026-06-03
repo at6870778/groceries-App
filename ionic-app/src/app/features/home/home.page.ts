@@ -161,14 +161,6 @@ import { NotificationStateService } from '../../core/services/notification-state
                       (click)="goToBanner(i)"
                       [attr.aria-label]="'Go to banner ' + (i + 1)"></button>
             </div>
-
-            <!-- Carousel navigation arrows -->
-            <button class="carousel-arrow carousel-arrow-left" (click)="previousBanner()" aria-label="Previous banner">
-              ‹
-            </button>
-            <button class="carousel-arrow carousel-arrow-right" (click)="nextBanner()" aria-label="Next banner">
-              ›
-            </button>
           </div>
 
           <!-- fireworks bursts -->
@@ -783,28 +775,6 @@ import { NotificationStateService } from '../../core/services/notification-state
 
     .banner-dots button:hover {
       background: rgba(255, 255, 255, 0.8);
-    }
-
-    /* Carousel arrows */
-    .carousel-arrow {
-      display: none;
-    }
-
-    .carousel-arrow:hover {
-      background: rgba(0, 0, 0, 0.6);
-      transform: translateY(-50%) scale(1.1);
-    }
-
-    .carousel-arrow:active {
-      transform: translateY(-50%) scale(0.95);
-    }
-
-    .carousel-arrow-left {
-      left: 12px;
-    }
-
-    .carousel-arrow-right {
-      right: 12px;
     }
 
     /* full-bleed banner image — natural height, no crop */
@@ -2534,10 +2504,10 @@ export class HomePage implements OnInit, OnDestroy {
     if (this.bannerAutoSlideTimer) {
       clearInterval(this.bannerAutoSlideTimer);
     }
-    // Auto-slide every 5 seconds
+    // Auto-slide every 2 seconds
     this.bannerAutoSlideTimer = setInterval(() => {
       this.nextBanner();
-    }, 5000);
+    }, 2000);
   }
 
   nextBanner(): void {

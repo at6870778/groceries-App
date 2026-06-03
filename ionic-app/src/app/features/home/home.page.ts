@@ -153,14 +153,6 @@ import { NotificationStateService } from '../../core/services/notification-state
                    [alt]="'Banner ' + banner"
                    class="ok-hero-bg-img">
             </div>
-            
-            <!-- Carousel dots -->
-            <div class="carousel-dots banner-dots">
-              <button *ngFor="let img of bannerImages(); let i = index"
-                      [class.active]="currentBannerIndex() === i"
-                      (click)="goToBanner(i)"
-                      [attr.aria-label]="'Go to banner ' + (i + 1)"></button>
-            </div>
           </div>
 
           <!-- fireworks bursts -->
@@ -966,9 +958,6 @@ import { NotificationStateService } from '../../core/services/notification-state
     .food-card-name { font-size: 0.82rem; font-weight: 700; color: #1a1a1a; line-height: 1.2; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .food-order-btn { width: 100%; padding: 5px 0; background: #667eea; border: none; border-radius: 8px; color: #fff; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
     .food-order-btn:active { opacity: 0.85; }
-    .carousel-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
-    .cdot { width: 6px; height: 6px; border-radius: 3px; background: #ddd; cursor: pointer; transition: all 0.2s; }
-    .cdot.active { background: #667eea; width: 18px; border-radius: 3px; }
     /* ══════════════════════════════════════
        CATEGORY CARDS
     ══════════════════════════════════════ */
@@ -2522,14 +2511,6 @@ export class HomePage implements OnInit, OnDestroy {
     const prev = (this.currentBannerIndex() - 1 + total) % total;
     this.currentBannerIndex.set(prev);
     this.restartAutoSlide();
-  }
-
-  goToBanner(index: number): void {
-    const total = this.bannerImages().length;
-    if (index >= 0 && index < total) {
-      this.currentBannerIndex.set(index);
-      this.restartAutoSlide();
-    }
   }
 
   private restartAutoSlide(): void {

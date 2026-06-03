@@ -1409,7 +1409,9 @@ export class CartPage implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.savedAddresses.set(res || []);
-          if (this.selectedAddressId() === 'gps') {
+          // Auto-select default address on first load or if no valid address selected
+          const currentAddr = this.selectedAddress();
+          if (!currentAddr || !currentAddr.id) {
             const def = (res || []).find((a: any) => a.isDefault) || (res || [])[0];
             if (def) {
               this.selectedAddress.set(def);
@@ -1447,42 +1449,49 @@ export class CartPage implements OnInit, OnDestroy {
       return;
     }
 
-    // Create temporary address object from form
-    const tempAddress = {
-      id: `temp_${Date.now()}`,
-      village: this.newAddressForm.village.trim(),
-      landmark: this.newAddressForm.landmark.trim(),
+    // Create address payload to save to backend database
+    const payload = {
+      label: `${this.newAddressForm.village.trim()} - ${this.newAddressForm.landmark.trim()}`,
       line1: this.newAddressForm.post.trim(),
       line2: this.newAddressForm.district?.trim() || '',
-      postalCode: this.newAddressForm.pincode?.trim() || '',
-      label: `${this.newAddressForm.village} - ${this.newAddressForm.landmark}`
+      city: this.newAddressForm.village.trim(),
+      state: 'Uttar Pradesh', // Default state
+      postalCode: this.newAddressForm.pincode?.trim() || '000000',
+      village: this.newAddressForm.village.trim(),
+      landmark: this.newAddressForm.landmark.trim(),
+      isDefault: true
     };
 
-    // Store in sessionStorage for use during checkout
-    try {
-      const storedData = JSON.parse(sessionStorage.getItem('temp_address_data') || '{}');
-      storedData[tempAddress.id] = tempAddress;
-      sessionStorage.setItem('temp_address_data', JSON.stringify(storedData));
-    } catch (e) {
-      console.warn('Could not save temp address:', e);
-    }
+    // Save address to backend database (persistent storage)
+    this.api.post<any>('/customer/profile/addresses', payload)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (savedAddress) => {
+          // Add to saved addresses list
+          this.savedAddresses.set([savedAddress, ...this.savedAddresses()]);
+          
+          // Select this address
+          this.selectedAddress.set(savedAddress);
+          this.selectedAddressId.set(savedAddress.id);
 
-    // Select this address
-    this.selectedAddress.set(tempAddress);
-    this.selectedAddressId.set(tempAddress.id);
+          // Close both modals
+          this.showAddNewAddressForm.set(false);
+          this.showAddressPicker.set(false);
 
-    // Close both modals
-    this.showAddNewAddressForm.set(false);
-    this.showAddressPicker.set(false);
-
-    // Reset form
-    this.newAddressForm = {
-      village: '',
-      landmark: '',
-      post: '',
-      pincode: '',
-      district: ''
-    };
+          // Reset form
+          this.newAddressForm = {
+            village: '',
+            landmark: '',
+            post: '',
+            pincode: '',
+            district: ''
+          };
+        },
+        error: (err) => {
+          console.error('Failed to save address:', err);
+          alert('Failed to save address. Please try again.');
+        }
+      });
   }
 
   private gpsVillageKey = 'orderkro_gps_village';

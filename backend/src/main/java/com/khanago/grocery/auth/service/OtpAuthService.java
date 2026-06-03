@@ -118,7 +118,7 @@ public class OtpAuthService {
                 }
             }
         } else {
-            msg91SmsService.sendOtp(phone, placeholderOtp);
+            msg91SmsService.sendOtp(phone, numericOtp);
             requestId = "LOCAL-OTP";
         }
 

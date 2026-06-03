@@ -31,8 +31,8 @@ springdoc:
 app:
   jwt:
     secret: ${JWT_SECRET:change-me-to-a-long-random-string-of-at-least-32-bytes}
-    expiry-minutes: ${JWT_EXPIRY_MINUTES:1440}
-    refresh-expiry-days: ${JWT_REFRESH_EXPIRY_DAYS:30}
+    expiry-minutes: ${JWT_EXPIRY_MINUTES:129600}
+    refresh-expiry-days: ${JWT_REFRESH_EXPIRY_DAYS:90}
   razorpay:
     key-id: ${RAZORPAY_KEY_ID:}
     key-secret: ${RAZORPAY_KEY_SECRET:}

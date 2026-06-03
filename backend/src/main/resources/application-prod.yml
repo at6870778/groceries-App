@@ -38,8 +38,8 @@ logging:
 app:
   jwt:
     secret: ${JWT_SECRET}
-    expiry-minutes: ${JWT_EXPIRY_MINUTES:1440}
-    refresh-expiry-days: ${JWT_REFRESH_EXPIRY_DAYS:30}
+    expiry-minutes: ${JWT_EXPIRY_MINUTES:129600}
+    refresh-expiry-days: ${JWT_REFRESH_EXPIRY_DAYS:90}
   auth:
     accept-any-otp: ${ACCEPT_ANY_OTP:false}
     static-otp: ${STATIC_OTP:123456}

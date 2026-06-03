@@ -142,11 +142,35 @@ import { NotificationStateService } from '../../core/services/notification-state
       <ng-container *ngIf="!hasSearchTerm()">
 
         <!-- ══════════════════════════════════════════════════
-             HERO BANNER — custom banner image
+             HERO BANNER — custom banner image with carousel
         ══════════════════════════════════════════════════ -->
         <div class="ok-hero">
-          <!-- full-bleed banner image -->
-          <img class="ok-hero-bg-img" src="assets/home-banner.png" alt="OrderKro Banner">
+          <!-- Carousel container -->
+          <div class="banner-carousel-wrap">
+            <div class="banner-carousel-track" [style.transform]="'translateX(' + (-currentBannerIndex() * 100) + '%)'">
+              <img *ngFor="let banner of bannerImages()" 
+                   [src]="banner" 
+                   [alt]="'Banner ' + banner"
+                   class="ok-hero-bg-img">
+            </div>
+            
+            <!-- Carousel dots -->
+            <div class="carousel-dots banner-dots">
+              <button *ngFor="let img of bannerImages(); let i = index"
+                      [class.active]="currentBannerIndex() === i"
+                      (click)="goToBanner(i)"
+                      [attr.aria-label]="'Go to banner ' + (i + 1)"></button>
+            </div>
+
+            <!-- Carousel navigation arrows -->
+            <button class="carousel-arrow carousel-arrow-left" (click)="previousBanner()" aria-label="Previous banner">
+              ‹
+            </button>
+            <button class="carousel-arrow carousel-arrow-right" (click)="nextBanner()" aria-label="Next banner">
+              ›
+            </button>
+          </div>
+
           <!-- fireworks bursts -->
           <div class="fw-wrap">
             <div class="fw fw1"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
@@ -701,6 +725,106 @@ import { NotificationStateService } from '../../core/services/notification-state
       display: flex;
       align-items: flex-end;
     }
+
+    /* ──────────────────────────────────────
+       BANNER CAROUSEL STYLES
+    ────────────────────────────────────── */
+    .banner-carousel-wrap {
+      position: relative;
+      width: 100%;
+      height: auto;
+      overflow: hidden;
+      background: #f5f5f5;
+    }
+
+    .banner-carousel-track {
+      display: flex;
+      width: 100%;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .banner-carousel-track .ok-hero-bg-img {
+      flex: 0 0 100%;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Banner dots */
+    .banner-dots {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .banner-dots button {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(4px);
+    }
+
+    .banner-dots button.active {
+      width: 24px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .banner-dots button:hover {
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Carousel arrows */
+    .carousel-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.4);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      font-size: 1.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(4px);
+      font-weight: 300;
+      line-height: 1;
+    }
+
+    .carousel-arrow:hover {
+      background: rgba(0, 0, 0, 0.6);
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    .carousel-arrow:active {
+      transform: translateY(-50%) scale(0.95);
+    }
+
+    .carousel-arrow-left {
+      left: 12px;
+    }
+
+    .carousel-arrow-right {
+      right: 12px;
+    }
+
     /* full-bleed banner image — natural height, no crop */
     .ok-hero-bg-img {
       display: block;
@@ -1185,66 +1309,73 @@ import { NotificationStateService } from '../../core/services/notification-state
     .quick-view-product {
       padding: 0;
       margin: 0;
-      display: block;
+      display: flex;
+      flex-direction: column;
       width: 100%;
       min-height: 0;
+      max-height: 100%;
+      overflow: hidden;
     }
     .qv-image-wrap {
       width: 100%;
-      height: 300px;
+      height: 480px;
       border-radius: 16px 16px 0 0;
-      overflow: auto;
+      overflow: hidden;
       margin: 0;
       margin-bottom: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #f8f9f0 !important;
+      background: linear-gradient(135deg, #f8f9f0 0%, #fafbf7 100%);
       flex-shrink: 0;
       position: relative;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     }
     .qv-image { 
       width: 100%; 
       height: 100%; 
       object-fit: contain; 
-      padding: 16px;
-      background: #f8f9f0;
+      padding: 24px;
+      background: linear-gradient(135deg, #f8f9f0 0%, #fafbf7 100%);
       cursor: zoom-in;
-      transition: transform 0.3s ease;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       touch-action: manipulation;
     }
     .qv-image:hover {
-      transform: scale(1.05);
+      transform: scale(1.08);
     }
     
     /* Product Details Section */
     .qv-details {
-      padding: 16px;
+      padding: 14px 16px;
       background: #fff;
       border-bottom: 1px solid #f0f0f0;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
     }
     
     .qv-category {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 700;
       color: #667eea;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
     
     .qv-name {
-      margin: 0 0 8px;
-      font-size: 1.15rem;
+      margin: 0 0 6px;
+      font-size: 1.2rem;
       font-weight: 800;
       color: #1a1a1a;
       line-height: 1.3;
     }
     
     .qv-unit {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: #999;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       font-weight: 500;
     }
     
@@ -1252,25 +1383,25 @@ import { NotificationStateService } from '../../core/services/notification-state
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     
     .qv-price {
       font-weight: 800;
-      font-size: 1.3rem;
+      font-size: 1.35rem;
       color: #1a1a1a;
     }
     
     .qv-mrp {
       text-decoration: line-through;
       color: #bbb;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
     }
     
     .qv-discount {
       background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
       color: #fff;
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 800;
       padding: 3px 8px;
       border-radius: 6px;
@@ -1278,21 +1409,21 @@ import { NotificationStateService } from '../../core/services/notification-state
     }
     
     .qv-description {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       color: #666;
-      line-height: 1.4;
-      margin-top: 6px;
+      line-height: 1.35;
+      margin-top: 4px;
     }
     
     .qv-actions {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       margin: 0;
-      padding: 14px 16px;
+      padding: 12px 16px;
       background: #fff;
       flex-wrap: wrap;
       justify-content: space-between;
-      border-top: none;
+      border-top: 1px solid #f0f0f0;
       flex-shrink: 0;
       border-radius: 0 0 16px 16px;
       width: 100%;
@@ -1301,35 +1432,32 @@ import { NotificationStateService } from '../../core/services/notification-state
     
     .qv-cancel-btn {
       flex: 1;
-      min-width: 110px;
-      padding: 11px 16px;
-      font-size: 0.92rem;
+      min-width: 100px;
+      padding: 10px 14px;
+      font-size: 0.9rem;
       font-weight: 600;
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: #f0f0f0;
       border: none;
       border-radius: 10px;
-      color: #fff;
+      color: #333;
       cursor: pointer;
       transition: all 0.3s ease;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .qv-cancel-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
     .qv-cancel-btn:active {
-      transform: translateY(0);
+      transform: scale(0.98);
+      background: #e8e8e8;
     }
     
     .qv-add-btn {
       flex: 1;
-      min-width: 110px;
-      padding: 11px 16px;
+      min-width: 100px;
+      padding: 10px 14px;
       background: linear-gradient(135deg, #667eea, #764ba2);
       color: #fff;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
       font-weight: 700;
       border: none;
       border-radius: 10px;
@@ -1339,37 +1467,34 @@ import { NotificationStateService } from '../../core/services/notification-state
       align-items: center;
       justify-content: center;
       gap: 5px;
-      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.35);
-    }
-    .qv-add-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.55);
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
     }
     .qv-add-btn:active {
-      transform: translateY(0);
+      transform: scale(0.98);
+      box-shadow: 0 2px 10px rgba(102, 126, 234, 0.2);
     }
     
     .qv-stepper {
       flex: 1;
-      min-width: 110px;
+      min-width: 100px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       background: linear-gradient(135deg, #667eea, #764ba2);
       border-radius: 10px;
-      padding: 0 12px;
-      height: 44px;
+      padding: 0 10px;
+      height: 40px;
     }
     
     .qv-step-btn {
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
       border: none;
       background: rgba(255, 255, 255, 0.3);
       color: #fff;
       border-radius: 6px;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       cursor: pointer;
       transition: all 0.2s ease;
       display: flex;
@@ -1377,14 +1502,14 @@ import { NotificationStateService } from '../../core/services/notification-state
       justify-content: center;
       font-weight: 700;
     }
-    .qv-step-btn:hover {
+    .qv-step-btn:active {
       background: rgba(255, 255, 255, 0.5);
     }
     
     .qv-qty {
       color: #fff;
       font-weight: 700;
-      font-size: 1rem;
+      font-size: 0.95rem;
       min-width: 20px;
       text-align: center;
     }
@@ -1456,68 +1581,244 @@ import { NotificationStateService } from '../../core/services/notification-state
     /* ═══════════════════════════════════════════════════════════
        RESPONSIVE DESIGN FOR ALL PHONE SIZES
     ═══════════════════════════════════════════════════════════ */
-    @media (max-width: 360px) {
+    
+    /* Standard phones: 375px-430px (iPhone, Pixel, Most Android) */
+    @media (min-width: 375px) and (max-width: 430px) {
       .modal-content {
-        max-width: calc(100% - 20px);
-        max-height: 85vh;
-        border-radius: 16px;
+        max-width: calc(100% - 24px);
+        max-height: 88vh;
       }
       .qv-image-wrap {
-        height: 120px;
+        height: 420px;
       }
       .qv-details {
-        padding: 10px;
+        padding: 13px 15px;
       }
-      .qv-category, .qv-name, .qv-description, .qv-unit {
-        font-size: 0.75rem;
+      .qv-category {
+        font-size: 0.69rem;
       }
-      .qv-price-row {
-        font-size: 0.85rem;
+      .qv-name {
+        font-size: 1.15rem;
+        margin-bottom: 7px;
+      }
+      .qv-unit {
+        font-size: 0.73rem;
+        margin-bottom: 7px;
+      }
+      .qv-price {
+        font-size: 1.32rem;
       }
       .qv-actions {
-        gap: 6px;
-        padding: 12px 12px;
-        flex-direction: column;
+        gap: 9px;
+        padding: 11px 15px;
       }
       .qv-cancel-btn, .qv-add-btn {
         padding: 10px 12px;
-        font-size: 0.85rem;
-        height: 40px;
-        min-width: unset;
-        flex: 1 1 100%;
-        white-space: normal;
-        text-overflow: clip;
+        font-size: 0.88rem;
+        height: 39px;
       }
       .qv-stepper {
-        min-width: 100px;
+        height: 39px;
+        gap: 5px;
+      }
+      .qv-step-btn {
+        width: 25px;
+        height: 25px;
+        font-size: 1.05rem;
       }
     }
 
-    @media (max-width: 280px) {
+    /* Small phones: 320px-360px */
+    @media (max-width: 360px) {
       .modal-content {
-        max-width: calc(100% - 16px);
-        border-radius: 12px;
-        max-height: 80vh;
+        max-width: calc(100% - 20px);
+        max-height: 86vh;
+        border-radius: 16px;
       }
       .qv-image-wrap {
-        height: 100px;
+        height: 360px;
       }
       .qv-details {
-        padding: 8px;
+        padding: 12px 14px;
       }
-      .qv-category, .qv-unit {
-        font-size: 0.65rem;
+      .qv-category {
+        font-size: 0.67rem;
+        margin-bottom: 3px;
       }
       .qv-name {
-        font-size: 0.8rem;
+        font-size: 1.05rem;
+        margin-bottom: 6px;
+        line-height: 1.25;
       }
-      .qv-description {
-        font-size: 0.7rem;
+      .qv-unit {
+        font-size: 0.71rem;
+        margin-bottom: 6px;
       }
       .qv-price-row {
-        font-size: 0.75rem;
+        margin-bottom: 6px;
+      }
+      .qv-price {
+        font-size: 1.25rem;
+      }
+      .qv-description {
+        font-size: 0.77rem;
+      }
+      .qv-actions {
+        gap: 8px;
+        padding: 10px 12px;
       }
       .qv-cancel-btn, .qv-add-btn {
+        padding: 9px 10px;
+        font-size: 0.81rem;
+        height: 37px;
+        min-width: 85px;
+      }
+      .qv-stepper {
+        min-width: 80px;
+        height: 37px;
+        gap: 4px;
+        padding: 0 8px;
+      }
+      .qv-step-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 1rem;
+      }
+    }
+
+    /* Very small phones: 280px-320px */
+    @media (max-width: 320px) {
+      .modal-content {
+        max-width: calc(100% - 16px);
+        border-radius: 14px;
+        max-height: 84vh;
+      }
+      .qv-image-wrap {
+        height: 320px;
+      }
+      .qv-details {
+        padding: 11px 12px;
+      }
+      .qv-category {
+        font-size: 0.65rem;
+        margin-bottom: 3px;
+      }
+      .qv-name {
+        font-size: 1rem;
+        margin-bottom: 5px;
+        line-height: 1.2;
+      }
+      .qv-unit {
+        font-size: 0.7rem;
+        margin-bottom: 5px;
+      }
+      .qv-price-row {
+        margin-bottom: 5px;
+      }
+      .qv-price {
+        font-size: 1.2rem;
+      }
+      .qv-mrp {
+        font-size: 0.85rem;
+      }
+      .qv-discount {
+        font-size: 0.65rem;
+        padding: 2px 6px;
+      }
+      .qv-description {
+        font-size: 0.76rem;
+        margin-top: 3px;
+      }
+      .qv-actions {
+        gap: 7px;
+        padding: 9px 11px;
+      }
+      .qv-cancel-btn, .qv-add-btn {
+        padding: 8px 9px;
+        font-size: 0.79rem;
+        height: 36px;
+        min-width: 75px;
+      }
+      .qv-stepper {
+        min-width: 75px;
+        height: 36px;
+        gap: 3px;
+        padding: 0 7px;
+      }
+      .qv-step-btn {
+        width: 22px;
+        height: 22px;
+        font-size: 0.95rem;
+      }
+      .qv-qty {
+        font-size: 0.9rem;
+      }
+    }
+
+    /* Extra large phones: 480px+ */
+    @media (min-width: 480px) {
+      .modal-content {
+        max-width: 480px;
+        max-height: 92vh;
+      }
+      .qv-image-wrap {
+        height: 520px;
+      }
+      .qv-details {
+        padding: 16px 18px;
+      }
+      .qv-category {
+        font-size: 0.7rem;
+        margin-bottom: 5px;
+      }
+      .qv-name {
+        font-size: 1.3rem;
+        margin-bottom: 8px;
+        line-height: 1.35;
+      }
+      .qv-unit {
+        font-size: 0.76rem;
+        margin-bottom: 8px;
+      }
+      .qv-price-row {
+        margin-bottom: 8px;
+      }
+      .qv-price {
+        font-size: 1.45rem;
+      }
+      .qv-mrp {
+        font-size: 0.92rem;
+      }
+      .qv-discount {
+        font-size: 0.7rem;
+        padding: 4px 10px;
+      }
+      .qv-description {
+        font-size: 0.86rem;
+        margin-top: 5px;
+      }
+      .qv-actions {
+        gap: 12px;
+        padding: 14px 18px;
+      }
+      .qv-cancel-btn, .qv-add-btn {
+        padding: 11px 16px;
+        font-size: 0.93rem;
+        height: 42px;
+        min-width: 120px;
+      }
+      .qv-stepper {
+        min-width: 120px;
+        height: 42px;
+        gap: 7px;
+        padding: 0 12px;
+      }
+      .qv-step-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 1.2rem;
+      }
+    }
         padding: 6px 8px;
         font-size: 0.75rem;
         height: 36px;
@@ -1562,6 +1863,15 @@ export class HomePage implements OnInit, OnDestroy {
   /** Stores the last message text the user dismissed — new messages bypass this */
   private dismissedMessage = localStorage.getItem('dismissed_announcement') || '';
   readonly bannerDismissed = signal(false);
+
+  // ── Banner Carousel ──
+  readonly bannerImages = signal<string[]>([
+    'assets/banner-chai-pohaa.png',
+    'assets/banner-foods.png',
+    'assets/banner-fruits-veggies.png'
+  ]);
+  readonly currentBannerIndex = signal(0);
+  private bannerAutoSlideTimer: any;
 
   private destroy$ = new Subject<void>();
   private backButtonListener: any;
@@ -1759,6 +2069,8 @@ export class HomePage implements OnInit, OnDestroy {
         }
       });
 
+    // Start banner carousel auto-slide
+    this.startBannerAutoSlide();
   }
 
   ionViewWillEnter(): void {
@@ -1828,6 +2140,9 @@ export class HomePage implements OnInit, OnDestroy {
     window.removeEventListener('androidBackButton', this.backButtonListener);
     window.removeEventListener('online', () => this.onOnline());
     window.removeEventListener('offline', () => this.onOffline());
+    if (this.bannerAutoSlideTimer) {
+      clearInterval(this.bannerAutoSlideTimer);
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -2230,6 +2545,49 @@ export class HomePage implements OnInit, OnDestroy {
 
   private onOffline(): void {
     console.log('🔴 Internet connection lost');
+  }
+
+  /* ═══════════════════════════════════════
+     BANNER CAROUSEL METHODS
+  ═══════════════════════════════════════ */
+
+  private startBannerAutoSlide(): void {
+    if (this.bannerAutoSlideTimer) {
+      clearInterval(this.bannerAutoSlideTimer);
+    }
+    // Auto-slide every 5 seconds
+    this.bannerAutoSlideTimer = setInterval(() => {
+      this.nextBanner();
+    }, 5000);
+  }
+
+  nextBanner(): void {
+    const total = this.bannerImages().length;
+    const next = (this.currentBannerIndex() + 1) % total;
+    this.currentBannerIndex.set(next);
+    this.restartAutoSlide();
+  }
+
+  previousBanner(): void {
+    const total = this.bannerImages().length;
+    const prev = (this.currentBannerIndex() - 1 + total) % total;
+    this.currentBannerIndex.set(prev);
+    this.restartAutoSlide();
+  }
+
+  goToBanner(index: number): void {
+    const total = this.bannerImages().length;
+    if (index >= 0 && index < total) {
+      this.currentBannerIndex.set(index);
+      this.restartAutoSlide();
+    }
+  }
+
+  private restartAutoSlide(): void {
+    if (this.bannerAutoSlideTimer) {
+      clearInterval(this.bannerAutoSlideTimer);
+    }
+    this.startBannerAutoSlide();
   }
 
 }

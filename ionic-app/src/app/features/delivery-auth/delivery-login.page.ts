@@ -120,14 +120,14 @@ import { SyncService } from '../../core/services/sync.service';
           <span>Welcome back, <strong>{{ returningDisplayName() }} Ji</strong>! Great to see you again.</span>
         </div>
 
-        <!-- 6 digit boxes (box-0 carries autocomplete for SMS autofill) -->
+        <!-- 6 digit boxes (all boxes have autocomplete for SMS autofill) -->
         <div class="otp-boxes">
           <input id="otpbox-0" class="otp-box" type="tel" inputmode="numeric" maxlength="1" autocomplete="one-time-code" [value]="otpDigits[0]" (input)="onOtpInput(0,$event)" (change)="onOtpInput(0,$event)" (keydown)="onOtpKeydown(0,$event)" (paste)="onOtpPaste($event)">
-          <input id="otpbox-1" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[1]" (input)="onOtpInput(1,$event)" (change)="onOtpInput(1,$event)" (keydown)="onOtpKeydown(1,$event)">
-          <input id="otpbox-2" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[2]" (input)="onOtpInput(2,$event)" (change)="onOtpInput(2,$event)" (keydown)="onOtpKeydown(2,$event)">
-          <input id="otpbox-3" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[3]" (input)="onOtpInput(3,$event)" (change)="onOtpInput(3,$event)" (keydown)="onOtpKeydown(3,$event)">
-          <input id="otpbox-4" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[4]" (input)="onOtpInput(4,$event)" (change)="onOtpInput(4,$event)" (keydown)="onOtpKeydown(4,$event)">
-          <input id="otpbox-5" class="otp-box" type="tel" inputmode="numeric" maxlength="1" [value]="otpDigits[5]" (input)="onOtpInput(5,$event)" (change)="onOtpInput(5,$event)" (keydown)="onOtpKeydown(5,$event)">
+          <input id="otpbox-1" class="otp-box" type="tel" inputmode="numeric" maxlength="1" autocomplete="one-time-code" [value]="otpDigits[1]" (input)="onOtpInput(1,$event)" (change)="onOtpInput(1,$event)" (keydown)="onOtpKeydown(1,$event)">
+          <input id="otpbox-2" class="otp-box" type="tel" inputmode="numeric" maxlength="1" autocomplete="one-time-code" [value]="otpDigits[2]" (input)="onOtpInput(2,$event)" (change)="onOtpInput(2,$event)" (keydown)="onOtpKeydown(2,$event)">
+          <input id="otpbox-3" class="otp-box" type="tel" inputmode="numeric" maxlength="1" autocomplete="one-time-code" [value]="otpDigits[3]" (input)="onOtpInput(3,$event)" (change)="onOtpInput(3,$event)" (keydown)="onOtpKeydown(3,$event)">
+          <input id="otpbox-4" class="otp-box" type="tel" inputmode="numeric" maxlength="1" autocomplete="one-time-code" [value]="otpDigits[4]" (input)="onOtpInput(4,$event)" (change)="onOtpInput(4,$event)" (keydown)="onOtpKeydown(4,$event)">
+          <input id="otpbox-5" class="otp-box" type="tel" inputmode="numeric" maxlength="1" autocomplete="one-time-code" [value]="otpDigits[5]" (input)="onOtpInput(5,$event)" (change)="onOtpInput(5,$event)" (keydown)="onOtpKeydown(5,$event)">
         </div>
 
         <!-- Name field -->
@@ -521,6 +521,7 @@ import { SyncService } from '../../core/services/sync.service';
     /* === OTP PAGE === */
     .otp-page {
       padding: 0;
+      overflow-x: hidden;
     }
 
     .otp-header {
@@ -578,32 +579,87 @@ import { SyncService } from '../../core/services/sync.service';
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* === OTP BOXES === */
+    /* === OTP BOXES — RESPONSIVE === */
     .otp-boxes {
       display: flex;
       justify-content: center;
+      align-items: center;
       gap: 10px;
-      padding: 36px 20px 24px;
+      padding: 36px 16px 24px;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
     }
 
     .otp-box {
-      width: 48px;
-      height: 56px;
+      width: 44px;
+      height: 52px;
       border-radius: 12px;
       border: 2px solid #e8ecf4;
       background: #f7f9fc;
       text-align: center;
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 700;
       color: #1a1a1a;
       outline: none;
-      transition: border-color 0.2s, transform 0.15s;
+      transition: border-color 0.2s, transform 0.15s, background 0.2s;
+      flex-shrink: 0;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: textfield;
+    }
+
+    /* Remove number input spinner */
+    .otp-box::-webkit-outer-spin-button,
+    .otp-box::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
     }
 
     .otp-box:focus {
-      border-color: #1ba672;
+      border-color: #667eea;
       background: #fff;
-      transform: scale(1.05);
+      transform: scale(1.08);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    /* Responsive styles for smaller phones */
+    @media (max-width: 360px) {
+      .otp-boxes {
+        padding: 32px 12px 20px;
+        gap: 8px;
+      }
+      .otp-box {
+        width: 40px;
+        height: 48px;
+        font-size: 18px;
+      }
+    }
+
+    @media (max-width: 320px) {
+      .otp-boxes {
+        padding: 28px 10px 18px;
+        gap: 6px;
+      }
+      .otp-box {
+        width: 36px;
+        height: 44px;
+        font-size: 16px;
+      }
+    }
+
+    @media (min-width: 480px) {
+      .otp-boxes {
+        padding: 40px 24px 28px;
+        gap: 12px;
+      }
+      .otp-box {
+        width: 50px;
+        height: 58px;
+        font-size: 22px;
+      }
     }
 
     /* === NAME INPUT === */

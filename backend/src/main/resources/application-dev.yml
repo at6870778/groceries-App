@@ -28,8 +28,8 @@ app:
     static-otp: ${STATIC_OTP:123456}
   jwt:
     secret: dev-secret-key-dev-secret-key-1234567890
-    expiry-minutes: 1440
-    refresh-expiry-days: 7
+    expiry-minutes: 129600
+    refresh-expiry-days: 90
   razorpay:
     key-id: ${RAZORPAY_KEY_ID:rzp_test_replace_me}
     key-secret: ${RAZORPAY_KEY_SECRET:replace_with_test_secret}

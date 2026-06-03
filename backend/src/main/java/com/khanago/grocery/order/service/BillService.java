@@ -158,19 +158,20 @@ public class BillService {
         document.add(new Paragraph("Items Ordered").setFont(bold).setFontSize(12)
                 .setFontColor(BRAND_DARK_GREEN).setMarginBottom(4));
 
-        Table itemsTable = new Table(new float[]{3, 1.5f, 0.8f, 1.5f, 1.5f})
+        Table itemsTable = new Table(new float[]{2.5f, 0.8f, 0.7f, 1.5f, 1.5f})
                 .setWidth(UnitValue.createPercentValue(100)).setMarginBottom(4);
 
         // Header row
         String[] cols = {"Item", "Qty", "Unit", "Unit Price", "Total"};
-        for (String col : cols) {
+        TextAlignment[] headerAligns = {TextAlignment.LEFT, TextAlignment.CENTER, TextAlignment.CENTER, TextAlignment.RIGHT, TextAlignment.RIGHT};
+        for (int i = 0; i < cols.length; i++) {
             Cell headerCell = new Cell()
                     .setBackgroundColor(BRAND_GREEN)
                     .setBorder(Border.NO_BORDER)
                     .setPadding(10)
                     .setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.MIDDLE)
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .add(new Paragraph(col).setFont(bold).setFontSize(10).setFontColor(ColorConstants.WHITE));
+                    .setTextAlignment(headerAligns[i])
+                    .add(new Paragraph(cols[i]).setFont(bold).setFontSize(10).setFontColor(ColorConstants.WHITE));
             itemsTable.addHeaderCell(headerCell);
         }
 
@@ -184,7 +185,9 @@ public class BillService {
             itemsTable.addCell(itemCell(qty, regular, rowBg, TextAlignment.CENTER));
             // Unit column: show just the unit (e.g., "kg")
             itemsTable.addCell(itemCell(item.getUnit() != null ? item.getUnit() : "-", regular, rowBg, TextAlignment.CENTER));
+            // Unit Price: RIGHT aligned
             itemsTable.addCell(itemCell("₹" + item.getUnitPrice(), regular, rowBg, TextAlignment.RIGHT));
+            // Total: RIGHT aligned
             itemsTable.addCell(itemCell("₹" + item.getLineTotal(), bold, rowBg, TextAlignment.RIGHT));
             alt = !alt;
         }

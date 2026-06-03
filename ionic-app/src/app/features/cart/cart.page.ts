@@ -204,11 +204,11 @@ declare global {
             </div>
           </div>
 
-          <!-- Free delivery nudge / congratulation -->
-          <div class="free-del-congrats" *ngIf="cartState.subtotal() >= 299">
-            🎉 Woohoo! <strong>FREE delivery</strong> unlocked on this order!
+          <!-- Free delivery nudge / congratulation (only show if delivery charge is not already free) -->
+          <div class="free-del-congrats" *ngIf="deliveryFee() === 0 && cartState.subtotal() > 0">
+            🎉 Woohoo! <strong>FREE delivery</strong> on this order!
           </div>
-          <div class="free-del-nudge" *ngIf="cartState.subtotal() < 299 && cartState.subtotal() > 0">
+          <div class="free-del-nudge" *ngIf="deliveryFee() > 0 && cartState.subtotal() < 299 && cartState.subtotal() > 0">
             🛒 Add <strong>₹{{ amountToFreeDelivery() }} more</strong> to get <strong>FREE delivery!</strong>
           </div>
 

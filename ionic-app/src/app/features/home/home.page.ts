@@ -1819,12 +1819,6 @@ import { NotificationStateService } from '../../core/services/notification-state
         font-size: 1.2rem;
       }
     }
-        padding: 6px 8px;
-        font-size: 0.75rem;
-        height: 36px;
-        min-height: 36px;
-      }
-    }
 
     /* Ensure touch targets are always >= 44px for accessibility */
     @media (max-width: 480px) {

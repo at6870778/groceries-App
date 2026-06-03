@@ -271,9 +271,6 @@ import { takeUntil } from 'rxjs/operators';
       white-space: nowrap;
       width: 100%;
       margin: 0;
-      --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      --color: #ffffff;
-      --box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26);
     }
     .step-btn {
       background: none;

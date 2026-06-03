@@ -787,7 +787,25 @@ import { NotificationStateService } from '../../core/services/notification-state
 
     /* Carousel arrows */
     .carousel-arrow {
-      display: none;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.4);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      font-size: 1.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(4px);
+      font-weight: 300;
+      line-height: 1;
     }
 
     .carousel-arrow:hover {
@@ -1416,23 +1434,21 @@ import { NotificationStateService } from '../../core/services/notification-state
       flex: 1;
       min-width: 100px;
       padding: 10px 14px;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: #fff;
       font-size: 0.9rem;
-      font-weight: 700;
+      font-weight: 600;
+      background: #f0f0f0;
       border: none;
       border-radius: 10px;
+      color: #333;
       cursor: pointer;
       transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .qv-cancel-btn:active {
       transform: scale(0.98);
-      box-shadow: 0 2px 10px rgba(102, 126, 234, 0.2);
+      background: #e8e8e8;
     }
     
     .qv-add-btn {

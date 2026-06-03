@@ -41,7 +41,7 @@ declare global {
           <div class="success-actions">
             <ion-button expand="block" (click)="downloadBill(lastPlacedOrderId() || 0)" *ngIf="lastPlacedOrderId()">📥 Download Receipt</ion-button>
             <ion-button expand="block" routerLink="/orders">View My Orders</ion-button>
-            <ion-button expand="block" fill="outline" routerLink="/home">Continue Shopping</ion-button>
+            <ion-button expand="block" fill="outline" routerLink="/products">Continue Shopping</ion-button>
           </div>
         </div>
       </ng-container>
@@ -370,8 +370,8 @@ declare global {
 
     .detail-row {
       display: flex;
-      flex-direction: column;
-      gap: 6px;
+      justify-content: space-between;
+      align-items: center;
       font-size: 12px;
     }
 
@@ -383,13 +383,9 @@ declare global {
     .value {
       color: #2e7d32;
       font-weight: 500;
-      text-align: left;
+      text-align: right;
       word-break: break-word;
-      white-space: normal;
-      line-height: 1.4;
-      padding: 8px;
-      background: rgba(255, 255, 255, 0.6);
-      border-radius: 8px;
+      flex: 0 1 50%;
     }
 
     .payment-card {

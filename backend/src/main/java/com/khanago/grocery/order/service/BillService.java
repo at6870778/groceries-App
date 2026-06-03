@@ -162,7 +162,7 @@ public class BillService {
                 .setWidth(UnitValue.createPercentValue(100)).setMarginBottom(4);
 
         // Header row
-        String[] cols = {"Item", "Qty & Unit", "Unit Price", "Total"};
+        String[] cols = {"Item", "Qty", "Unit Price", "Total"};
         for (String col : cols) {
             itemsTable.addHeaderCell(new Cell()
                     .setBackgroundColor(BRAND_GREEN)
@@ -176,9 +176,7 @@ public class BillService {
         for (OrderItem item : order.getOrderItems()) {
             DeviceRgb rowBg = alt ? ROW_ALT : new DeviceRgb(255, 255, 255);
             itemsTable.addCell(itemCell(item.getProductName(), regular, rowBg, TextAlignment.LEFT));
-            // Include unit with quantity (e.g., "2 kg", "500 gram", "3 pcs")
-            String qtyWithUnit = item.getQuantity() + " " + (item.getUnit() != null ? item.getUnit() : "");
-            itemsTable.addCell(itemCell(qtyWithUnit.trim(), regular, rowBg, TextAlignment.CENTER));
+            itemsTable.addCell(itemCell(String.valueOf(item.getQuantity()), regular, rowBg, TextAlignment.CENTER));
             itemsTable.addCell(itemCell("₹" + item.getUnitPrice(), regular, rowBg, TextAlignment.RIGHT));
             itemsTable.addCell(itemCell("₹" + item.getLineTotal(), bold, rowBg, TextAlignment.RIGHT));
             alt = !alt;

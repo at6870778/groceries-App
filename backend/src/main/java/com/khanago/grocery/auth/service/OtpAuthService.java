@@ -87,11 +87,13 @@ public class OtpAuthService {
         // 3. Invalidate all prior active OTPs for this phone (one-at-a-time principle)
         otpRecordRepository.invalidateAllActiveForPhone(phone);
 
-        // 4. Persist OTP metadata for resend/rate-limit tracking.
-        String placeholderOtp = widgetEnabled ? "widget-otp" : String.format("%06d", secureRandom.nextInt(1_000_000));
+        // 4. Generate numeric OTP upfront (needed for both widget and fallback SMS)
+        String numericOtp = String.format("%06d", secureRandom.nextInt(1_000_000));
+        
+        // 5. Persist OTP metadata for resend/rate-limit tracking.
         OtpRecord record = new OtpRecord();
         record.setPhone(phone);
-        record.setOtpHash(passwordEncoder.encode(placeholderOtp));
+        record.setOtpHash(passwordEncoder.encode(numericOtp));
         record.setExpiresAt(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES));
         record.setAttemptCount(0);
         record.setUsed(false);
@@ -104,11 +106,11 @@ public class OtpAuthService {
                 requestId = msg91SmsService.sendWidgetOtp(phone);
             } catch (Exception widgetException) {
                 // Widget failed (credentials invalid, region not supported, etc.)
-                // Fall back to regular SMS API with template
+                // Fall back to regular SMS API with numeric OTP
                 log.warn("MSG91 widget OTP failed for +{}, falling back to regular SMS API: {}", 
                         phone, widgetException.getMessage());
                 try {
-                    msg91SmsService.sendOtp(phone, placeholderOtp);
+                    msg91SmsService.sendOtp(phone, numericOtp);
                     requestId = "FALLBACK-API-OTP";
                 } catch (Exception apiException) {
                     log.error("Both widget and regular SMS API failed for +{}", phone);

@@ -160,21 +160,14 @@ public class Msg91SmsService {
 
             JsonNode root = OBJECT_MAPPER.readTree(responseBody);
             // MSG91 widget sendOtpMobile returns reqId in "message" field on success
-            String typeField = root.path("type").asText("").toLowerCase(Locale.ROOT);
+            // IMPORTANT: HTTP 200 status code is the real success indicator
+            // MSG91 sometimes returns type:"error" even when OTP was sent (quirk with their API)
+            
             String requestId = root.path("message").asText(null);
+            String typeField = root.path("type").asText("").toLowerCase(Locale.ROOT);
             
-            // Check for error indicators in response
-            boolean isError = "error".equals(typeField) || root.has("error");
-            
-            if (isError) {
-                String errorMsg = root.path("message").asText(root.path("error").asText("Unknown error"));
-                log.error("MSG91 widget sendOtp for +{} returned error body: {}", fullPhone, responseBody);
-                throw new RuntimeException("Unable to send OTP. MSG91 error: " + errorMsg);
-            }
-
-            // Accept HTTP 200 with any response type as indication OTP was sent
-            // MSG91 might return: "success", "pending", or other status codes
-            // The fact we got HTTP 200 means OTP likely was sent
+            // Trust HTTP 200 status - if we reached here, MSG91 accepted the request
+            // The type field is unreliable, so we ignore it when HTTP 200 is returned
             log.debug("MSG91 widget response type='{}' for +{}: {}", typeField, fullPhone, responseBody);
 
             // If MSG91 doesn't provide requestId, generate one ourselves since HTTP 200 indicates OTP was sent

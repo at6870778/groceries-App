@@ -158,7 +158,7 @@ public class BillService {
         document.add(new Paragraph("Items Ordered").setFont(bold).setFontSize(12)
                 .setFontColor(BRAND_DARK_GREEN).setMarginBottom(4));
 
-        Table itemsTable = new Table(new float[]{3, 1.2f, 0.8f, 1.3f, 1.3f})
+        Table itemsTable = new Table(new float[]{3, 1.5f, 0.8f, 1.5f, 1.5f})
                 .setWidth(UnitValue.createPercentValue(100)).setMarginBottom(4);
 
         // Header row
@@ -169,6 +169,7 @@ public class BillService {
                     .setBorder(Border.NO_BORDER)
                     .setPadding(10)
                     .setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.CENTER)
+                    .setTextAlignment(TextAlignment.CENTER)
                     .add(new Paragraph(col).setFont(bold).setFontSize(10).setFontColor(ColorConstants.WHITE));
             itemsTable.addHeaderCell(headerCell);
         }
@@ -178,9 +179,9 @@ public class BillService {
         for (OrderItem item : order.getOrderItems()) {
             DeviceRgb rowBg = alt ? ROW_ALT : new DeviceRgb(255, 255, 255);
             itemsTable.addCell(itemCell(item.getProductName(), regular, rowBg, TextAlignment.LEFT));
-            // Qty column: show quantity with unit (e.g., "2 kg")
-            String qtyWithUnit = item.getQuantity() + " " + (item.getUnit() != null ? item.getUnit() : "");
-            itemsTable.addCell(itemCell(qtyWithUnit.trim(), regular, rowBg, TextAlignment.CENTER));
+            // Qty column: show ONLY quantity (e.g., "2")
+            String qty = item.getQuantity() != null ? item.getQuantity().toString() : "0";
+            itemsTable.addCell(itemCell(qty, regular, rowBg, TextAlignment.CENTER));
             // Unit column: show just the unit (e.g., "kg")
             itemsTable.addCell(itemCell(item.getUnit() != null ? item.getUnit() : "-", regular, rowBg, TextAlignment.CENTER));
             itemsTable.addCell(itemCell("₹" + item.getUnitPrice(), regular, rowBg, TextAlignment.RIGHT));
@@ -243,9 +244,9 @@ public class BillService {
 
     private Cell itemCell(String text, PdfFont font, DeviceRgb bg, TextAlignment align) {
         return new Cell().setBackgroundColor(bg).setBorder(Border.NO_BORDER)
-                .setPaddingTop(8).setPaddingBottom(8).setPaddingLeft(8).setPaddingRight(8)
+                .setPaddingTop(12).setPaddingBottom(12).setPaddingLeft(10).setPaddingRight(10)
                 .setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.MIDDLE)
-                .add(new Paragraph(text).setFont(font).setFontSize(9).setTextAlignment(align));
+                .add(new Paragraph(text).setFont(font).setFontSize(9).setTextAlignment(align).setMargin(0));
     }
 
     private void addTotalRow(Table table, String label, String value,

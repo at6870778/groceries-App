@@ -1,0 +1,99 @@
+<div class="sales-report-container">
+  <div class="report-header">
+    <h1>📊 Sales Report</h1>
+    <p>View daily sales metrics and detailed order information for any date range</p>
+  </div>
+
+  <div class="filter-section">
+    <div class="filter-card">
+      <h3>Select Date Range</h3>
+      <div class="date-inputs">
+        <div class="date-group">
+          <label>From Date</label>
+          <input type="date" [(ngModel)]="fromDate" class="date-input">
+        </div>
+        <div class="date-group">
+          <label>To Date</label>
+          <input type="date" [(ngModel)]="toDate" class="date-input">
+        </div>
+      </div>
+      <button class="btn btn-primary" (click)="generateReport()" [disabled]="loading">
+        {{ loading ? '⏳ Generating...' : '🔍 Generate Report' }}
+      </button>
+      <div class="error-message" *ngIf="error">{{ error }}</div>
+    </div>
+  </div>
+
+  <div class="report-section" *ngIf="report">
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="card">
+        <div class="card-icon">📦</div>
+        <div class="card-content">
+          <div class="label">Total Orders</div>
+          <div class="value">{{ report.totalOrders }}</div>
+          <div class="period">{{ formatDate(report.fromDate) }} - {{ formatDate(report.toDate) }}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">💰</div>
+        <div class="card-content">
+          <div class="label">Total Revenue</div>
+          <div class="value">₹{{ formatAmount(report.totalRevenue) }}</div>
+          <div class="period">{{ report.totalDays }} {{ getDaysLabel() }}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">📈</div>
+        <div class="card-content">
+          <div class="label">Avg Order Value</div>
+          <div class="value">₹{{ formatAmount(report.avgOrderValue) }}</div>
+          <div class="period">Per order</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">📅</div>
+        <div class="card-content">
+          <div class="label">Date Range</div>
+          <div class="value">{{ report.totalDays }}</div>
+          <div class="period">{{ getDaysLabel() }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Daily Breakdown Table -->
+    <div class="table-section">
+      <div class="section-header">
+        <h2>📋 Daily Breakdown</h2>
+        <button class="btn btn-secondary" (click)="downloadReport()">📥 Download CSV</button>
+      </div>
+
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Orders</th>
+            <th>Revenue</th>
+            <th>Avg Order Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let daily of report.dailyBreakdown">
+            <td>{{ formatDate(daily.date) }}</td>
+            <td>{{ daily.orderCount }}</td>
+            <td class="revenue">₹{{ formatAmount(daily.dailyRevenue) }}</td>
+            <td>₹{{ formatAmount(daily.avgDailyOrderValue) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="!report && !loading && !error">
+    <div class="empty-icon">📊</div>
+    <p>Select a date range and click "Generate Report" to view sales data</p>
+  </div>
+</div>

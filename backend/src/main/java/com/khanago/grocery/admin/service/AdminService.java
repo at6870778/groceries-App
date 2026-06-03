@@ -4,6 +4,7 @@ import com.khanago.grocery.admin.dto.AdminUserDto;
 import com.khanago.grocery.admin.dto.AdminCreateUserDto;
 import com.khanago.grocery.admin.dto.DailyOrderReportPointDto;
 import com.khanago.grocery.admin.dto.DashboardDto;
+import com.khanago.grocery.admin.dto.DateRangeSalesReportDto;
 import com.khanago.grocery.admin.dto.ReportDto;
 import com.khanago.grocery.catalog.repository.ProductRepository;
 import com.khanago.grocery.common.enums.OrderStatus;
@@ -91,6 +92,46 @@ public class AdminService {
                         new BigDecimal(row[2].toString())
                 ))
                 .toList();
+    }
+
+    public DateRangeSalesReportDto salesReportByDateRange(LocalDate fromDate, LocalDate toDate) {
+        // Validate date range
+        if (fromDate.isAfter(toDate)) {
+            throw new ApiException("From date must be before or equal to To date");
+        }
+
+        LocalDateTime fromDateTime = fromDate.atStartOfDay();
+        LocalDateTime toDateTime = toDate.atStartOfDay().plusDays(1).minusNanos(1); // End of day
+
+        // Get total count and revenue
+        long totalOrders = orderRepository.countDeliveredByDateRange(fromDateTime, toDateTime);
+        BigDecimal totalRevenue = orderRepository.sumRevenueByDateRange(fromDateTime, toDateTime);
+        if (totalRevenue == null) {
+            totalRevenue = BigDecimal.ZERO;
+        }
+
+        // Calculate average order value
+        BigDecimal avgOrderValue = totalOrders > 0 
+            ? totalRevenue.divide(new BigDecimal(totalOrders), 2, java.math.RoundingMode.HALF_UP)
+            : BigDecimal.ZERO;
+
+        // Get daily breakdown
+        List<DateRangeSalesReportDto.DailySalesDto> dailyBreakdown = orderRepository
+            .findDeliveredSummaryByDateRange(fromDateTime, toDateTime).stream()
+            .map(row -> {
+                LocalDate date = LocalDate.parse(row[0].toString());
+                long orderCount = ((Number) row[1]).longValue();
+                BigDecimal dailyRevenue = new BigDecimal(row[2].toString());
+                BigDecimal avgDailyOrderValue = orderCount > 0
+                    ? dailyRevenue.divide(new BigDecimal(orderCount), 2, java.math.RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+                return new DateRangeSalesReportDto.DailySalesDto(date, orderCount, dailyRevenue, avgDailyOrderValue);
+            })
+            .toList();
+
+        int totalDays = (int) java.time.temporal.ChronoUnit.DAYS.between(fromDate, toDate) + 1;
+
+        return new DateRangeSalesReportDto(fromDate, toDate, totalOrders, totalRevenue, avgOrderValue, totalDays, dailyBreakdown);
     }
 
     public AdminUserDto createCustomer(AdminCreateUserDto request) {

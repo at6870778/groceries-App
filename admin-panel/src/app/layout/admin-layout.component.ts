@@ -36,6 +36,7 @@ import { SessionTimeoutService } from '../core/services/session-timeout.service'
       <mat-sidenav mode="side" opened class="menu">
         <h3 class="brand">Order Kro Admin</h3>
         <a routerLink="/dashboard">Dashboard</a>
+        <a routerLink="/sales-report">📊 Sales Report</a>
         <a routerLink="/products">Products</a>
         <a routerLink="/orders">Orders</a>
         <a routerLink="/deliver">Deliver</a>

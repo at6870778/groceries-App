@@ -97,7 +97,7 @@ public class BillService {
                 .setFont(bold).setFontSize(28).setFontColor(BRAND_GREEN).setMarginBottom(2));
         brandCell.add(new Paragraph("Fresh. Fast. At Your Doorstep.")
                 .setFont(italic).setFontSize(10).setFontColor(TEXT_MUTED).setMarginBottom(4));
-        brandCell.add(new Paragraph("www.orderkro.in  |  support@orderkro.in")
+        brandCell.add(new Paragraph("www.orderkro.in  |  orderkrosupport@gmail.com"))
                 .setFont(regular).setFontSize(8).setFontColor(TEXT_MUTED));
         headerTable.addCell(brandCell);
         document.add(headerTable);
@@ -158,17 +158,19 @@ public class BillService {
         document.add(new Paragraph("Items Ordered").setFont(bold).setFontSize(12)
                 .setFontColor(BRAND_DARK_GREEN).setMarginBottom(4));
 
-        Table itemsTable = new Table(new float[]{4, 1, 1.5f, 1.5f})
+        Table itemsTable = new Table(new float[]{3, 1.2f, 0.8f, 1.3f, 1.3f})
                 .setWidth(UnitValue.createPercentValue(100)).setMarginBottom(4);
 
         // Header row
-        String[] cols = {"Item", "Qty & Unit", "Unit Price", "Total"};
+        String[] cols = {"Item", "Qty", "Unit", "Unit Price", "Total"};
         for (String col : cols) {
-            itemsTable.addHeaderCell(new Cell()
+            Cell headerCell = new Cell()
                     .setBackgroundColor(BRAND_GREEN)
                     .setBorder(Border.NO_BORDER)
-                    .setPadding(8)
-                    .add(new Paragraph(col).setFont(bold).setFontSize(10).setFontColor(ColorConstants.WHITE)));
+                    .setPadding(10)
+                    .setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.CENTER)
+                    .add(new Paragraph(col).setFont(bold).setFontSize(10).setFontColor(ColorConstants.WHITE));
+            itemsTable.addHeaderCell(headerCell);
         }
 
         // Item rows
@@ -176,9 +178,11 @@ public class BillService {
         for (OrderItem item : order.getOrderItems()) {
             DeviceRgb rowBg = alt ? ROW_ALT : new DeviceRgb(255, 255, 255);
             itemsTable.addCell(itemCell(item.getProductName(), regular, rowBg, TextAlignment.LEFT));
-            // Include unit with quantity (e.g., "2 kg", "500 gram", "3 pcs")
+            // Qty column: show quantity with unit (e.g., "2 kg")
             String qtyWithUnit = item.getQuantity() + " " + (item.getUnit() != null ? item.getUnit() : "");
             itemsTable.addCell(itemCell(qtyWithUnit.trim(), regular, rowBg, TextAlignment.CENTER));
+            // Unit column: show just the unit (e.g., "kg")
+            itemsTable.addCell(itemCell(item.getUnit() != null ? item.getUnit() : "-", regular, rowBg, TextAlignment.CENTER));
             itemsTable.addCell(itemCell("₹" + item.getUnitPrice(), regular, rowBg, TextAlignment.RIGHT));
             itemsTable.addCell(itemCell("₹" + item.getLineTotal(), bold, rowBg, TextAlignment.RIGHT));
             alt = !alt;
@@ -221,7 +225,7 @@ public class BillService {
         document.add(thanksBox);
 
         // ── FOOTER ────────────────────────────────────────────────────────────
-        document.add(new Paragraph("\nOrderKro  •  Freshness Guaranteed  •  support@orderkro.in")
+        document.add(new Paragraph("\nOrderKro  •  Freshness Guaranteed  •  orderkrosupport@gmail.com"))
                 .setFont(italic).setFontSize(8).setFontColor(TEXT_MUTED).setTextAlignment(TextAlignment.CENTER));
 
         document.close();
@@ -239,7 +243,8 @@ public class BillService {
 
     private Cell itemCell(String text, PdfFont font, DeviceRgb bg, TextAlignment align) {
         return new Cell().setBackgroundColor(bg).setBorder(Border.NO_BORDER)
-                .setPaddingTop(6).setPaddingBottom(6).setPaddingLeft(8).setPaddingRight(8)
+                .setPaddingTop(8).setPaddingBottom(8).setPaddingLeft(8).setPaddingRight(8)
+                .setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.MIDDLE)
                 .add(new Paragraph(text).setFont(font).setFontSize(9).setTextAlignment(align));
     }
 

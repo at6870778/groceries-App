@@ -620,8 +620,8 @@ import { ActivityState } from '../../core/state/activity.state';
 export class ProfilePage implements OnInit, OnDestroy {
   readonly defaultSupportContact = {
     phoneNumber: '+919876543210',
-    supportEmail: 'support@orderkro.in',
-    privacyEmail: 'privacy@orderkro.in',
+    supportEmail: 'orderkrosupport@gmail.com',
+    privacyEmail: 'orderkrosupport@gmail.com',
     addressLine: 'Hata Kushinagar, Uttar Pradesh'
   };
   readonly supportContact = signal({ ...this.defaultSupportContact });

@@ -11,6 +11,7 @@ import { ApiService } from '../../core/services/api.service';
 import { CartState } from '../../core/state/cart.state';
 import { ActivityState } from '../../core/state/activity.state';
 import { LocationService } from '../../core/services/location.service';
+import { DeliveryChargeService } from '../../core/services/delivery-charge.service';
 import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -247,7 +248,7 @@ declare global {
               ₹{{ cartState.subtotal() }} <span style="font-size:0.75rem;color:#2e7d32;font-weight:700">🎉 FREE delivery!</span>
             </span>
             <span class="chip-total" *ngIf="deliveryFee() > 0">
-              ₹{{ cartState.subtotal() + deliveryFee() }} <span style="font-size:0.75rem;opacity:0.7">(incl. ₹20 delivery)</span>
+              ₹{{ cartState.subtotal() + deliveryFee() }} <span style="font-size:0.75rem;opacity:0.7">(incl. ₹{{ Math.round(deliveryFee()) }} delivery)</span>
             </span>
           </div>
 
@@ -1283,6 +1284,7 @@ declare global {
 export class CartPage implements OnInit, OnDestroy {
   checking = false;
   orderMsg = '';
+  Math = Math;
   readonly checkoutStep = signal<'cart' | 'payment'>('cart');
   readonly paymentMode = signal<'UPI' | 'COD'>('COD');
   readonly confirmingCod = signal(false);
@@ -1291,8 +1293,11 @@ export class CartPage implements OnInit, OnDestroy {
   readonly checkoutSuccess = signal(false);
   readonly lastPlacedAmount = signal(0);
   readonly lastPlacedOrderId = signal<number | null>(null);
-  readonly deliveryFee = computed(() => this.cartState.subtotal() >= 299 ? 0 : 20);
-  readonly deliveryFeeLabel = computed(() => this.cartState.subtotal() >= 299 ? 'FREE 🎉' : '₹20');
+  readonly deliveryFee = computed(() => this.deliveryChargeService.deliveryCharge().chargeAmount);
+  readonly deliveryFeeLabel = computed(() => {
+    const charge = this.deliveryChargeService.deliveryCharge().chargeAmount;
+    return charge === 0 ? 'FREE 🎉' : `₹${Math.round(charge)}`;
+  });
   readonly amountToFreeDelivery = computed(() => Math.max(0, 299 - this.cartState.subtotal()));
   readonly refetchingLoc = signal(false);
   readonly savedAddresses = signal<any[]>([]);
@@ -1368,7 +1373,8 @@ export class CartPage implements OnInit, OnDestroy {
     private http: HttpClient,
     public cartState: CartState,
     private activityState: ActivityState,
-    public locationService: LocationService
+    public locationService: LocationService,
+    public deliveryChargeService: DeliveryChargeService
   ) {
     // Auto-detect location on cart page load
     this.ensureLocationDetected();

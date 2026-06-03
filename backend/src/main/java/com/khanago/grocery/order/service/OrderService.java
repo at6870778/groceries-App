@@ -11,6 +11,7 @@ import com.khanago.grocery.notification.UserNotificationService;
 import com.khanago.grocery.delivery.DeliveryAssignment;
 import com.khanago.grocery.delivery.repository.DeliveryAssignmentRepository;
 import com.khanago.grocery.delivery.service.DeliveryFeeService;
+import com.khanago.grocery.config.DeliveryChargeService;
 import com.khanago.grocery.order.Order;
 import com.khanago.grocery.order.OrderItem;
 import com.khanago.grocery.order.dto.AdminOrderDetailDto;
@@ -47,6 +48,7 @@ public class OrderService {
     private final DeliveryAssignmentRepository deliveryAssignmentRepository;
     private final CartService cartService;
     private final DeliveryFeeService deliveryFeeService;
+    private final DeliveryChargeService deliveryChargeService;
     private final AdminNotificationService adminNotificationService;
     private final FcmService fcmService;
     private final UserNotificationService userNotificationService;
@@ -72,7 +74,8 @@ public class OrderService {
                 .map(i -> i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal deliveryFee = deliveryFeeService.calculateFeeByAmount(subtotal);
+        // Use admin-configured delivery charge instead of distance-based fee
+        BigDecimal deliveryFee = deliveryChargeService.getDeliveryChargeAmount();
 
         Order order = new Order();
         order.setCustomer(customer);

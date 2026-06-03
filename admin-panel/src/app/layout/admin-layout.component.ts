@@ -46,6 +46,7 @@ import { SessionTimeoutService } from '../core/services/session-timeout.service'
         <a routerLink="/roles">🔐 Role Management</a>
         <a routerLink="/announcement">📢 Announcement</a>
         <a routerLink="/banners">🎨 Banners</a>
+        <a routerLink="/delivery-charge">🚗 Delivery Charge</a>
         <a routerLink="/push-notifications">📲 Push Notifications</a>
         <a routerLink="/support-contact">🛟 Support Contact</a>
       </mat-sidenav>

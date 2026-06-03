@@ -97,7 +97,7 @@ public class BillService {
                 .setFont(bold).setFontSize(28).setFontColor(BRAND_GREEN).setMarginBottom(2));
         brandCell.add(new Paragraph("Fresh. Fast. At Your Doorstep.")
                 .setFont(italic).setFontSize(10).setFontColor(TEXT_MUTED).setMarginBottom(4));
-        brandCell.add(new Paragraph("www.orderkro.in  |  orderkrosupport@gmail.com"))
+        brandCell.add(new Paragraph("www.orderkro.in  |  orderkrosupport@gmail.com")
                 .setFont(regular).setFontSize(8).setFontColor(TEXT_MUTED));
         headerTable.addCell(brandCell);
         document.add(headerTable);
@@ -168,7 +168,7 @@ public class BillService {
                     .setBackgroundColor(BRAND_GREEN)
                     .setBorder(Border.NO_BORDER)
                     .setPadding(10)
-                    .setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.CENTER)
+                    .setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.MIDDLE)
                     .setTextAlignment(TextAlignment.CENTER)
                     .add(new Paragraph(col).setFont(bold).setFontSize(10).setFontColor(ColorConstants.WHITE));
             itemsTable.addHeaderCell(headerCell);
@@ -226,7 +226,7 @@ public class BillService {
         document.add(thanksBox);
 
         // ── FOOTER ────────────────────────────────────────────────────────────
-        document.add(new Paragraph("\nOrderKro  •  Freshness Guaranteed  •  orderkrosupport@gmail.com"))
+        document.add(new Paragraph("\nOrderKro  •  Freshness Guaranteed  •  orderkrosupport@gmail.com")
                 .setFont(italic).setFontSize(8).setFontColor(TEXT_MUTED).setTextAlignment(TextAlignment.CENTER));
 
         document.close();

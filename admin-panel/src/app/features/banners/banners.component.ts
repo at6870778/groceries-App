@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
-import { AppProperties } from '../../core/config/app-properties';
+import { ApiService } from '../../core/services/api.service';
 
 interface Banner {
   id: number;
@@ -413,10 +412,9 @@ export class BannersComponent implements OnInit {
   banners: Banner[] = [];
   bannerForm: FormGroup;
   isLoading = false;
-  private apiUrl = `${AppProperties.apiUrl}/admin/banners`;
 
   constructor(
-    private http: HttpClient,
+    private api: ApiService,
     private fb: FormBuilder
   ) {
     this.bannerForm = this.fb.group({
@@ -432,7 +430,7 @@ export class BannersComponent implements OnInit {
   }
 
   loadBanners() {
-    this.http.get<Banner[]>(this.apiUrl).subscribe({
+    this.api.get<Banner[]>('admin/banners').subscribe({
       next: (data) => {
         this.banners = data.sort((a, b) => a.displayOrder - b.displayOrder);
       },
@@ -453,7 +451,7 @@ export class BannersComponent implements OnInit {
       isActive: true
     };
 
-    this.http.post<Banner>(this.apiUrl, newBanner).subscribe({
+    this.api.post<Banner>('admin/banners', newBanner).subscribe({
       next: (created) => {
         this.banners.push(created);
         this.banners.sort((a, b) => a.displayOrder - b.displayOrder);
@@ -471,7 +469,7 @@ export class BannersComponent implements OnInit {
   }
 
   updateBanner(banner: Banner) {
-    this.http.put(`${this.apiUrl}/${banner.id}`, banner).subscribe({
+    this.api.put(`admin/banners/${banner.id}`, banner).subscribe({
       next: () => {
         this.banners.sort((a, b) => a.displayOrder - b.displayOrder);
       },
@@ -484,7 +482,7 @@ export class BannersComponent implements OnInit {
   }
 
   toggleBannerStatus(banner: Banner) {
-    this.http.patch(`${this.apiUrl}/${banner.id}/toggle`, {}).subscribe({
+    this.api.patch<Banner>(`admin/banners/${banner.id}/toggle`, {}).subscribe({
       next: (updated: Banner) => {
         banner.isActive = updated.isActive;
       },
@@ -498,7 +496,7 @@ export class BannersComponent implements OnInit {
   deleteBanner(id: number) {
     if (!confirm('Are you sure you want to delete this banner?')) return;
 
-    this.http.delete(`${this.apiUrl}/${id}`).subscribe({
+    this.api.delete(`admin/banners/${id}`).subscribe({
       next: () => {
         this.banners = this.banners.filter(b => b.id !== id);
         alert('Banner deleted successfully!');

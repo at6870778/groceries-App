@@ -4,6 +4,7 @@ import com.khanago.grocery.cart.CartItem;
 import com.khanago.grocery.cart.service.CartService;
 import com.khanago.grocery.common.exception.ApiException;
 import com.khanago.grocery.config.AppProperties;
+import com.khanago.grocery.config.DeliveryChargeService;
 import com.khanago.grocery.payment.dto.CreatePaymentOrderResponseDto;
 import com.khanago.grocery.payment.dto.VerifyPaymentRequestDto;
 import com.khanago.grocery.payment.dto.VerifyPaymentResponseDto;
@@ -30,6 +31,7 @@ public class PaymentService {
     private final CartService cartService;
     private final UserRepository userRepository;
     private final AppProperties appProperties;
+    private final DeliveryChargeService deliveryChargeService;
 
     public CreatePaymentOrderResponseDto createOrderForCurrentUser() {
         String keyId = appProperties.getRazorpay().getKeyId();
@@ -57,7 +59,8 @@ public class PaymentService {
                     })
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal deliveryFee = new BigDecimal("20.00");
+            // Use admin-configured delivery charge
+            BigDecimal deliveryFee = deliveryChargeService.getDeliveryChargeAmount();
             BigDecimal total = subtotal.add(deliveryFee);
             int amountInPaise = total.multiply(new BigDecimal("100")).intValueExact();
 

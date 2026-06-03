@@ -1293,9 +1293,11 @@ export class CartPage implements OnInit, OnDestroy {
   readonly checkoutSuccess = signal(false);
   readonly lastPlacedAmount = signal(0);
   readonly lastPlacedOrderId = signal<number | null>(null);
-  readonly deliveryFee = computed(() => this.deliveryChargeService.deliveryCharge().chargeAmount);
+  // Delivery fee from last checkout response (shown after order confirmation)
+  readonly currentDeliveryFee = signal(0);
+  readonly deliveryFee = computed(() => this.currentDeliveryFee());
   readonly deliveryFeeLabel = computed(() => {
-    const charge = this.deliveryChargeService.deliveryCharge().chargeAmount;
+    const charge = this.deliveryFee();
     return charge === 0 ? 'FREE 🎉' : `₹${Math.round(charge)}`;
   });
   readonly amountToFreeDelivery = computed(() => Math.max(0, 299 - this.cartState.subtotal()));
@@ -1808,6 +1810,8 @@ export class CartPage implements OnInit, OnDestroy {
       return;
     }
 
+    // Load delivery charge only when user proceeds to payment (lazy load)
+    this.deliveryChargeService.loadDeliveryCharge();
     this.checkoutStep.set('payment');
   }
 
@@ -1885,7 +1889,11 @@ export class CartPage implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
         next: (response) => {
-          const placedAmount = this.cartState.subtotal() + this.deliveryFee();
+          // Capture the current delivery fee from response (ALWAYS up-to-date from backend)
+          const deliveryFeeFromResponse = response?.deliveryFee || 0;
+          this.currentDeliveryFee.set(Number(deliveryFeeFromResponse));
+          
+          const placedAmount = this.cartState.subtotal() + Number(deliveryFeeFromResponse);
           const orderId = response?.id;
           
           // For UPI orders, mark as paid since payment was already verified

@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AppProperties } from '../config/app-properties';
+import { environment } from '../../../environments/environment';
 
 export interface DeliveryCharge {
   chargeAmount: number;
@@ -12,23 +12,24 @@ export interface DeliveryCharge {
   providedIn: 'root'
 })
 export class DeliveryChargeService {
-  private readonly API_URL = `${AppProperties.apiUrl}/config/delivery-charge`;
+  private readonly API_URL = `${environment.apiUrl}/config/delivery-charge`;
   
   // Signal to store current delivery charge
   readonly deliveryCharge = signal<DeliveryCharge>({
     chargeAmount: 0,
-    description: 'Loading...'
+    description: 'Not loaded'
   });
   
   // Signal to track loading state
   readonly isLoading = signal(false);
   
   constructor(private http: HttpClient) {
-    this.loadDeliveryCharge();
+    // Don't auto-load to avoid unnecessary API calls
+    // Charge is fetched only when checkout is placed
   }
   
   /**
-   * Load delivery charge from API
+   * Load delivery charge from API (called on checkout only)
    */
   loadDeliveryCharge(): void {
     this.isLoading.set(true);

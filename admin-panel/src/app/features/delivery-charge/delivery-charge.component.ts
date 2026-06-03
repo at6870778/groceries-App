@@ -388,7 +388,7 @@ export class DeliveryChargeComponent implements OnInit {
   }
 
   loadCurrentCharge() {
-    this.api.get<DeliveryCharge>('admin/delivery-charge').subscribe({
+    this.api.get<DeliveryCharge>('/admin/delivery-charge').subscribe({
       next: (data) => {
         this.currentCharge = data;
         this.chargeForm.patchValue({
@@ -404,7 +404,7 @@ export class DeliveryChargeComponent implements OnInit {
   }
 
   loadHistory() {
-    this.api.get<any[]>('admin/delivery-charge/history').subscribe({
+    this.api.get<any[]>('/admin/delivery-charge/history').subscribe({
       next: (data) => {
         this.history = data;
       },
@@ -423,7 +423,7 @@ export class DeliveryChargeComponent implements OnInit {
       description: this.chargeForm.value.description
     };
 
-    this.api.put<DeliveryCharge>('admin/delivery-charge', payload).subscribe({
+    this.api.put<DeliveryCharge>('/admin/delivery-charge', payload).subscribe({
       next: (updated) => {
         this.currentCharge = updated;
         this.loadHistory();

@@ -22,6 +22,7 @@ export const appRoutes: Routes = [
       { path: 'users', loadComponent: () => import('./features/users/all-users.component').then(m => m.AllUsersComponent) },
       { path: 'roles', loadComponent: () => import('./features/users/role-management.component').then(m => m.RoleManagementComponent) },
       { path: 'announcement', loadComponent: () => import('./features/announcement/announcement.component').then(m => m.AnnouncementComponent) },
+      { path: 'banners', loadComponent: () => import('./features/banners/banners.component').then(m => m.BannersComponent) },
       { path: 'support-contact', loadComponent: () => import('./features/support-contact/support-contact.component').then(m => m.SupportContactComponent) },
       { path: 'push-notifications', loadComponent: () => import('./features/push-notifications/push-notifications.component').then(m => m.PushNotificationsComponent) }
     ]

@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonContent, IonHeader, IonToolbar } from '@ionic/angular/standalone';
 import { ApiService } from '../../core/services/api.service';
+import { BannerService, Banner } from '../../core/services/banner.service';
 import { Router } from '@angular/router';
 import { CartState } from '../../core/state/cart.state';
 import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component';
@@ -154,8 +155,8 @@ import { NotificationStateService } from '../../core/services/notification-state
                  [style.transform]="'translateX(' + (-currentBannerIndex() * 100) + '%)'"
                  [style.transition]="bannerSwipeInProgress() ? 'none' : 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)'">
               <img *ngFor="let banner of bannerImages()" 
-                   [src]="banner" 
-                   [alt]="'Banner ' + banner"
+                   [src]="banner.imageUrl" 
+                   [alt]="banner.title || 'Banner'"
                    class="ok-hero-bg-img">
             </div>
           </div>
@@ -1807,12 +1808,7 @@ export class HomePage implements OnInit, OnDestroy {
   readonly bannerDismissed = signal(false);
 
   // ── Banner Carousel ──
-  readonly bannerImages = signal<string[]>([
-    'assets/banner-chai-pohaa.png',
-    'assets/banner-foods.png',
-    'assets/banner-fruits-veggies.png',
-    'assets/banner-kirana.png'
-  ]);
+  readonly bannerImages = signal<Banner[]>([]);
   readonly currentBannerIndex = signal(0);
   readonly bannerSwipeInProgress = signal(false);
   private bannerTouchStartX = 0;
@@ -1918,6 +1914,7 @@ export class HomePage implements OnInit, OnDestroy {
 
   constructor(
     private api: ApiService,
+    private bannerService: BannerService,
     private router: Router,
     private cartState: CartState,
     private activityState: ActivityState,
@@ -1974,6 +1971,21 @@ export class HomePage implements OnInit, OnDestroy {
             // New or different announcement - show it
             this.bannerDismissed.set(false);
           }
+        }
+      });
+
+    // Load banners from API
+    this.bannerService.getActiveBanners()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (banners) => {
+          this.bannerImages.set(banners);
+          this.startBannerAutoSlide();
+        },
+        error: (err) => {
+          console.error('Failed to load banners:', err);
+          // Fallback to empty banners - user won't see carousel
+          this.bannerImages.set([]);
         }
       });
 

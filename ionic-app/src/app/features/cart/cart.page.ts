@@ -92,10 +92,72 @@ declare global {
               <button class="loc-retry-btn" (click)="detectGpsFromPicker()" [disabled]="locationService.isLocating()">
                 📍 {{ locationService.isLocating() ? 'Detecting...' : 'Detect my GPS location' }}
               </button>
-              <button class="addr-manual-btn" routerLink="/profile">+ Add Address in Profile</button>
             </div>
 
+            <!-- Add New Address Button -->
+            <button class="addr-add-new-btn" (click)="showAddNewAddressForm.set(true)">
+              ➕ Add New Address
+            </button>
+
             <button class="addr-picker-close" (click)="showAddressPicker.set(false)">Done</button>
+
+            <!-- Add New Address Form (Inline Modal) -->
+            <div class="addr-form-overlay" *ngIf="showAddNewAddressForm()" (click)="showAddNewAddressForm.set(false)"></div>
+            <div class="addr-form-modal" *ngIf="showAddNewAddressForm()">
+              <div class="addr-form-header">
+                <h3>Add New Address</h3>
+                <button class="addr-form-close" (click)="showAddNewAddressForm.set(false)">✕</button>
+              </div>
+
+              <form class="addr-form" (ngSubmit)="addNewAddressAndSelect()">
+                <!-- Village (Mandatory) -->
+                <div class="form-group">
+                  <label>Village/Area <span class="required">*</span></label>
+                  <input type="text" [(ngModel)]="newAddressForm.village" name="village" 
+                         placeholder="e.g., Whitefield, Indiranagar" required>
+                  <small *ngIf="!newAddressForm.village" class="error">Village is required</small>
+                </div>
+
+                <!-- Landmark (Mandatory) -->
+                <div class="form-group">
+                  <label>Landmark <span class="required">*</span></label>
+                  <input type="text" [(ngModel)]="newAddressForm.landmark" name="landmark" 
+                         placeholder="e.g., Near Metro Station, Next to Mall" required>
+                  <small *ngIf="!newAddressForm.landmark" class="error">Landmark is required</small>
+                </div>
+
+                <!-- Post/Post Office (Mandatory) -->
+                <div class="form-group">
+                  <label>Post/Post Office <span class="required">*</span></label>
+                  <input type="text" [(ngModel)]="newAddressForm.post" name="post" 
+                         placeholder="e.g., Whitefield Post Office" required>
+                  <small *ngIf="!newAddressForm.post" class="error">Post is required</small>
+                </div>
+
+                <!-- Pincode (Optional) -->
+                <div class="form-group">
+                  <label>Pincode</label>
+                  <input type="text" [(ngModel)]="newAddressForm.pincode" name="pincode" 
+                         placeholder="e.g., 560066">
+                </div>
+
+                <!-- District (Optional) -->
+                <div class="form-group">
+                  <label>District</label>
+                  <input type="text" [(ngModel)]="newAddressForm.district" name="district" 
+                         placeholder="e.g., Bengaluru Urban">
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="addr-form-actions">
+                  <button type="button" class="btn-cancel" (click)="showAddNewAddressForm.set(false)">Cancel</button>
+                  <button type="submit" class="btn-save" 
+                          [disabled]="!newAddressForm.village || !newAddressForm.landmark || !newAddressForm.post">
+                    Save & Select
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
 
           <!-- Village + Landmark prompt before payment -->
@@ -201,9 +263,9 @@ declare global {
               <span class="location-title">Delivery Location</span>
             </div>
             <div class="location-details">
-              <div class="detail-row" *ngIf="loc.address">
-                <span class="label">Address</span>
-                <span class="value">{{ loc.address }}</span>
+              <div class="detail-row">
+                <span class="label">Full Address</span>
+                <span class="value">{{ formattedDeliveryAddress() }}</span>
               </div>
               <div class="detail-row">
                 <span class="label">Delivery Charge</span>
@@ -1032,9 +1094,182 @@ declare global {
       }
     }
 
+    /* Add New Address Button */
+    .addr-add-new-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 12px;
+    }
+    
+    .addr-add-new-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(102, 126, 234, 0.3);
+    }
+
+    /* Address Form Modal Overlay */
+    .addr-form-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+
+    /* Address Form Modal */
+    .addr-form-modal {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-radius: 20px 20px 0 0;
+      padding: 20px;
+      max-height: 90vh;
+      overflow-y: auto;
+      z-index: 1000;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .addr-form-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #f0f0f0;
+      padding-bottom: 12px;
+    }
+
+    .addr-form-header h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+
+    .addr-form-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #999;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Form Styling */
+    .addr-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #1a1a1a;
+    }
+
+    .required {
+      color: #ff6b6b;
+      font-weight: 700;
+    }
+
+    .form-group input {
+      padding: 12px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-group .error {
+      color: #ff6b6b;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .addr-form-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .btn-cancel {
+      flex: 1;
+      padding: 12px;
+      background: #f0f0f0;
+      color: #333;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-cancel:active {
+      transform: scale(0.98);
+      background: #e0e0e0;
+    }
+
+    .btn-save {
+      flex: 1;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-save:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-save:active:not(:disabled) {
+      transform: scale(0.98);
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+
     /* Ensure touch targets are always >= 44px */
     @media (max-width: 480px) {
-      .loc-retry-btn, .addr-manual-btn, .addr-edit-btn, .addr-del-btn {
+      .loc-retry-btn, .addr-manual-btn, .addr-edit-btn, .addr-del-btn, .addr-add-new-btn {
         min-height: 44px;
         padding: 10px;
       }
@@ -1064,20 +1299,51 @@ export class CartPage implements OnInit, OnDestroy {
   readonly selectedAddressId = signal<any>('gps'); // 'gps' | address.id
   readonly selectedAddress = signal<any | null>(null); // null = use GPS
   readonly showAddressPicker = signal(false);
+  readonly showAddNewAddressForm = signal(false);
   readonly showLocationDetailsPrompt = signal(false);
   readonly savingLocationDetails = signal(false);
   readonly locationDetailsError = signal('');
   private pendingProceedAfterDetails = false;
   checkoutVillage = '';
   checkoutLandmark = '';
+  
+  newAddressForm = {
+    village: '',
+    landmark: '',
+    post: '',
+    pincode: '',
+    district: ''
+  };
 
   readonly selectedAddressLabel = computed(() => {
     const addr = this.selectedAddress();
     if (addr) return `${addr.label ? addr.label + ': ' : ''}${this.formatAddress(addr)}`;
-    const loc = this.locationService.currentLocation();
-    if (loc?.address) return loc.address;
+    
+    // Show full address with Village → Landmark → Detected Location order
+    const meta = this.getPersistedVillageAndLandmark();
+    const detectedLocation = String(this.locationService.currentLocation()?.address || '').trim();
+    const parts: string[] = [];
+    
+    if (meta.village) parts.push(`Village: ${meta.village}`);
+    if (meta.landmark) parts.push(`Landmark: ${meta.landmark}`);
+    if (detectedLocation) parts.push(detectedLocation);
+    
+    if (parts.length > 0) return parts.join(' | ');
+    if (detectedLocation) return detectedLocation;
     if (this.locationService.isLocating()) return 'Detecting location…';
     return 'No address selected – tap Change';
+  });
+
+  readonly formattedDeliveryAddress = computed(() => {
+    const meta = this.getPersistedVillageAndLandmark();
+    const detectedLocation = String(this.locationService.currentLocation()?.address || '').trim();
+    const parts: string[] = [];
+    
+    if (detectedLocation) parts.push(detectedLocation);
+    if (meta.village) parts.push(`Village: ${meta.village}`);
+    if (meta.landmark) parts.push(`Landmark: ${meta.landmark}`);
+    
+    return parts.length > 0 ? parts.join(' | ') : 'No address provided';
   });
 
   private destroy$ = new Subject<void>();
@@ -1172,6 +1438,51 @@ export class CartPage implements OnInit, OnDestroy {
     this.selectedAddress.set(addr);
     this.selectedAddressId.set(addr.id);
     this.showAddressPicker.set(false);
+  }
+
+  addNewAddressAndSelect() {
+    // Validate mandatory fields
+    if (!this.newAddressForm.village?.trim() || !this.newAddressForm.landmark?.trim() || !this.newAddressForm.post?.trim()) {
+      alert('Please fill in all mandatory fields: Village, Landmark, and Post');
+      return;
+    }
+
+    // Create temporary address object from form
+    const tempAddress = {
+      id: `temp_${Date.now()}`,
+      village: this.newAddressForm.village.trim(),
+      landmark: this.newAddressForm.landmark.trim(),
+      line1: this.newAddressForm.post.trim(),
+      line2: this.newAddressForm.district?.trim() || '',
+      postalCode: this.newAddressForm.pincode?.trim() || '',
+      label: `${this.newAddressForm.village} - ${this.newAddressForm.landmark}`
+    };
+
+    // Store in sessionStorage for use during checkout
+    try {
+      const storedData = JSON.parse(sessionStorage.getItem('temp_address_data') || '{}');
+      storedData[tempAddress.id] = tempAddress;
+      sessionStorage.setItem('temp_address_data', JSON.stringify(storedData));
+    } catch (e) {
+      console.warn('Could not save temp address:', e);
+    }
+
+    // Select this address
+    this.selectedAddress.set(tempAddress);
+    this.selectedAddressId.set(tempAddress.id);
+
+    // Close both modals
+    this.showAddNewAddressForm.set(false);
+    this.showAddressPicker.set(false);
+
+    // Reset form
+    this.newAddressForm = {
+      village: '',
+      landmark: '',
+      post: '',
+      pincode: '',
+      district: ''
+    };
   }
 
   private gpsVillageKey = 'orderkro_gps_village';

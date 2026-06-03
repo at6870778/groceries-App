@@ -144,10 +144,15 @@ import { NotificationStateService } from '../../core/services/notification-state
         <!-- ══════════════════════════════════════════════════
              HERO BANNER — custom banner image with carousel
         ══════════════════════════════════════════════════ -->
-        <div class="ok-hero">
+        <div class="ok-hero" 
+             (touchstart)="onBannerTouchStart($event)"
+             (touchmove)="onBannerTouchMove($event)"
+             (touchend)="onBannerTouchEnd($event)">
           <!-- Carousel container -->
           <div class="banner-carousel-wrap">
-            <div class="banner-carousel-track" [style.transform]="'translateX(' + (-currentBannerIndex() * 100) + '%)'">
+            <div class="banner-carousel-track" 
+                 [style.transform]="'translateX(' + (-currentBannerIndex() * 100) + '%)'"
+                 [style.transition]="bannerSwipeInProgress() ? 'none' : 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)'">
               <img *ngFor="let banner of bannerImages()" 
                    [src]="banner" 
                    [alt]="'Banner ' + banner"
@@ -1809,6 +1814,9 @@ export class HomePage implements OnInit, OnDestroy {
     'assets/banner-kirana.png'
   ]);
   readonly currentBannerIndex = signal(0);
+  readonly bannerSwipeInProgress = signal(false);
+  private bannerTouchStartX = 0;
+  private bannerTouchStartY = 0;
   private bannerAutoSlideTimer: any;
 
   private destroy$ = new Subject<void>();
@@ -2488,6 +2496,49 @@ export class HomePage implements OnInit, OnDestroy {
   /* ═══════════════════════════════════════
      BANNER CAROUSEL METHODS
   ═══════════════════════════════════════ */
+
+  /**
+   * Handle banner carousel swipe/drag - capture starting touch position
+   */
+  onBannerTouchStart(e: TouchEvent): void {
+    this.bannerTouchStartX = e.touches[0].clientX;
+    this.bannerTouchStartY = e.touches[0].clientY;
+    this.bannerSwipeInProgress.set(true);
+  }
+
+  /**
+   * Optional: track touch movement (for future visual feedback)
+   */
+  onBannerTouchMove(e: TouchEvent): void {
+    // Could add visual feedback like opacity/scale here
+  }
+
+  /**
+   * Handle end of swipe - calculate direction and change banner
+   */
+  onBannerTouchEnd(e: TouchEvent): void {
+    this.bannerSwipeInProgress.set(false);
+    
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    
+    // Calculate swipe distance
+    const swipeX = this.bannerTouchStartX - touchEndX;
+    const swipeY = this.bannerTouchStartY - touchEndY;
+    
+    // Only consider it a swipe if:
+    // 1. Horizontal movement is greater than vertical (not a scroll)
+    // 2. Swipe distance is at least 30px
+    if (Math.abs(swipeX) > Math.abs(swipeY) && Math.abs(swipeX) > 30) {
+      if (swipeX > 0) {
+        // Swiped left → show next banner
+        this.nextBanner();
+      } else {
+        // Swiped right → show previous banner
+        this.previousBanner();
+      }
+    }
+  }
 
   private startBannerAutoSlide(): void {
     if (this.bannerAutoSlideTimer) {

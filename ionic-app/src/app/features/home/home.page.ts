@@ -1925,13 +1925,22 @@ export class HomePage implements OnInit, OnDestroy {
   ngOnInit() {
     // Register back button handler using same pattern as app.component.ts
     this.backButtonListener = (e: Event) => {
-      // If modal is open, close it and prevent default back button behavior
+      // Priority 1: If modal is open, close it
       if (this.showQuickViewModal()) {
         e.preventDefault();
         this.closeQuickView();
         return;
       }
-      // If modal is closed, don't prevent default - let global handler (app.component.ts) take over
+      
+      // Priority 2: If search is active, clear it and show all items
+      if (this.searchTerm()) {
+        e.preventDefault();
+        this.searchTerm.set('');
+        this.clearChipFilter(); // Also clear category filter
+        return;
+      }
+      
+      // If neither modal nor search is active, don't prevent default - let global handler (app.component.ts) take over
       // This allows proper navigation back to previous page or exit on double-tap
     };
     
@@ -2164,9 +2173,10 @@ export class HomePage implements OnInit, OnDestroy {
     return [name, description, unit, categoryName].some((value) => value.includes(term));
   }
 
+  // Search across ALL products (global search), not just filtered ones
   filteredProducts() {
     const term = this.normalizedSearchTerm();
-    return this.products().filter((product) => this.matchesProduct(product, term));
+    return this.allProducts().filter((product) => this.matchesProduct(product, term));
   }
 
   filteredCategories() {

@@ -1846,7 +1846,8 @@ export class HomePage implements OnInit, OnDestroy {
   readonly bannerImages = signal<string[]>([
     'assets/banner-chai-pohaa.png',
     'assets/banner-foods.png',
-    'assets/banner-fruits-veggies.png'
+    'assets/banner-fruits-veggies.png',
+    'assets/banner-kirana.png'
   ]);
   readonly currentBannerIndex = signal(0);
   private bannerAutoSlideTimer: any;

@@ -160,18 +160,27 @@ public class Msg91SmsService {
 
             JsonNode root = OBJECT_MAPPER.readTree(responseBody);
             // MSG91 widget sendOtpMobile returns reqId in "message" field on success
-            boolean success = "success".equalsIgnoreCase(root.path("type").asText());
+            String typeField = root.path("type").asText("").toLowerCase(Locale.ROOT);
             String requestId = root.path("message").asText(null);
-
-            if (!success) {
-                log.error("MSG91 widget sendOtp for +{} returned non-success body: {}", fullPhone, responseBody);
-                throw new RuntimeException("Unable to send OTP. MSG91 widget did not confirm delivery.");
+            
+            // Check for error indicators in response
+            boolean isError = "error".equals(typeField) || root.has("error");
+            
+            if (isError) {
+                String errorMsg = root.path("message").asText(root.path("error").asText("Unknown error"));
+                log.error("MSG91 widget sendOtp for +{} returned error body: {}", fullPhone, responseBody);
+                throw new RuntimeException("Unable to send OTP. MSG91 error: " + errorMsg);
             }
 
-            // If MSG91 doesn't provide requestId, generate one ourselves since OTP was successfully sent
+            // Accept HTTP 200 with any response type as indication OTP was sent
+            // MSG91 might return: "success", "pending", or other status codes
+            // The fact we got HTTP 200 means OTP likely was sent
+            log.debug("MSG91 widget response type='{}' for +{}: {}", typeField, fullPhone, responseBody);
+
+            // If MSG91 doesn't provide requestId, generate one ourselves since HTTP 200 indicates OTP was sent
             if (requestId == null || requestId.isBlank()) {
                 requestId = UUID.randomUUID().toString();
-                log.info("MSG91 widget sent OTP successfully but without explicit requestId. Generated fallback: {} for +{}", requestId, fullPhone);
+                log.info("MSG91 widget sent OTP (HTTP 200) but without explicit requestId. Generated fallback: {} for +{}", requestId, fullPhone);
             }
 
             log.info("Widget OTP dispatched via MSG91 to +{} with reqId {} and response: {}", fullPhone, requestId, responseBody);

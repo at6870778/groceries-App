@@ -6,9 +6,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * Sends Firebase Cloud Messaging push notifications.
+ * Sends Firebase Cloud Messaging push notifications with image support.
  * All methods are @Async — they fire-and-forget on the async executor.
+ * 
+ * Image handling:
+ * - Android: Images display as large notifications in system tray
+ * - iOS: Images display in push notification through APNs
+ * - Requires: HTTPS URLs, valid image format, accessible from public internet
  */
 @Slf4j
 @Service
@@ -19,6 +27,31 @@ public class FcmService {
     }
 
     /**
+     * Validate and normalize image URLs for push notifications.
+     * Firebase requires HTTPS URLs that are publicly accessible.
+     */
+    private String validateImageUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) return null;
+        
+        // Trim whitespace
+        imageUrl = imageUrl.trim();
+        
+        // Check if it's a valid HTTPS URL
+        if (!imageUrl.startsWith("https://")) {
+            log.warn("Image URL is not HTTPS, rejecting for safety: {}", imageUrl);
+            return null;
+        }
+        
+        // Ensure URL length is within Firebase limits (~2048 chars)
+        if (imageUrl.length() > 2000) {
+            log.warn("Image URL too long ({}), rejecting", imageUrl.length());
+            return null;
+        }
+        
+        return imageUrl;
+    }
+
+    /**
      * Send a notification to a single device token.
      * @param imageUrl optional HTTPS URL of image to show in the notification (can be null)
      */
@@ -26,27 +59,48 @@ public class FcmService {
     public void sendToToken(String token, String title, String body, String clickAction, String imageUrl) {
         if (!isAvailable() || token == null || token.isBlank()) return;
         try {
+            String validatedImageUrl = validateImageUrl(imageUrl);
+            
             Notification.Builder notifBuilder = Notification.builder()
                     .setTitle(title)
                     .setBody(body);
-            if (imageUrl != null && !imageUrl.isBlank()) notifBuilder.setImage(imageUrl);
+            if (validatedImageUrl != null) notifBuilder.setImage(validatedImageUrl);
 
             AndroidNotification.Builder androidNotifBuilder = AndroidNotification.builder()
                     .setChannelId("khanago_orders")
                     .setSound("default")
                     .setDefaultVibrateTimings(true)
                     .setDefaultLightSettings(true);
-            if (imageUrl != null && !imageUrl.isBlank()) androidNotifBuilder.setImage(imageUrl);
+            if (validatedImageUrl != null) {
+                androidNotifBuilder.setImage(validatedImageUrl);
+                log.debug("Added image to Android notification: {}", validatedImageUrl);
+            }
 
-            Message message = Message.builder()
+            Message.Builder messageBuilder = Message.builder()
                     .setToken(token)
                     .setNotification(notifBuilder.build())
-                    .putData("click_action", clickAction != null ? clickAction : "")
+                    .putData("click_action", clickAction != null ? clickAction : "");
+            
+            // Add image to data payload for client-side handling
+            if (validatedImageUrl != null) {
+                messageBuilder.putData("imageUrl", validatedImageUrl);
+            }
+            
+            Message message = messageBuilder
                     .setAndroidConfig(AndroidConfig.builder()
                             .setPriority(AndroidConfig.Priority.HIGH)
                             .setNotification(androidNotifBuilder.build())
                             .build())
+                    // APNs config for iOS — ensures image displays on lock screen/notification center
+                    .setApnsConfig(ApnsConfig.builder()
+                            .setAps(Aps.builder()
+                                    .setSound("default")
+                                    .setMutableContent(true) // Allows image download before display
+                                    .build())
+                            .putCustomData("imageUrl", validatedImageUrl != null ? validatedImageUrl : "")
+                            .build())
                     .build();
+            
             String response = FirebaseMessaging.getInstance().send(message);
             log.debug("FCM token send response: {}", response);
         } catch (FirebaseMessagingException e) {
@@ -68,30 +122,50 @@ public class FcmService {
     public void sendToTopic(String topic, String title, String body, String imageUrl) {
         if (!isAvailable()) return;
         try {
+            String validatedImageUrl = validateImageUrl(imageUrl);
+            
             Notification.Builder notifBuilder = Notification.builder()
                     .setTitle(title)
                     .setBody(body);
-            if (imageUrl != null && !imageUrl.isBlank()) notifBuilder.setImage(imageUrl);
+            if (validatedImageUrl != null) notifBuilder.setImage(validatedImageUrl);
 
             AndroidNotification.Builder androidNotifBuilder = AndroidNotification.builder()
                     .setChannelId("khanago_promos")
                     .setSound("default");
-            if (imageUrl != null && !imageUrl.isBlank()) androidNotifBuilder.setImage(imageUrl);
+            if (validatedImageUrl != null) {
+                androidNotifBuilder.setImage(validatedImageUrl);
+                log.debug("Added image to Android topic notification: {}", validatedImageUrl);
+            }
 
-            Message message = Message.builder()
+            Message.Builder messageBuilder = Message.builder()
                     .setTopic(topic)
                     .setNotification(notifBuilder.build())
-                    .putData("click_action", "OPEN_PROMOTIONS")
-                    .putData("imageUrl", imageUrl != null ? imageUrl : "")
+                    .putData("click_action", "OPEN_PROMOTIONS");
+            
+            // Add image to data payload for client-side handling
+            if (validatedImageUrl != null) {
+                messageBuilder.putData("imageUrl", validatedImageUrl);
+            }
+            
+            Message message = messageBuilder
                     .setAndroidConfig(AndroidConfig.builder()
-                        .setPriority(AndroidConfig.Priority.HIGH)
+                            .setPriority(AndroidConfig.Priority.HIGH)
                             .setNotification(androidNotifBuilder.build())
                             .build())
+                    // APNs config for iOS — ensures image displays on lock screen/notification center
+                    .setApnsConfig(ApnsConfig.builder()
+                            .setAps(Aps.builder()
+                                    .setSound("default")
+                                    .setMutableContent(true) // Allows image download before display
+                                    .build())
+                            .putCustomData("imageUrl", validatedImageUrl != null ? validatedImageUrl : "")
+                            .build())
                     .build();
+            
             String response = FirebaseMessaging.getInstance().send(message);
-            log.debug("FCM topic send response: {}", response);
+            log.debug("FCM topic send response for topic '{}': {}", topic, response);
         } catch (FirebaseMessagingException e) {
-            log.warn("FCM send to topic failed: {}", e.getMessage());
+            log.warn("FCM send to topic '{}' failed: {}", topic, e.getMessage());
         }
     }
 

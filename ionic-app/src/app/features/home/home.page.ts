@@ -1986,41 +1986,13 @@ export class HomePage implements OnInit, OnDestroy {
     // ✅ LOAD DYNAMIC BANNERS FROM BACKEND (with caching)
     // Option B Implementation: localStorage (10 min) + backend cache (10 min)
     // Performance: 2-15ms response time, 92% fewer API calls
-    this.bannerService.getActiveBanners()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (banners: Banner[]) => {
-          if (banners && banners.length > 0) {
-            // Sort by display order (just in case)
-            const sorted = banners.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
-            this.bannerImages.set(sorted);
-            console.log(`✅ Loaded ${sorted.length} dynamic banners for carousel`);
-          } else {
-            console.warn('⚠️ No banners received from backend, using fallback');
-            // Fallback to static banners if API returns empty
-            const fallbackBanners: Banner[] = [
-              { id: 1, imageUrl: '/assets/banner-chai-pohaa.png', displayOrder: 1, isActive: true, title: 'Chai & Snacks' },
-              { id: 2, imageUrl: '/assets/banner-fruits-veggies.png', displayOrder: 2, isActive: true, title: 'Fresh Fruits' },
-              { id: 3, imageUrl: '/assets/banner-kirana.png', displayOrder: 3, isActive: true, title: 'Groceries' },
-              { id: 4, imageUrl: '/assets/banner-foods.png', displayOrder: 4, isActive: true, title: 'Foods' }
-            ];
-            this.bannerImages.set(fallbackBanners);
-          }
-          this.startBannerAutoSlide();
-        },
-        error: (err) => {
-          console.warn('❌ Error loading banners:', err);
-          // Fallback on error
-          const fallbackBanners: Banner[] = [
-            { id: 1, imageUrl: '/assets/banner-chai-pohaa.png', displayOrder: 1, isActive: true, title: 'Chai & Snacks' },
-            { id: 2, imageUrl: '/assets/banner-fruits-veggies.png', displayOrder: 2, isActive: true, title: 'Fresh Fruits' },
-            { id: 3, imageUrl: '/assets/banner-kirana.png', displayOrder: 3, isActive: true, title: 'Groceries' },
-            { id: 4, imageUrl: '/assets/banner-foods.png', displayOrder: 4, isActive: true, title: 'Foods' }
-          ];
-          this.bannerImages.set(fallbackBanners);
-          this.startBannerAutoSlide();
-        }
-      });
+    this.loadBannersWithAutoRotation();
+    
+    // Refresh banners every 5 minutes to catch admin updates
+    setInterval(() => {
+      console.log('🔄 Refreshing banners from cache...');
+      this.loadBannersWithAutoRotation();
+    }, 5 * 60 * 1000);
 
     this.loadSavedAddresses();
 
@@ -2590,14 +2562,69 @@ export class HomePage implements OnInit, OnDestroy {
     }
   }
 
+  private loadBannersWithAutoRotation(): void {
+    this.bannerService.getActiveBanners()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (banners: Banner[]) => {
+          if (banners && banners.length > 0) {
+            // Sort by display order (just in case)
+            const sorted = banners.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+            this.bannerImages.set(sorted);
+            console.log(`✅ Loaded ${sorted.length} dynamic banners for carousel`);
+            // Reset carousel to first image when banners update
+            this.currentBannerIndex.set(0);
+          } else {
+            console.warn('⚠️ No banners received from backend, using fallback');
+            // Fallback to static banners if API returns empty
+            const fallbackBanners: Banner[] = [
+              { id: 1, imageUrl: '/assets/banner-chai-pohaa.png', displayOrder: 1, isActive: true, title: 'Chai & Snacks' },
+              { id: 2, imageUrl: '/assets/banner-fruits-veggies.png', displayOrder: 2, isActive: true, title: 'Fresh Fruits' },
+              { id: 3, imageUrl: '/assets/banner-kirana.png', displayOrder: 3, isActive: true, title: 'Groceries' },
+              { id: 4, imageUrl: '/assets/banner-foods.png', displayOrder: 4, isActive: true, title: 'Foods' }
+            ];
+            this.bannerImages.set(fallbackBanners);
+            this.currentBannerIndex.set(0);
+          }
+          // Always restart carousel on banner load
+          this.startBannerAutoSlide();
+        },
+        error: (err) => {
+          console.warn('❌ Error loading banners:', err);
+          // Fallback on error
+          const fallbackBanners: Banner[] = [
+            { id: 1, imageUrl: '/assets/banner-chai-pohaa.png', displayOrder: 1, isActive: true, title: 'Chai & Snacks' },
+            { id: 2, imageUrl: '/assets/banner-fruits-veggies.png', displayOrder: 2, isActive: true, title: 'Fresh Fruits' },
+            { id: 3, imageUrl: '/assets/banner-kirana.png', displayOrder: 3, isActive: true, title: 'Groceries' },
+            { id: 4, imageUrl: '/assets/banner-foods.png', displayOrder: 4, isActive: true, title: 'Foods' }
+          ];
+          this.bannerImages.set(fallbackBanners);
+          this.currentBannerIndex.set(0);
+          this.startBannerAutoSlide();
+        }
+      });
+  }
+
   private startBannerAutoSlide(): void {
+    // Only start carousel if there are banners to show
+    if (!this.bannerImages() || this.bannerImages().length === 0) {
+      console.warn('⚠️ No banners to auto-slide');
+      return;
+    }
+    
     if (this.bannerAutoSlideTimer) {
       clearInterval(this.bannerAutoSlideTimer);
     }
-    // Auto-slide every 2 seconds
-    this.bannerAutoSlideTimer = setInterval(() => {
-      this.nextBanner();
-    }, 2000);
+    
+    // Auto-slide every 2 seconds (only if more than 1 banner)
+    if (this.bannerImages().length > 1) {
+      this.bannerAutoSlideTimer = setInterval(() => {
+        this.nextBanner();
+      }, 2000);
+      console.log('▶️ Banner carousel started');
+    } else {
+      console.log('ℹ️ Only 1 banner, carousel rotation disabled');
+    }
   }
 
   nextBanner(): void {

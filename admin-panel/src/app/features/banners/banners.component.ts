@@ -27,10 +27,24 @@ interface Banner {
       <div class="card add-banner-card">
         <h2>Add New Banner</h2>
         <form [formGroup]="bannerForm" (ngSubmit)="submitBanner()" class="banner-form">
-          <div class="form-group">
-            <label>Image URL *</label>
-            <input type="text" formControlName="imageUrl" placeholder="https://example.com/image.png" class="form-control">
-            <small>Enter the full URL or path to the banner image</small>
+          <div class="form-group" style="grid-column: span 2;">
+            <label>Banner Image * <span style="color: #667eea; font-size: 12px;">(Upload directly - no copying URLs!)</span></label>
+            <div style="display: flex; gap: 8px; align-items: flex-start;">
+              <div style="flex: 1;">
+                <input type="text" formControlName="imageUrl" placeholder="Auto-filled after upload" class="form-control">
+                <small style="color: #999; margin-top: 4px; display: block;">✨ Just upload image - URL fills automatically!</small>
+              </div>
+              <div style="display: flex; gap: 8px; margin-top: 2px;">
+                <input #bannerFileInput type="file" accept="image/*" style="display:none"
+                  (change)="uploadBannerImage($any($event.target).files[0])" />
+                <button type="button" [disabled]="uploading" (click)="bannerFileInput.click()"
+                  style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-weight: 600; background: #f5f5f5; font-size: 14px; white-space: nowrap;">
+                  {{ uploading ? '⏳ Uploading...' : '☁️ Upload Image' }}
+                </button>
+              </div>
+            </div>
+            <img *ngIf="bannerForm.get('imageUrl')?.value" [src]="bannerForm.get('imageUrl')?.value" alt="preview"
+              style="max-height: 100px; margin-top: 8px; border-radius: 4px; border: 1px solid #ddd; object-fit: cover;" />
           </div>
 
           <div class="form-group">
@@ -49,7 +63,7 @@ interface Banner {
             <small>Lower number = higher priority (shown first)</small>
           </div>
 
-          <button type="submit" [disabled]="!bannerForm.valid || isLoading" class="btn btn-primary">
+          <button type="submit" [disabled]="!bannerForm.valid || isLoading" class="btn btn-primary" style="grid-column: span 2;">
             {{ isLoading ? 'Adding...' : '+ Add Banner' }}
           </button>
         </form>
@@ -399,15 +413,6 @@ interface Banner {
         grid-column: span 1;
       }
 
-      .banners-table {
-        font-size: 12px;
-      }
-
-      .banners-table th,
-      .banners-table td {
-        padding: 8px;
-      }
-
       .banner-thumb {
         width: 50px;
         height: 50px;
@@ -419,6 +424,7 @@ export class BannersComponent implements OnInit {
   banners: Banner[] = [];
   bannerForm: FormGroup;
   isLoading = false;
+  uploading = false;
 
   constructor(
     private api: ApiService,
@@ -538,6 +544,26 @@ export class BannersComponent implements OnInit {
       error: (err) => {
         console.error('Failed to delete banner:', err);
         alert('Failed to delete banner');
+      }
+    });
+  }
+
+  /**
+   * Upload banner image directly (no need to go to product page)
+   * Uploads to Cloudinary and auto-fills the image URL in the form
+   */
+  uploadBannerImage(file: File) {
+    if (!file) return;
+    this.uploading = true;
+    this.api.uploadFile<{ url: string }>('/admin/catalog/upload-image', file).subscribe({
+      next: (res) => {
+        this.bannerForm.patchValue({ imageUrl: res.url });
+        this.uploading = false;
+        alert('✅ Image uploaded! URL auto-filled in the form. Now click "+ Add Banner"');
+      },
+      error: (err) => {
+        this.uploading = false;
+        alert('❌ Image upload failed: ' + (err?.error?.message || 'Unknown error'));
       }
     });
   }

@@ -8,12 +8,13 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatIconModule } from '@angular/material/icon';
 import { ApiService } from '../../core/services/api.service';
 
 @Component({
   standalone: true,
   imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule,
-            MatButtonModule, MatSlideToggleModule, MatSnackBarModule, MatCardModule, MatTooltipModule],
+            MatButtonModule, MatSlideToggleModule, MatSnackBarModule, MatCardModule, MatTooltipModule, MatIconModule],
   template: `
     <h2 class="page-title">📢 Announcement Banner</h2>
 
@@ -35,20 +36,33 @@ import { ApiService } from '../../core/services/api.service';
             placeholder="e.g. 🎉 Free delivery on orders above ₹299 today!"></textarea>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" style="width:100%;margin-bottom:8px;">
-          <mat-label>Notification Image URL <span style="font-weight:400;color:#999">(optional)</span></mat-label>
-          <input matInput [(ngModel)]="message.imageUrl"
-            placeholder="https://res.cloudinary.com/... or any public image URL">
-          <mat-hint>Leave blank to send text-only notification. Must be a public HTTPS image link.</mat-hint>
-        </mat-form-field>
-
-        <!-- Image preview -->
-        <div *ngIf="message.imageUrl?.trim()" style="margin-bottom:14px;">
-          <img [src]="message.imageUrl" alt="Preview" style="max-height:120px;border-radius:8px;border:1px solid #ddd;object-fit:cover;">
-          <div style="font-size:11px;color:#888;margin-top:4px;">Preview — this image will appear in the push notification</div>
+        <div style="margin-top: 16px;">
+          <label style="font-weight: 600; color: #333; display: block; margin-bottom: 8px;">
+            Notification Image <span style="font-size: 12px; color: #999;">(optional - upload directly)</span>
+          </label>
+          <div style="display: flex; gap: 8px; align-items: flex-start;">
+            <input type="text" [(ngModel)]="message.imageUrl" placeholder="Auto-filled after upload"
+              style="flex: 1; padding: 10px 12px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px;">
+            <div style="display: flex; gap: 8px; margin-top: 0;">
+              <input #imgFileInput type="file" accept="image/*" style="display:none"
+                (change)="uploadImage($any($imgFileInput.files)[0])" />
+              <button mat-stroked-button type="button" [disabled]="uploading()" (click)="imgFileInput.click()"
+                style="white-space: nowrap;">
+                <mat-icon style="font-size: 18px; width: 18px; height: 18px; margin-right: 4px;">cloud_upload</mat-icon>
+                {{ uploading() ? 'Uploading...' : 'Upload' }}
+              </button>
+            </div>
+          </div>
+          <small style="color: #999; margin-top: 4px; display: block;">✨ Upload image - URL fills automatically!</small>
         </div>
 
-        <div style="display:flex;align-items:center;gap:24px;margin:8px 0 16px;">
+        <!-- Image preview -->
+        <div *ngIf="message.imageUrl?.trim()" style="margin-top:14px;">
+          <img [src]="message.imageUrl" alt="Preview" style="max-height:120px;border-radius:8px;border:1px solid #ddd;object-fit:cover;">
+          <div style="font-size:11px;color:#888;margin-top:4px;">✓ Preview — this image will appear in the push notification</div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:24px;margin:16px 0;">
           <mat-slide-toggle [(ngModel)]="message.active" color="primary">
             {{ message.active ? '✅ Active (visible to users)' : '⏸ Inactive (hidden)' }}
           </mat-slide-toggle>
@@ -60,7 +74,7 @@ import { ApiService } from '../../core/services/api.service';
           </div>
         </div>
 
-        <div style="display:flex;gap:12px;">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
           <button mat-flat-button color="primary" (click)="save()" [disabled]="saving()">
             {{ saving() ? 'Saving...' : '💾 Save & Publish' }}
           </button>
@@ -100,6 +114,7 @@ export class AnnouncementComponent implements OnInit {
   message = { message: '', active: false, bgColor: '#667eea', imageUrl: '' };
   saving = signal(false);
   pushing = signal(false);
+  uploading = signal(false);
 
   constructor(private api: ApiService, private snack: MatSnackBar) {}
 
@@ -152,6 +167,26 @@ export class AnnouncementComponent implements OnInit {
       error: () => {
         this.snack.open('❌ Failed to send push notification', '', { duration: 3000 });
         this.pushing.set(false);
+      }
+    });
+  }
+
+  /**
+   * Upload announcement image directly
+   * Uploads to Cloudinary and auto-fills the image URL
+   */
+  uploadImage(file: File) {
+    if (!file) return;
+    this.uploading.set(true);
+    this.api.uploadFile<{ url: string }>('/admin/catalog/upload-image', file).subscribe({
+      next: (res) => {
+        this.message.imageUrl = res.url;
+        this.uploading.set(false);
+        this.snack.open('✅ Image uploaded! URL auto-filled.', '', { duration: 2000 });
+      },
+      error: (err) => {
+        this.uploading.set(false);
+        this.snack.open('❌ Upload failed: ' + (err?.error?.message || 'Unknown error'), '', { duration: 3000 });
       }
     });
   }

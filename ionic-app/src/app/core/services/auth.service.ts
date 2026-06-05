@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Capacitor } from '@capacitor/core';
 import { environment } from '../../../environments/environment';
+import { NotificationStateService } from './notification-state.service';
 
 type AppRole = 'CUSTOMER' | 'DELIVERY_BOY';
 
@@ -13,7 +14,10 @@ export class AuthService {
   readonly deliveryToken = signal<string | null>(this.loadTokenFromStorage('delivery_token'));
   readonly activeRole = signal<AppRole | null>(this.loadRoleFromStorage());
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private notificationState: NotificationStateService
+  ) {}
 
   /** Load and validate token from storage, ensuring proper string normalization */
   private loadTokenFromStorage(key: 'customer_token' | 'delivery_token'): string | null {
@@ -153,6 +157,11 @@ export class AuthService {
     localStorage.removeItem('active_role');
     localStorage.removeItem('active_phone');
     localStorage.removeItem('suggested_role');
+    
+    // ✅ Clear notifications on logout to prevent duplicates on re-login
+    console.log('🔄 Clearing notifications on logout');
+    this.notificationState.clear();
+    
     this.notifyScopeChanged();
   }
 

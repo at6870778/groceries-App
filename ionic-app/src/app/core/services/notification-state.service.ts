@@ -18,13 +18,27 @@ export class NotificationStateService {
   unreadCount = signal<number>(0);
 
   load(): void {
+    // ✅ Clear old notifications first to prevent duplicates on re-login
+    this.notifications.set([]);
+    this.unreadCount.set(0);
+    
     this.api.get<AppNotification[]>('/customer/notifications').subscribe({
       next: (data) => {
-        this.notifications.set(data);
+        this.notifications.set(data); // Replace, don't append
         this.unreadCount.set(data.length);
+        console.log('✅ Notifications loaded:', data.length);
       },
-      error: () => {}
+      error: () => {
+        console.warn('⚠️ Failed to load notifications');
+      }
     });
+  }
+
+  /** Clear all notifications (called on logout) */
+  clear(): void {
+    console.log('🗑️ Clearing all notifications');
+    this.notifications.set([]);
+    this.unreadCount.set(0);
   }
 
   /** Delete on tap — removes from DB and local list immediately */

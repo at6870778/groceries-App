@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -45,7 +45,7 @@ import { ApiService } from '../../core/services/api.service';
               style="flex: 1; padding: 10px 12px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px;">
             <div style="display: flex; gap: 8px; margin-top: 0;">
               <input #imgFileInput type="file" accept="image/*" style="display:none"
-                (change)="uploadImage($any($imgFileInput.files)[0])" />
+                (change)="onFileSelected($event)" />
               <button mat-stroked-button type="button" [disabled]="uploading()" (click)="imgFileInput.click()"
                 style="white-space: nowrap;">
                 <mat-icon style="font-size: 18px; width: 18px; height: 18px; margin-right: 4px;">cloud_upload</mat-icon>
@@ -111,6 +111,8 @@ export class AnnouncementComponent implements OnInit {
   // Default hero banner — replace with your actual Cloudinary URL after uploading home-banner.png
   private readonly DEFAULT_BANNER_URL = '';
 
+  @ViewChild('imgFileInput') imgFileInput!: ElementRef<HTMLInputElement>;
+
   message = { message: '', active: false, bgColor: '#667eea', imageUrl: '' };
   saving = signal(false);
   pushing = signal(false);
@@ -169,6 +171,16 @@ export class AnnouncementComponent implements OnInit {
         this.pushing.set(false);
       }
     });
+  }
+
+  /**
+   * Handle file selection from input
+   */
+  onFileSelected(event: any) {
+    const file = event.target?.files?.[0];
+    if (file) {
+      this.uploadImage(file);
+    }
   }
 
   /**

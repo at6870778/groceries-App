@@ -2,6 +2,8 @@ package com.khanago.grocery.banner;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -15,12 +17,15 @@ public class BannerService {
     private final BannerRepository bannerRepository;
     
     /**
-     * Get all active banners sorted by display order
+     * Get all active banners sorted by display order - LIMIT 5 (cached for 10 min)
+     * Only latest active banners shown to users
      */
+    @Cacheable(value = "activeBanners", cacheManager = "cacheManager")
     public List<BannerDto> getActiveBanners() {
-        log.info("Fetching active banners");
+        log.info("Fetching active banners (limit 5)");
         return bannerRepository.findAllByIsActiveTrueOrderByDisplayOrder()
                 .stream()
+                .limit(5) // ✅ Maximum 5 banners in app
                 .map(BannerDto::fromEntity)
                 .collect(Collectors.toList());
     }
@@ -47,9 +52,10 @@ public class BannerService {
     }
     
     /**
-     * Create new banner
+     * Create new banner - Invalidate cache after creation
      */
     @Transactional
+    @CacheEvict(value = "activeBanners", allEntries = true) // ✅ Clear cache
     public BannerDto createBanner(Banner banner) {
         log.info("Creating new banner with title: {}", banner.getTitle());
         if (banner.getDisplayOrder() == null) {
@@ -60,15 +66,19 @@ public class BannerService {
                     .orElse(0);
             banner.setDisplayOrder(maxOrder + 1);
         }
+        if (banner.getIsActive() == null) {
+            banner.setIsActive(true);
+        }
         Banner saved = bannerRepository.save(banner);
         log.info("Banner created with id: {}", saved.getId());
         return BannerDto.fromEntity(saved);
     }
     
     /**
-     * Update banner
+     * Update banner - Invalidate cache after update
      */
     @Transactional
+    @CacheEvict(value = "activeBanners", allEntries = true) // ✅ Clear cache
     public BannerDto updateBanner(Long id, Banner bannerDetails) {
         log.info("Updating banner with id: {}", id);
         Banner banner = bannerRepository.findById(id)
@@ -96,9 +106,10 @@ public class BannerService {
     }
     
     /**
-     * Toggle banner active status
+     * Toggle banner active/inactive status - Invalidate cache
      */
     @Transactional
+    @CacheEvict(value = "activeBanners", allEntries = true) // ✅ Clear cache
     public BannerDto toggleBannerStatus(Long id) {
         log.info("Toggling banner status for id: {}", id);
         Banner banner = bannerRepository.findById(id)
@@ -111,12 +122,16 @@ public class BannerService {
     }
     
     /**
-     * Delete banner
+     * Delete banner (completely remove from DB) - Invalidate cache
+     * Use this to free up database space
      */
     @Transactional
+    @CacheEvict(value = "activeBanners", allEntries = true) // ✅ Clear cache
     public void deleteBanner(Long id) {
-        log.info("Deleting banner with id: {}", id);
+        log.info("Deleting banner with id: {} (permanently removing from DB)", id);
+        Banner banner = bannerRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Banner not found"));
         bannerRepository.deleteById(id);
-        log.info("Banner deleted successfully");
+        log.info("Banner deleted successfully - DB space freed!");
     }
 }

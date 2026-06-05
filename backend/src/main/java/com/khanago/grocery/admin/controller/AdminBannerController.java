@@ -63,21 +63,27 @@ public class AdminBannerController {
     
     /**
      * Toggle banner active/inactive status
+     * Deactivate: Hide from app, keep in DB (no deletion)
+     * Reactivate: Show in app again
      */
     @PatchMapping("/{id}/toggle")
     public ResponseEntity<BannerDto> toggleBannerStatus(@PathVariable Long id) {
-        log.info("ADMIN: Toggling banner status for id: {}", id);
+        log.info("ADMIN: Toggling banner status for id: {} - Cache will be cleared", id);
         BannerDto updated = bannerService.toggleBannerStatus(id);
+        log.info("ADMIN: Banner status toggled to: {} - Next app request will fetch fresh data", updated.getIsActive());
         return ResponseEntity.ok(updated);
     }
     
     /**
-     * Delete banner
+     * Delete banner PERMANENTLY from database
+     * Use this to remove old banners and free up DB space
+     * WARNING: This cannot be undone!
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBanner(@PathVariable Long id) {
-        log.info("ADMIN: Deleting banner with id: {}", id);
+        log.warn("ADMIN: Permanently deleting banner with id: {} - This frees DB space", id);
         bannerService.deleteBanner(id);
+        log.info("ADMIN: Banner deleted from DB - Cache cleared for all users");
         return ResponseEntity.noContent().build();
     }
     

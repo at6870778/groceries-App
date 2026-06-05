@@ -3,27 +3,23 @@ import { authGuard } from './core/guards/auth.guard';
 import { deliveryGuard } from './core/guards/delivery.guard';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthService } from './core/services/auth.service';
 
 const rootGuard = () => {
   const router = inject(Router);
-  const token = localStorage.getItem('customer_token');
-  if (token && token !== 'undefined' && token !== 'null') {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      if (payload.exp && payload.exp * 1000 > Date.now()) {
-        return router.parseUrl('/home');
-      }
-    } catch { /* invalid token, fall through to login */ }
+  const auth = inject(AuthService);
+  
+  // Check customer token first
+  if (auth.customerToken()) {
+    return router.parseUrl('/home');
   }
-  const deliveryToken = localStorage.getItem('delivery_token');
-  if (deliveryToken && deliveryToken !== 'undefined' && deliveryToken !== 'null') {
-    try {
-      const payload = JSON.parse(atob(deliveryToken.split('.')[1]));
-      if (payload.exp && payload.exp * 1000 > Date.now()) {
-        return router.parseUrl('/delivery/orders');
-      }
-    } catch { /* invalid token */ }
+  
+  // Check delivery token
+  if (auth.deliveryToken()) {
+    return router.parseUrl('/delivery/orders');
   }
+  
+  // No valid token, redirect to login
   return router.parseUrl('/login');
 };
 

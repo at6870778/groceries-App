@@ -9,11 +9,67 @@ type AppRole = 'CUSTOMER' | 'DELIVERY_BOY';
 export class AuthService {
   private readonly baseUrl = this.resolveBaseUrl();
 
-  readonly customerToken = signal<string | null>(localStorage.getItem('customer_token'));
-  readonly deliveryToken = signal<string | null>(localStorage.getItem('delivery_token'));
-  readonly activeRole = signal<AppRole | null>((localStorage.getItem('active_role') as AppRole | null) ?? null);
+  readonly customerToken = signal<string | null>(this.loadTokenFromStorage('customer_token'));
+  readonly deliveryToken = signal<string | null>(this.loadTokenFromStorage('delivery_token'));
+  readonly activeRole = signal<AppRole | null>(this.loadRoleFromStorage());
 
   constructor(private http: HttpClient) {}
+
+  /** Load and validate token from storage, ensuring proper string normalization */
+  private loadTokenFromStorage(key: 'customer_token' | 'delivery_token'): string | null {
+    try {
+      const token = localStorage.getItem(key);
+      // Reject if null, undefined, or string 'undefined'/'null'
+      if (!token || token === 'undefined' || token === 'null') {
+        localStorage.removeItem(key);
+        return null;
+      }
+      // Validate JWT structure (basic check)
+      if (!token.includes('.')) {
+        localStorage.removeItem(key);
+        return null;
+      }
+      // Check if token is expired
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          localStorage.removeItem(key);
+          return null;
+        }
+      } catch {
+        localStorage.removeItem(key);
+        return null;
+      }
+      return token;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Load and validate role from storage */
+  private loadRoleFromStorage(): AppRole | null {
+    try {
+      const role = localStorage.getItem('active_role');
+      if (role !== 'CUSTOMER' && role !== 'DELIVERY_BOY') {
+        localStorage.removeItem('active_role');
+        return null;
+      }
+      return role as AppRole;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Utility: Check if a token is valid */
+  private isTokenValid(token: string | null): boolean {
+    if (!token || token === 'undefined' || token === 'null') return false;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return !payload.exp || payload.exp * 1000 > Date.now();
+    } catch {
+      return false;
+    }
+  }
 
   private resolveBaseUrl(): string {
     const configuredUrl = (environment.apiUrl || '').replace(/\/$/, '');
@@ -66,6 +122,12 @@ export class AuthService {
   }
 
   saveToken(token: string, role: AppRole, phone?: string) {
+    // Validate token before saving
+    if (!token || !token.includes('.')) {
+      console.error('Invalid token format: cannot save');
+      return;
+    }
+    
     if (role === 'DELIVERY_BOY') {
       this.deliveryToken.set(token);
       localStorage.setItem('delivery_token', token);
@@ -82,6 +144,7 @@ export class AuthService {
   }
 
   clearTokens() {
+    // Clear both signals AND localStorage to prevent lingering state
     this.customerToken.set(null);
     this.deliveryToken.set(null);
     this.activeRole.set(null);
@@ -89,23 +152,41 @@ export class AuthService {
     localStorage.removeItem('delivery_token');
     localStorage.removeItem('active_role');
     localStorage.removeItem('active_phone');
+    localStorage.removeItem('suggested_role');
     this.notifyScopeChanged();
   }
 
   logout(role?: AppRole) {
+    // Logout specific role or all roles if no role specified
     if (role === 'DELIVERY_BOY') {
       this.deliveryToken.set(null);
       localStorage.removeItem('delivery_token');
-    } else {
+    } else if (role === 'CUSTOMER') {
       this.customerToken.set(null);
       localStorage.removeItem('customer_token');
+    } else {
+      // If no specific role, logout both
+      this.customerToken.set(null);
+      this.deliveryToken.set(null);
+      localStorage.removeItem('customer_token');
+      localStorage.removeItem('delivery_token');
     }
+    
+    // If current active role matches or no specific role provided, clear active role
     if (this.activeRole() === role || !role) {
       this.activeRole.set(null);
       localStorage.removeItem('active_role');
       localStorage.removeItem('active_phone');
     }
     this.notifyScopeChanged();
+  }
+
+  /** Handle 401/403 errors - auto-logout when backend says token is invalid */
+  handleAuthError(status: number) {
+    if (status === 401 || status === 403) {
+      console.warn(`Auth error (${status}): Clearing tokens and logging out`);
+      this.clearTokens();
+    }
   }
 
   getCurrentUser(): any {

@@ -114,7 +114,7 @@ export class PushNotificationService {
       header: title,
       message: body,
       duration: 4000,
-      position: 'top',
+      position: 'bottom',
       color: 'dark',
       buttons: [{ icon: 'close', role: 'cancel' }]
     });
@@ -136,7 +136,7 @@ export class PushNotificationService {
         header: title,
         message: body,
         duration: 5000,
-        position: 'top',
+        position: 'bottom',
         color: 'dark',
         cssClass: 'image-notification-toast',
         buttons: [{ icon: 'close', role: 'cancel' }]

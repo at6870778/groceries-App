@@ -234,8 +234,8 @@ import { NotificationStateService } from '../../core/services/notification-state
                   <div class="prod-name">{{ p.name }}</div>
                   <div class="prod-unit">{{ scaledUnit(p.unit, cartQty(p.id)) }}</div>
                   <div class="prod-price-row">
-                    <span class="prod-mrp" *ngIf="getDiscount(p) > 0">₹{{ getOriginalPrice(p) }}</span>
-                    <span class="prod-price">₹{{ p.sellingPrice }}</span>
+                    <span class="prod-mrp" *ngIf="getDiscount(p) > 0">₹{{ getOriginalPrice(p) * (cartQty(p.id) || 1) }}</span>
+                    <span class="prod-price">₹{{ p.sellingPrice * (cartQty(p.id) || 1) }}</span>
                   </div>
                   <div class="prod-actions" (click)="$event.stopPropagation()">
                     <ng-container *ngIf="cartQty(p.id) === 0; else allStep">

@@ -61,7 +61,7 @@ import { takeUntil } from 'rxjs/operators';
             <div class="action-row">
               <div class="stepper-wrap" (click)="$event.stopPropagation()">
                 <ng-container *ngIf="cartQty(p.id) === 0; else stepper">
-                  <ion-button size="small" fill="solid" (click)="addToCart(p)" [disabled]="adding() === p.id" class="add-btn">
+                  <ion-button size="small" fill="solid" (click)="addToCart(p)" class="add-btn" [class.adding]="adding() === p.id">
                     {{ adding() === p.id ? '...' : 'ADD' }}
                   </ion-button>
                 </ng-container>
@@ -73,7 +73,7 @@ import { takeUntil } from 'rxjs/operators';
                   </div>
                 </ng-template>
               </div>
-              <ion-button size="small" (click)="buyNow(p)" [disabled]="adding() === p.id" class="buy-btn">
+              <ion-button size="small" (click)="buyNow(p)" class="buy-btn" [class.adding]="adding() === p.id">
                 {{ adding() === p.id ? '...' : 'BUY' }}
               </ion-button>
             </div>
@@ -327,11 +327,14 @@ import { takeUntil } from 'rxjs/operators';
       --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       --color: #ffffff;
       --box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26);
-      pointer-events: none;
     }
     .add-btn:active, .add-btn:focus {
       --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       --box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26);
+    }
+    .add-btn.adding {
+      opacity: 0.7;
+      pointer-events: none;
     }
     .step-btn {
       background: none;
@@ -362,6 +365,10 @@ import { takeUntil } from 'rxjs/operators';
       --border-radius: 10px;
       --box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26);
       font-weight: 700;
+    }
+    .buy-btn.adding {
+      opacity: 0.7;
+      pointer-events: none;
     }
     .discount-badge {
       position: absolute;

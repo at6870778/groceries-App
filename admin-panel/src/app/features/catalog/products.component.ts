@@ -129,7 +129,31 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
           </div>
 
           <mat-form-field appearance="outline">
-            <mat-label>Image URL</mat-label>
+            <mat-label>Emoji</mat-label>
+            <mat-select formControlName="emoji">
+              <mat-option value="">None</mat-option>
+              <mat-option value="🥦">🥦 Vegetables</mat-option>
+              <mat-option value="🍿">🍿 Snacks</mat-option>
+              <mat-option value="☕">☕ Beverages</mat-option>
+              <mat-option value="🍪">🍪 Bakery</mat-option>
+              <mat-option value="🧴">🧴 Cosmetics</mat-option>
+              <mat-option value="🧻">🧻 Daily Essentials</mat-option>
+              <mat-option value="🌾">🌾 Grains</mat-option>
+              <mat-option value="🥛">🥛 Dairy</mat-option>
+              <mat-option value="🍖">🍖 Meat</mat-option>
+              <mat-option value="🐟">🐟 Seafood</mat-option>
+              <mat-option value="🍊">🍊 Fruits</mat-option>
+              <mat-option value="🧂">🧂 Spices</mat-option>
+              <mat-option value="🎂">🎂 Desserts</mat-option>
+              <mat-option value="🥤">🥤 Drinks</mat-option>
+              <mat-option value="📦">📦 Packaged Foods</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div style="margin-top:12px;">
+          <mat-form-field appearance="outline" style="width:100%;">
+            <mat-label>Image URL (Optional)</mat-label>
             <input matInput formControlName="imageUrl" />
           </mat-form-field>
         </div>
@@ -162,7 +186,7 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
         <table class="cat-table">
           <thead>
             <tr>
-              <th style="width:54px"></th>
+              <th style="width:54px">Emoji</th>
               <th>Name</th>
               <th>Slug</th>
               <th style="width:120px">Visibility</th>
@@ -171,10 +195,7 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
           </thead>
           <tbody>
             <tr *ngFor="let c of categories()" [class.inactive-row]="!c.active">
-              <td>
-                <img *ngIf="c.imageUrl" [src]="c.imageUrl" [alt]="c.name" class="thumb" />
-                <div *ngIf="!c.imageUrl" class="thumb-placeholder"><mat-icon>category</mat-icon></div>
-              </td>
+              <td style="font-size:24px;text-align:center;">{{ c.emoji || '📦' }}</td>
               <td><strong style="font-size:13px">{{ c.name }}</strong></td>
               <td><span class="slug-tag">{{ c.slug }}</span></td>
               <td>
@@ -405,6 +426,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
     name: ['', Validators.required],
     slug: ['', Validators.required],
     imageUrl: [''],
+    emoji: [''],
     active: [true]
   });
 
@@ -509,11 +531,14 @@ export class ProductsComponent implements OnInit, OnDestroy {
     if (this.categoryForm.invalid) return;
     const id = this.editingCategoryId();
     this.catSaving.set(true);
+    const formData = this.categoryForm.getRawValue();
+    console.log('📤 Saving category:', { id, formData });
     const req = id
-      ? this.api.put(`/admin/catalog/categories/${id}`, this.categoryForm.getRawValue())
-      : this.api.post('/admin/catalog/categories', this.categoryForm.getRawValue());
+      ? this.api.put(`/admin/catalog/categories/${id}`, formData)
+      : this.api.post('/admin/catalog/categories', formData);
     req.subscribe({
-      next: () => {
+      next: (response) => {
+        console.log('✅ Category saved successfully:', response);
         this.catSaving.set(false);
         this.cancelCategoryEdit();
         this.loadCategories();
@@ -521,6 +546,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.catSaving.set(false);
+        console.error('❌ Failed to save category:', err);
         this.snack.open(err?.error?.message || 'Failed to save category', 'OK', { duration: 3500, panelClass: ['snack-error'] });
       }
     });
@@ -604,12 +630,15 @@ export class ProductsComponent implements OnInit, OnDestroy {
     this.catUploading.set(true);
     this.api.uploadFile<{ url: string }>('/admin/catalog/upload-image', file).subscribe({
       next: (res) => {
+        console.log('✅ Image uploaded to Cloudinary:', res.url);
         this.categoryForm.patchValue({ imageUrl: res.url });
+        console.log('📝 Form imageUrl updated:', this.categoryForm.get('imageUrl')?.value);
         this.catUploading.set(false);
-        this.snack.open('Image uploaded', 'OK', { duration: 2000 });
+        this.snack.open('Image uploaded ✓', 'OK', { duration: 2000 });
       },
       error: (err) => {
         this.catUploading.set(false);
+        console.error('❌ Image upload failed:', err);
         this.snack.open(err?.error?.message || 'Upload failed', 'OK', { duration: 3000 });
       }
     });

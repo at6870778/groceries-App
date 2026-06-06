@@ -44,7 +44,7 @@ import { takeUntil } from 'rxjs/operators';
       <div *ngIf="!loading() && products().length === 0" class="status">No products found for this category/search.</div>
 
       <div class="grid" *ngIf="!loading() && products().length > 0">
-        <article class="item" *ngFor="let p of products(); let i = index" [style.animationDelay.ms]="i * 45">
+        <article class="item" *ngFor="let p of products(); let i = index" [style.animationDelay.ms]="i * 45" (click)="openQuickView(p, $event)">
           <div class="item-art" [class.has-photo]="p.imageUrl" [style.background]="p.imageUrl ? '#fff' : productBg(p)">
             <div class="discount-badge" *ngIf="+p.mrp > +p.sellingPrice">{{ getDiscount(p) }}%</div>
             <img *ngIf="p.imageUrl" class="art-image photo-img" [src]="p.imageUrl" [alt]="p.name">
@@ -61,7 +61,7 @@ import { takeUntil } from 'rxjs/operators';
             <div class="action-row">
               <div class="stepper-wrap" (click)="$event.stopPropagation()">
                 <ng-container *ngIf="cartQty(p.id) === 0; else stepper">
-                  <ion-button size="small" fill="outline" color="medium" (click)="addToCart(p)" [disabled]="adding() === p.id" class="add-btn">
+                  <ion-button size="small" fill="solid" (click)="addToCart(p)" [disabled]="adding() === p.id" class="add-btn">
                     {{ adding() === p.id ? '...' : 'ADD' }}
                   </ion-button>
                 </ng-container>
@@ -81,6 +81,67 @@ import { takeUntil } from 'rxjs/operators';
         </article>
       </div>
     </ion-content>
+
+    <!-- ══════════════════════════════════════
+         QUICK-VIEW MODAL
+    ══════════════════════════════════════ -->
+    <div class="modal-overlay" *ngIf="showQuickViewModal()" (click)="closeQuickView()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <button class="modal-close" (click)="closeQuickView()">✕</button>
+        <div *ngIf="selectedProductForModal() as product" class="quick-view-product">
+          <div class="qv-image-wrap" 
+               (touchstart)="onTouchStart($event)" 
+               (touchmove)="onTouchMove($event)" 
+               (touchend)="onTouchEnd($event)"
+               (wheel)="onMouseWheel($event)"
+               (click)="toggleZoomControls()">
+            <div class="zoom-controls" *ngIf="imageZoom() > 1 || showZoomHint()">
+              <button class="zoom-btn zoom-out" (click)="resetZoom($event)" title="Reset zoom">
+                <span>↺</span>
+              </button>
+            </div>
+            <div class="zoom-hint" *ngIf="imageZoom() === 1 && !zoomHintHidden()">
+              🔍 Pinch to zoom or use mouse wheel
+            </div>
+            <div class="qv-image-container" [style.transform]="'scale(' + imageZoom() + ')'" [style.transformOrigin]="'center'">
+              <img 
+                *ngIf="product.imageUrl" 
+                class="qv-image" 
+                [src]="product.imageUrl" 
+                [alt]="product.name"
+                [style.cursor]="imageZoom() > 1 ? 'grab' : 'zoom-in'">
+            </div>
+          </div>
+          
+          <!-- Product Details -->
+          <div class="qv-details">
+            <div class="qv-category">{{ product.categoryName }}</div>
+            <h2 class="qv-name">{{ product.name }}</h2>
+            <div class="qv-unit" *ngIf="product.unit">{{ product.unit }}</div>
+            <div class="qv-price-row">
+              <span class="qv-price">₹{{ product.sellingPrice }}</span>
+              <span class="qv-mrp" *ngIf="product.mrp && product.mrp > product.sellingPrice">₹{{ product.mrp }}</span>
+              <span class="qv-discount" *ngIf="getDiscount(product) > 0">{{ getDiscount(product) }}% OFF</span>
+            </div>
+            <div class="qv-description" *ngIf="product.description">{{ product.description }}</div>
+          </div>
+          
+          <div class="qv-actions">
+            <button class="qv-cancel-btn" (click)="closeQuickView()">Continue Shopping</button>
+            <ng-container *ngIf="cartQty(product.id) === 0; else qvStep">
+              <button class="qv-add-btn" (click)="addToCartFromModal(product)">+ Add to Cart</button>
+            </ng-container>
+            <ng-template #qvStep>
+              <div class="qv-stepper">
+                <button class="qv-step-btn" (click)="removeFromCart(product)">−</button>
+                <span class="qv-qty">{{ cartQty(product.id) }}</span>
+                <button class="qv-step-btn" (click)="addToCart(product)">+</button>
+              </div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+    </div>
     <app-bottom-nav></app-bottom-nav>
   `,
   styles: [`
@@ -327,6 +388,366 @@ import { takeUntil } from 'rxjs/operators';
       from { opacity: 0; transform: translateY(10px) scale(0.985); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
+
+    /* ══════════════════════════════════════
+       QUICK-VIEW MODAL
+    ══════════════════════════════════════ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      animation: fade-in 0.3s ease;
+      overflow: hidden;
+      padding: 16px;
+    }
+    @keyframes fade-in {
+      from { opacity: 0; backdrop-filter: blur(0px); }
+      to { opacity: 1; backdrop-filter: blur(6px); }
+    }
+    .modal-content {
+      width: 100%;
+      max-width: 450px;
+      max-height: 90vh;
+      background: #fff;
+      border-radius: 20px;
+      animation: zoom-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .modal-content::-webkit-scrollbar { width: 6px; }
+    .modal-content::-webkit-scrollbar-track { background: transparent; }
+    .modal-content::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+    @keyframes zoom-in {
+      from { 
+        transform: scale(0.8) translateY(20px);
+        opacity: 0;
+      }
+      to { 
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.7);
+      border: none;
+      font-size: 1.4rem;
+      color: #fff;
+      cursor: pointer;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .modal-close:active { 
+      background: rgba(0, 0, 0, 0.85);
+      transform: scale(1.15);
+    }
+    
+    .quick-view-product {
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      min-height: 0;
+      max-height: 100%;
+      overflow: hidden;
+    }
+    .qv-image-wrap {
+      width: 100%;
+      height: 480px;
+      border-radius: 16px 16px 0 0;
+      overflow: hidden;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f8f9f0 0%, #fafbf7 100%);
+      flex-shrink: 0;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+    .qv-image-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease-out;
+      transform-origin: center;
+    }
+    .qv-image { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: contain; 
+      padding: 24px;
+      background: linear-gradient(135deg, #f8f9f0 0%, #fafbf7 100%);
+      cursor: zoom-in;
+      transition: cursor 0.2s ease;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .zoom-controls {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 30;
+      display: flex;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 12px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      animation: slide-down 0.3s ease;
+    }
+    @keyframes slide-down {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .zoom-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .zoom-btn:active {
+      background: rgba(255, 255, 255, 0.4);
+      transform: scale(0.95);
+    }
+    .zoom-out span {
+      display: inline-block;
+      transition: transform 0.3s ease;
+    }
+    .zoom-btn:active span {
+      transform: rotate(360deg);
+    }
+    .zoom-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      white-space: nowrap;
+      z-index: 25;
+      pointer-events: none;
+      animation: fade-in-out 3s ease;
+    }
+    @keyframes fade-in-out {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+      15% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      85% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    }
+    
+    /* Product Details Section */
+    .qv-details {
+      padding: 14px 16px;
+      background: #fff;
+      border-bottom: 1px solid #f0f0f0;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+    }
+    
+    .qv-category {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #667eea;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    
+    .qv-name {
+      margin: 0 0 6px;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #1a1a1a;
+      line-height: 1.3;
+    }
+    
+    .qv-unit {
+      font-size: 0.72rem;
+      color: #999;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    
+    .qv-price-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    
+    .qv-price {
+      font-weight: 800;
+      font-size: 1.35rem;
+      color: #1a1a1a;
+    }
+    
+    .qv-mrp {
+      text-decoration: line-through;
+      color: #bbb;
+      font-size: 0.88rem;
+    }
+    
+    .qv-discount {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-left: auto;
+    }
+    
+    .qv-description {
+      font-size: 0.82rem;
+      color: #666;
+      line-height: 1.35;
+      margin-top: 4px;
+    }
+    
+    .qv-actions {
+      display: flex;
+      gap: 10px;
+      margin: 0;
+      padding: 12px 16px;
+      background: #fff;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      border-top: 1px solid #f0f0f0;
+      flex-shrink: 0;
+      border-radius: 0 0 16px 16px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    
+    .qv-cancel-btn {
+      flex: 1;
+      min-width: 100px;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+    }
+    .qv-cancel-btn:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 10px rgba(102, 126, 234, 0.2);
+    }
+    
+    .qv-add-btn {
+      flex: 1;
+      min-width: 100px;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+    }
+    .qv-add-btn:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 10px rgba(102, 126, 234, 0.2);
+    }
+    
+    .qv-stepper {
+      flex: 1;
+      min-width: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 10px;
+      padding: 0 10px;
+      height: 40px;
+    }
+    
+    .qv-step-btn {
+      width: 26px;
+      height: 26px;
+      border: none;
+      background: rgba(255, 255, 255, 0.3);
+      color: #fff;
+      border-radius: 6px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+    .qv-step-btn:active {
+      background: rgba(255, 255, 255, 0.5);
+    }
+    
+    .qv-qty {
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      min-width: 20px;
+      text-align: center;
+    }
   `]
 })
 export class ProductsPage implements OnInit, OnDestroy {
@@ -339,6 +760,12 @@ export class ProductsPage implements OnInit, OnDestroy {
   readonly categoryName = signal('');
   readonly loading = signal(false);
   readonly searchTerm = signal('');
+  readonly showQuickViewModal = signal(false);
+  readonly selectedProductForModal = signal<any>(null);
+  readonly imageZoom = signal(1);
+  readonly imageRotation = signal(0);
+  private zoomStartDistance = 0;
+  private zoomStartScale = 1;
 
   private searchTimeout: any;
   private lastQuery = '';
@@ -551,5 +978,101 @@ export class ProductsPage implements OnInit, OnDestroy {
 
   private onOffline(): void {
     console.log('🔴 Internet connection lost');
+  }
+
+  openQuickView(product: any, event?: Event): void {
+    if (event) event.stopPropagation();
+    this.selectedProductForModal.set(product);
+    this.showQuickViewModal.set(true);
+  }
+
+  closeQuickView(): void {
+    this.imageZoom.set(1);
+    this.zoomHintHidden.set(false);
+    this.showQuickViewModal.set(false);
+    setTimeout(() => this.selectedProductForModal.set(null), 200);
+  }
+
+  addToCartFromModal(product: any): void {
+    this.addToCart(product);
+  }
+
+  // ═══════════════════════════════════════
+  // ZOOM FUNCTIONALITY
+  // ═══════════════════════════════════════
+  readonly showZoomHint = signal(true);
+  readonly zoomHintHidden = signal(false);
+
+  private getTouchDistance(touches: TouchList): number {
+    if (touches.length < 2) return 0;
+    const touch1 = touches[0];
+    const touch2 = touches[1];
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  onTouchStart(event: TouchEvent): void {
+    if (event.touches.length === 2) {
+      this.zoomHintHidden.set(true);
+      this.zoomStartDistance = this.getTouchDistance(event.touches);
+      this.zoomStartScale = this.imageZoom();
+    }
+  }
+
+  onTouchMove(event: TouchEvent): void {
+    if (event.touches.length === 2) {
+      event.preventDefault();
+      const currentDistance = this.getTouchDistance(event.touches);
+      if (this.zoomStartDistance > 0) {
+        const ratio = currentDistance / this.zoomStartDistance;
+        const newZoom = Math.min(Math.max(this.zoomStartScale * ratio, 1), 4);
+        this.imageZoom.set(newZoom);
+      }
+    }
+  }
+
+  onTouchEnd(event: TouchEvent): void {
+    if (event.touches.length < 2) {
+      this.zoomStartDistance = 0;
+      // Snap to valid zoom levels
+      const currentZoom = this.imageZoom();
+      if (currentZoom < 1.2) {
+        this.imageZoom.set(1);
+      } else if (currentZoom < 2) {
+        this.imageZoom.set(1.5);
+      } else {
+        this.imageZoom.set(Math.min(currentZoom, 4));
+      }
+    }
+  }
+
+  onMouseWheel(event: WheelEvent): void {
+    event.preventDefault();
+    const currentZoom = this.imageZoom();
+    const zoomStep = 0.2;
+    let newZoom = currentZoom;
+    
+    if (event.deltaY < 0) {
+      // Scroll up = zoom in
+      newZoom = Math.min(currentZoom + zoomStep, 4);
+    } else {
+      // Scroll down = zoom out
+      newZoom = Math.max(currentZoom - zoomStep, 1);
+    }
+    
+    this.imageZoom.set(newZoom);
+    this.zoomHintHidden.set(true);
+  }
+
+  resetZoom(event: Event): void {
+    event.stopPropagation();
+    this.imageZoom.set(1);
+  }
+
+  toggleZoomControls(): void {
+    if (this.imageZoom() === 1) {
+      this.zoomHintHidden.set(!this.zoomHintHidden());
+    }
   }
 }

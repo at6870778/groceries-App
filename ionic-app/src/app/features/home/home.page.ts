@@ -180,7 +180,7 @@ import { NotificationStateService } from '../../core/services/notification-state
             [class.active]="activeCategorySlug() === cat.slug"
             [ngStyle]="chipNgStyle(i, activeCategorySlug() === cat.slug)"
             (click)="selectChip(cat.slug)">
-            <span class="chip-emoji">{{ catEmoji(cat.slug) }}</span>
+            <span class="chip-emoji">{{ getEmoji(cat) }}</span>
             <span class="chip-label">{{ cat.name }}</span>
           </button>
         </div>
@@ -267,8 +267,23 @@ import { NotificationStateService } from '../../core/services/notification-state
       <div class="modal-content" (click)="$event.stopPropagation()" [@slideUp]>
         <button class="modal-close" (click)="closeQuickView()">✕</button>
         <div *ngIf="selectedProductForModal() as product" class="quick-view-product">
-          <div class="qv-image-wrap" [style.background]="productBg(product)">
-            <img *ngIf="product.imageUrl" class="qv-image" [src]="product.imageUrl" [alt]="product.name">
+          <div class="qv-image-wrap" 
+               (touchstart)="onTouchStart($event)" 
+               (touchmove)="onTouchMove($event)" 
+               (touchend)="onTouchEnd($event)"
+               (wheel)="onMouseWheel($event)"
+               (click)="toggleZoomControls()">
+            <div class="zoom-controls" *ngIf="imageZoom() > 1 || showZoomHint()">
+              <button class="zoom-btn zoom-out" (click)="resetZoom($event)" title="Reset zoom">
+                <span>↺</span>
+              </button>
+            </div>
+            <div class="zoom-hint" *ngIf="imageZoom() === 1 && !zoomHintHidden()">
+              🔍 Pinch to zoom or use mouse wheel
+            </div>
+            <div class="qv-image-container" [style.transform]="'scale(' + imageZoom() + ')'" [style.transformOrigin]="'center'">
+              <img *ngIf="product.imageUrl" class="qv-image" [src]="product.imageUrl" [alt]="product.name" [style.cursor]="imageZoom() > 1 ? 'grab' : 'zoom-in'">
+            </div>
           </div>
           
           <!-- Product Details -->
@@ -1307,7 +1322,6 @@ import { NotificationStateService } from '../../core/services/notification-state
       border-radius: 16px 16px 0 0;
       overflow: hidden;
       margin: 0;
-      margin-bottom: 0;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1315,6 +1329,17 @@ import { NotificationStateService } from '../../core/services/notification-state
       flex-shrink: 0;
       position: relative;
       box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+    .qv-image-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease-out;
+      transform-origin: center;
     }
     .qv-image { 
       width: 100%; 
@@ -1323,11 +1348,80 @@ import { NotificationStateService } from '../../core/services/notification-state
       padding: 24px;
       background: linear-gradient(135deg, #f8f9f0 0%, #fafbf7 100%);
       cursor: zoom-in;
-      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: cursor 0.2s ease;
       touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
     }
-    .qv-image:hover {
-      transform: scale(1.08);
+    .zoom-controls {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 30;
+      display: flex;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 12px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      animation: slide-down 0.3s ease;
+    }
+    @keyframes slide-down {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .zoom-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .zoom-btn:active {
+      background: rgba(255, 255, 255, 0.4);
+      transform: scale(0.95);
+    }
+    .zoom-out span {
+      display: inline-block;
+      transition: transform 0.3s ease;
+    }
+    .zoom-btn:active span {
+      transform: rotate(360deg);
+    }
+    .zoom-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      white-space: nowrap;
+      z-index: 25;
+      pointer-events: none;
+      animation: fade-in-out 3s ease;
+    }
+    @keyframes fade-in-out {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+      15% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      85% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
     }
     
     /* Product Details Section */
@@ -1916,6 +2010,11 @@ export class HomePage implements OnInit, OnDestroy {
   /** Quick-view modal state */
   readonly selectedProductForModal = signal<any>(null);
   readonly showQuickViewModal = signal(false);
+  readonly imageZoom = signal(1);
+  readonly showZoomHint = signal(true);
+  readonly zoomHintHidden = signal(false);
+  private zoomStartDistance = 0;
+  private zoomStartScale = 1;
 
   readonly shortDeliveryLabel = computed(() => {
     const full = this.deliveryLabel();
@@ -2485,6 +2584,8 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   closeQuickView(): void {
+    this.imageZoom.set(1);
+    this.zoomHintHidden.set(false);
     this.showQuickViewModal.set(false);
     setTimeout(() => this.selectedProductForModal.set(null), 200);
   }
@@ -2495,10 +2596,105 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   categoryImage(category: any) {
-    if (category?.imageUrl) return category.imageUrl;
+    if (category?.imageUrl) {
+      console.log('🖼️ Using uploaded image for category:', category.slug, category.imageUrl);
+      return category.imageUrl;
+    }
     const slug = String(category?.slug || '').toLowerCase();
-    if (slug in this.categoryPhotoBySlug) return this.categoryPhotoBySlug[slug as keyof typeof this.categoryPhotoBySlug];
+    if (slug in this.categoryPhotoBySlug) {
+      console.log('📸 Using fallback image for category:', slug);
+      return this.categoryPhotoBySlug[slug as keyof typeof this.categoryPhotoBySlug];
+    }
+    console.log('🍎 Using default image for category:', slug);
     return 'https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.JPG';
+  }
+
+  getEmoji(category: any): string {
+    // Priority 1: emoji from API (database)
+    if (category?.emoji) {
+      console.log('😊 Using emoji from API:', category.slug, category.emoji);
+      return category.emoji;
+    }
+    // Priority 2: fallback hardcoded emoji based on slug
+    const slug = String(category?.slug || '').toLowerCase();
+    console.log('😊 Using fallback emoji for category:', slug);
+    return this.catEmoji(slug);
+  }
+
+  // ═══════════════════════════════════════
+  // ZOOM FUNCTIONALITY FOR QUICK-VIEW
+  // ═══════════════════════════════════════
+  private getTouchDistance(touches: TouchList): number {
+    if (touches.length < 2) return 0;
+    const touch1 = touches[0];
+    const touch2 = touches[1];
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  onTouchStart(event: TouchEvent): void {
+    if (event.touches.length === 2) {
+      this.zoomHintHidden.set(true);
+      this.zoomStartDistance = this.getTouchDistance(event.touches);
+      this.zoomStartScale = this.imageZoom();
+    }
+  }
+
+  onTouchMove(event: TouchEvent): void {
+    if (event.touches.length === 2) {
+      event.preventDefault();
+      const currentDistance = this.getTouchDistance(event.touches);
+      if (this.zoomStartDistance > 0) {
+        const ratio = currentDistance / this.zoomStartDistance;
+        const newZoom = Math.min(Math.max(this.zoomStartScale * ratio, 1), 4);
+        this.imageZoom.set(newZoom);
+      }
+    }
+  }
+
+  onTouchEnd(event: TouchEvent): void {
+    if (event.touches.length < 2) {
+      this.zoomStartDistance = 0;
+      // Snap to valid zoom levels
+      const currentZoom = this.imageZoom();
+      if (currentZoom < 1.2) {
+        this.imageZoom.set(1);
+      } else if (currentZoom < 2) {
+        this.imageZoom.set(1.5);
+      } else {
+        this.imageZoom.set(Math.min(currentZoom, 4));
+      }
+    }
+  }
+
+  onMouseWheel(event: WheelEvent): void {
+    event.preventDefault();
+    const currentZoom = this.imageZoom();
+    const zoomStep = 0.2;
+    let newZoom = currentZoom;
+    
+    if (event.deltaY < 0) {
+      // Scroll up = zoom in
+      newZoom = Math.min(currentZoom + zoomStep, 4);
+    } else {
+      // Scroll down = zoom out
+      newZoom = Math.max(currentZoom - zoomStep, 1);
+    }
+    
+    this.imageZoom.set(newZoom);
+    this.zoomHintHidden.set(true);
+  }
+
+  resetZoom(event: Event): void {
+    event.stopPropagation();
+    this.imageZoom.set(1);
+  }
+
+  toggleZoomControls(): void {
+    if (this.imageZoom() === 1) {
+      this.zoomHintHidden.set(!this.zoomHintHidden());
+    }
   }
 
   categoryBg(category: any) {

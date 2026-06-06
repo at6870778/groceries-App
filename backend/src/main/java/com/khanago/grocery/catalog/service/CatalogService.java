@@ -77,6 +77,7 @@ public class CatalogService {
         category.setName(request.name());
         category.setSlug(request.slug());
         category.setImageUrl(request.imageUrl());
+        category.setEmoji(request.emoji());
         category.setActive(request.active());
         return toCategoryDto(categoryRepository.save(category));
     }
@@ -86,6 +87,7 @@ public class CatalogService {
         category.setName(request.name());
         category.setSlug(request.slug());
         category.setImageUrl(request.imageUrl());
+        category.setEmoji(request.emoji());
         category.setActive(request.active());
         return toCategoryDto(categoryRepository.save(category));
     }
@@ -129,7 +131,7 @@ public class CatalogService {
     }
 
     private CategoryDto toCategoryDto(Category category) {
-        return new CategoryDto(category.getId(), category.getName(), category.getSlug(), category.getImageUrl(), category.isActive());
+        return new CategoryDto(category.getId(), category.getName(), category.getSlug(), category.getImageUrl(), category.getEmoji(), category.isActive());
     }
 
     private RestaurantDto toRestaurantDto(Restaurant r, Double userLat, Double userLng) {

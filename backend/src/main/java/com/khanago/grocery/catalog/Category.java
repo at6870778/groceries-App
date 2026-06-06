@@ -24,6 +24,9 @@ public class Category extends BaseAuditEntity {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(length = 10)
+    private String emoji;
+
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 }

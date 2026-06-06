@@ -75,13 +75,9 @@ public class FcmService {
                     .setClickAction(clickAction);
             
             if (validatedImageUrl != null) {
-                // Set both image and explicit data for BigPictureStyle
-                // Layout order: Title → Body text → BIG PICTURE (standard Flipkart/Amazon style)
-                androidNotifBuilder
-                    .setImage(validatedImageUrl)
-                    .setSummaryText(body)  // Summary appears above/with text
-                    .putCustomData("bigPictureUrl", validatedImageUrl);
-                log.debug("Added image to Android notification with standard layout (text above): {}", validatedImageUrl);
+                // Set image for BigPictureStyle
+                androidNotifBuilder.setImage(validatedImageUrl);
+                log.debug("Added image to Android notification: {}", validatedImageUrl);
             }
 
             Message.Builder messageBuilder = Message.builder()
@@ -150,13 +146,9 @@ public class FcmService {
                     .setClickAction("OPEN_PROMOTIONS");
             
             if (validatedImageUrl != null) {
-                // Set both image (for BigPictureStyle) and icon
-                // Layout order: Title → Body text → BIG PICTURE (standard Flipkart/Amazon style)
-                androidNotifBuilder
-                    .setImage(validatedImageUrl)  // Large image in notification
-                    .setSummaryText(body)  // Summary text appears above/with big picture
-                    .putCustomData("bigPictureUrl", validatedImageUrl);  // Explicit for BigPictureStyle
-                log.debug("Added image to Android topic notification with standard layout (text above): {}", validatedImageUrl);
+                // Set image for BigPictureStyle
+                androidNotifBuilder.setImage(validatedImageUrl);
+                log.debug("Added image to Android topic notification: {}", validatedImageUrl);
             }
 
             Message.Builder messageBuilder = Message.builder()

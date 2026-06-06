@@ -70,10 +70,18 @@ public class FcmService {
                     .setChannelId("khanago_orders")
                     .setSound("default")
                     .setDefaultVibrateTimings(true)
-                    .setDefaultLightSettings(true);
+                    .setDefaultLightSettings(true)
+                    .setColor("#FF5722")  // OrderKro brand color
+                    .setClickAction(clickAction);
+            
             if (validatedImageUrl != null) {
-                androidNotifBuilder.setImage(validatedImageUrl);
-                log.debug("Added image to Android notification: {}", validatedImageUrl);
+                // Set both image and explicit data for BigPictureStyle
+                // Layout order: Title → Body text → BIG PICTURE (standard Flipkart/Amazon style)
+                androidNotifBuilder
+                    .setImage(validatedImageUrl)
+                    .setSummaryText(body)  // Summary appears above/with text
+                    .putCustomData("bigPictureUrl", validatedImageUrl);
+                log.debug("Added image to Android notification with standard layout (text above): {}", validatedImageUrl);
             }
 
             Message.Builder messageBuilder = Message.builder()
@@ -84,6 +92,7 @@ public class FcmService {
             // Add image to data payload for client-side handling
             if (validatedImageUrl != null) {
                 messageBuilder.putData("imageUrl", validatedImageUrl);
+                messageBuilder.putData("bigPictureUrl", validatedImageUrl);
             }
             
             Message message = messageBuilder
@@ -95,9 +104,14 @@ public class FcmService {
                     .setApnsConfig(ApnsConfig.builder()
                             .setAps(Aps.builder()
                                     .setSound("default")
-                                    .setMutableContent(true) // Allows image download before display
+                                    .setMutableContent(true)  // Allows image download before display
+                                    .setAlert(ApsAlert.builder()
+                                            .setTitle(title)
+                                            .setBody(body)
+                                            .build())
                                     .build())
                             .putCustomData("imageUrl", validatedImageUrl != null ? validatedImageUrl : "")
+                            .putCustomData("bigPictureUrl", validatedImageUrl != null ? validatedImageUrl : "")
                             .build())
                     .build();
             
@@ -131,10 +145,18 @@ public class FcmService {
 
             AndroidNotification.Builder androidNotifBuilder = AndroidNotification.builder()
                     .setChannelId("khanago_promos")
-                    .setSound("default");
+                    .setSound("default")
+                    .setColor("#FF5722")  // OrderKro brand color
+                    .setClickAction("OPEN_PROMOTIONS");
+            
             if (validatedImageUrl != null) {
-                androidNotifBuilder.setImage(validatedImageUrl);
-                log.debug("Added image to Android topic notification: {}", validatedImageUrl);
+                // Set both image (for BigPictureStyle) and icon
+                // Layout order: Title → Body text → BIG PICTURE (standard Flipkart/Amazon style)
+                androidNotifBuilder
+                    .setImage(validatedImageUrl)  // Large image in notification
+                    .setSummaryText(body)  // Summary text appears above/with big picture
+                    .putCustomData("bigPictureUrl", validatedImageUrl);  // Explicit for BigPictureStyle
+                log.debug("Added image to Android topic notification with standard layout (text above): {}", validatedImageUrl);
             }
 
             Message.Builder messageBuilder = Message.builder()
@@ -145,6 +167,7 @@ public class FcmService {
             // Add image to data payload for client-side handling
             if (validatedImageUrl != null) {
                 messageBuilder.putData("imageUrl", validatedImageUrl);
+                messageBuilder.putData("bigPictureUrl", validatedImageUrl);
             }
             
             Message message = messageBuilder
@@ -156,9 +179,14 @@ public class FcmService {
                     .setApnsConfig(ApnsConfig.builder()
                             .setAps(Aps.builder()
                                     .setSound("default")
-                                    .setMutableContent(true) // Allows image download before display
+                                    .setMutableContent(true)  // Allows image download before display
+                                    .setAlert(ApsAlert.builder()
+                                            .setTitle(title)
+                                            .setBody(body)
+                                            .build())
                                     .build())
                             .putCustomData("imageUrl", validatedImageUrl != null ? validatedImageUrl : "")
+                            .putCustomData("bigPictureUrl", validatedImageUrl != null ? validatedImageUrl : "")
                             .build())
                     .build();
             

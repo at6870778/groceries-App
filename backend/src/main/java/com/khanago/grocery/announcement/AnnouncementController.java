@@ -26,6 +26,12 @@ public class AnnouncementController {
         return repo.findById(1L).orElseGet(Announcement::new);
     }
 
+    /** Admin only — fetch current announcement for editing */
+    @GetMapping("/api/admin/announcement")
+    public Announcement getForAdmin() {
+        return repo.findById(1L).orElseGet(Announcement::new);
+    }
+
     /** Admin only — save/update the announcement */
     @PutMapping("/api/admin/announcement")
     public Announcement update(@RequestBody Map<String, Object> body) {

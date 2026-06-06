@@ -273,14 +273,6 @@ import { NotificationStateService } from '../../core/services/notification-state
                (touchend)="onTouchEnd($event)"
                (wheel)="onMouseWheel($event)"
                (click)="toggleZoomControls()">
-            <div class="zoom-controls" *ngIf="imageZoom() > 1 || showZoomHint()">
-              <button class="zoom-btn zoom-out" (click)="resetZoom($event)" title="Reset zoom">
-                <span>↺</span>
-              </button>
-            </div>
-            <div class="zoom-hint" *ngIf="imageZoom() === 1 && !zoomHintHidden()">
-              🔍 Pinch to zoom or use mouse wheel
-            </div>
             <div class="qv-image-container" [style.transform]="'scale(' + imageZoom() + ')'" [style.transformOrigin]="'center'">
               <img *ngIf="product.imageUrl" class="qv-image" [src]="product.imageUrl" [alt]="product.name" [style.cursor]="imageZoom() > 1 ? 'grab' : 'zoom-in'">
             </div>
@@ -798,42 +790,7 @@ import { NotificationStateService } from '../../core/services/notification-state
       object-fit: contain;
     }
 
-    /* ═══════════════════════════════════════
-       BANNER REFRESH BUTTON — sync latest banners
-    ═══════════════════════════════════════ */
-    .banner-refresh-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: rgba(102, 126, 234, 0.9);
-      border: none;
-      color: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 15;
-      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
 
-    .banner-refresh-btn:hover {
-      background: rgba(102, 126, 234, 1);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
-      transform: scale(1.05);
-    }
-
-    .banner-refresh-btn:active {
-      transform: scale(0.92);
-    }
-
-    @keyframes banner-refresh-spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
 
     .dish-body { padding: 9px 10px 11px; }
     .dish-name { font-size: 0.82rem; font-weight: 800; color: #1a1a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }

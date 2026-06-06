@@ -95,14 +95,6 @@ import { takeUntil } from 'rxjs/operators';
                (touchend)="onTouchEnd($event)"
                (wheel)="onMouseWheel($event)"
                (click)="toggleZoomControls()">
-            <div class="zoom-controls" *ngIf="imageZoom() > 1 || showZoomHint()">
-              <button class="zoom-btn zoom-out" (click)="resetZoom($event)" title="Reset zoom">
-                <span>↺</span>
-              </button>
-            </div>
-            <div class="zoom-hint" *ngIf="imageZoom() === 1 && !zoomHintHidden()">
-              🔍 Pinch to zoom or use mouse wheel
-            </div>
             <div class="qv-image-container" [style.transform]="'scale(' + imageZoom() + ')'" [style.transformOrigin]="'center'">
               <img 
                 *ngIf="product.imageUrl" 

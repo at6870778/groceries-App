@@ -74,21 +74,6 @@ import { NotificationStateService } from '../../core/services/notification-state
     <ion-content [scrollEvents]="true" [fullscreen]="false" class="home-content"
       style="--padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px))">
 
-      <!-- ══ ADMIN ANNOUNCEMENT BANNER ══ -->
-      <div class="admin-announce-strip"
-           *ngIf="announcementBanner()?.active && !bannerDismissed()"
-           [style.background]="announcementBanner()?.bgColor || '#667eea'">
-        <!-- sprinkle particles -->
-        <span class="spk spk1">✨</span>
-        <span class="spk spk2">★</span>
-        <span class="spk spk3">◆</span>
-        <span class="spk spk4">✨</span>
-        <span class="spk spk5">•</span>
-        <span class="spk spk6">★</span>
-        <span class="announce-msg">{{ announcementBanner()?.message }}</span>
-        <button class="announce-close" (click)="dismissBanner()" aria-label="Dismiss">✕</button>
-      </div>
-
       <!-- ══ PERSONALIZED WELCOME BANNER ══ -->
       <div class="welcome-banner">
         <div class="welcome-content">

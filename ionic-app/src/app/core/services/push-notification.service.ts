@@ -3,7 +3,6 @@ import { Router } from '@angular/router';
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { PushNotifications, Token, PushNotificationSchema, ActionPerformed } from '@capacitor/push-notifications';
-import { ToastController } from '@ionic/angular/standalone';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
 import { NotificationStateService } from './notification-state.service';
@@ -13,7 +12,6 @@ export class PushNotificationService {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private router = inject(Router);
-  private toastCtrl = inject(ToastController);
   private notifState = inject(NotificationStateService);
 
   /**
@@ -101,49 +99,6 @@ export class PushNotificationService {
       this.router.navigate(['/orders']);
     } else if (action === 'OPEN_PROMOTIONS') {
       this.router.navigate(['/home']);
-    }
-  }
-
-  private async showToast(title: string, body: string): Promise<void> {
-    const toast = await this.toastCtrl.create({
-      header: title,
-      message: body,
-      duration: 4000,
-      position: 'bottom',
-      color: 'dark',
-      buttons: [{ icon: 'close', role: 'cancel' }]
-    });
-    await toast.present();
-  }
-
-  /**
-   * Show notification with image — creates a visual card instead of toast
-   */
-  private async showImageNotification(title: string, body: string, imageUrl: string): Promise<void> {
-    // Use alert dialog to show image with text
-    const AlertController = (await import('@ionic/angular')).AlertController;
-    const alertCtrl = this.toastCtrl as any; // Reuse injected controller namespace
-    
-    try {
-      // For now, show as text toast but with image context
-      // In production, you can create a custom overlay component
-      const toast = await this.toastCtrl.create({
-        header: title,
-        message: body,
-        duration: 5000,
-        position: 'bottom',
-        color: 'dark',
-        cssClass: 'image-notification-toast',
-        buttons: [{ icon: 'close', role: 'cancel' }]
-      });
-      await toast.present();
-      
-      // Log image URL for debugging
-      console.log('📸 Notification with image received:', { title, body, imageUrl });
-    } catch (e) {
-      console.error('Failed to show image notification:', e);
-      // Fallback to text toast
-      await this.showToast(title, body);
     }
   }
 }

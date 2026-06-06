@@ -37,15 +37,14 @@ public class AnnouncementController {
     public Announcement update(@RequestBody Map<String, Object> body) {
         Announcement a = repo.findById(1L).orElseGet(Announcement::new);
         a.setId(1L);
-        boolean wasActive = a.isActive();
         if (body.containsKey("message"))  a.setMessage((String) body.get("message"));
         if (body.containsKey("active"))   a.setActive((Boolean) body.get("active"));
         if (body.containsKey("bgColor"))  a.setBgColor((String) body.get("bgColor"));
         if (body.containsKey("imageUrl")) a.setImageUrl((String) body.get("imageUrl"));
         Announcement saved = repo.save(a);
-        // Broadcast push + in-app notification when announcement is newly activated
-        boolean isNowActive = saved.isActive();
-        if (!wasActive && isNowActive && saved.getMessage() != null && !saved.getMessage().isBlank()) {
+        
+        // Broadcast push + in-app notification when active
+        if (saved.isActive() && saved.getMessage() != null && !saved.getMessage().isBlank()) {
             fcmService.sendToTopic("promotions", "🛍️ Order Kro", saved.getMessage(), saved.getImageUrl());
             broadcastInAppNotification("🛍️ Order Kro", saved.getMessage(), saved.getImageUrl());
         }

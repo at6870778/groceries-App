@@ -126,6 +126,8 @@ public class FcmService {
 
     /**
      * Send a notification to all subscribers of a topic (e.g. "promotions").
+     * IMPORTANT: Sends as DATA-ONLY (no system notification) so app handles display in foreground.
+     * In background, Android will wake the app and let it decide how to display.
      * @param imageUrl optional HTTPS URL of image to show in the notification (can be null)
      */
     @Async
@@ -134,27 +136,15 @@ public class FcmService {
         try {
             String validatedImageUrl = validateImageUrl(imageUrl);
             
-            Notification.Builder notifBuilder = Notification.builder()
-                    .setTitle(title)
-                    .setBody(body);
-            if (validatedImageUrl != null) notifBuilder.setImage(validatedImageUrl);
-
-            AndroidNotification.Builder androidNotifBuilder = AndroidNotification.builder()
-                    .setChannelId("khanago_promos")
-                    .setSound("default")
-                    .setColor("#FF5722")  // OrderKro brand color
-                    .setClickAction("OPEN_PROMOTIONS");
-            
-            if (validatedImageUrl != null) {
-                // Set image for BigPictureStyle
-                androidNotifBuilder.setImage(validatedImageUrl);
-                log.debug("Added image to Android topic notification: {}", validatedImageUrl);
-            }
-
+            // ✅ Data-only message: No system notification shown in foreground
+            // App receives in 'pushNotificationReceived' listener and updates bell counter
+            // Background: Android shows system notification so user is aware
             Message.Builder messageBuilder = Message.builder()
                     .setTopic(topic)
-                    .setNotification(notifBuilder.build())
-                    .putData("click_action", "OPEN_PROMOTIONS");
+                    .putData("title", title)
+                    .putData("body", body)
+                    .putData("click_action", "OPEN_PROMOTIONS")
+                    .putData("type", "PROMO");
             
             // Add image to data payload for client-side handling
             if (validatedImageUrl != null) {
@@ -165,13 +155,13 @@ public class FcmService {
             Message message = messageBuilder
                     .setAndroidConfig(AndroidConfig.builder()
                             .setPriority(AndroidConfig.Priority.HIGH)
-                            .setNotification(androidNotifBuilder.build())
                             .build())
                     // APNs config for iOS — ensures image displays on lock screen/notification center
                     .setApnsConfig(ApnsConfig.builder()
                             .setAps(Aps.builder()
                                     .setSound("default")
                                     .setMutableContent(true)  // Allows image download before display
+                                    .setContentAvailable(true)  // Wakes app in background
                                     .setAlert(ApsAlert.builder()
                                             .setTitle(title)
                                             .setBody(body)

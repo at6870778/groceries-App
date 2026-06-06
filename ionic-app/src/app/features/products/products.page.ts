@@ -52,10 +52,10 @@ import { takeUntil } from 'rxjs/operators';
           <div class="meta">
             <div class="brand">{{ getBrandName(p.name) }}</div>
             <div class="name">{{ p.name }}</div>
-            <div class="unit">{{ p.unit }}</div>
+            <div class="unit">{{ scaledUnit(p.unit, cartQty(p.id)) }}</div>
             <div class="pricing">
-              <span class="original-price" *ngIf="+p.mrp > +p.sellingPrice">₹{{ p.mrp }}</span>
-              <span class="sale-price">₹{{ p.sellingPrice }}</span>
+              <span class="original-price" *ngIf="+p.mrp > +p.sellingPrice">₹{{ +p.mrp * (cartQty(p.id) || 1) }}</span>
+              <span class="sale-price">₹{{ +p.sellingPrice * (cartQty(p.id) || 1) }}</span>
             </div>
             <div class="delivery-time">📦 10 mins</div>
             <div class="action-row">
@@ -109,10 +109,10 @@ import { takeUntil } from 'rxjs/operators';
           <div class="qv-details">
             <div class="qv-category">{{ product.categoryName }}</div>
             <h2 class="qv-name">{{ product.name }}</h2>
-            <div class="qv-unit" *ngIf="product.unit">{{ product.unit }}</div>
+            <div class="qv-unit" *ngIf="product.unit">{{ scaledUnit(product.unit, cartQty(product.id)) }}</div>
             <div class="qv-price-row">
-              <span class="qv-price">₹{{ product.sellingPrice }}</span>
-              <span class="qv-mrp" *ngIf="product.mrp && product.mrp > product.sellingPrice">₹{{ product.mrp }}</span>
+              <span class="qv-price">₹{{ product.sellingPrice * (cartQty(product.id) || 1) }}</span>
+              <span class="qv-mrp" *ngIf="product.mrp && product.mrp > product.sellingPrice">₹{{ product.mrp * (cartQty(product.id) || 1) }}</span>
               <span class="qv-discount" *ngIf="getDiscount(product) > 0">{{ getDiscount(product) }}% OFF</span>
             </div>
             <div class="qv-description" *ngIf="product.description">{{ product.description }}</div>
@@ -326,6 +326,11 @@ import { takeUntil } from 'rxjs/operators';
       margin: 0;
       --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       --color: #ffffff;
+      --box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26);
+      pointer-events: none;
+    }
+    .add-btn:active, .add-btn:focus {
+      --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       --box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26);
     }
     .step-btn {
@@ -935,6 +940,26 @@ export class ProductsPage implements OnInit, OnDestroy {
   getBrandName(productName: string): string {
     const words = productName.split(' ');
     return words[0] || 'Fresh';
+  }
+
+  scaledUnit(unit: string, qty: number): string {
+    if (!unit || qty <= 1) return unit || '';
+    const match = unit.match(/^(\d+(?:\.\d+)?)\s*(.+)$/);
+    if (!match) return unit;
+    const base = parseFloat(match[1]);
+    const suffix = match[2].trim();
+    const total = base * qty;
+    const lo = suffix.toLowerCase();
+    if (lo === 'g' || lo === 'gm' || lo === 'gms' || lo === 'gram' || lo === 'grams') {
+      if (total >= 1000) { const v = total / 1000; return `${v % 1 === 0 ? v : v.toFixed(1)} kg`; }
+      return `${total} ${suffix}`;
+    }
+    if (lo === 'ml') {
+      if (total >= 1000) { const v = total / 1000; return `${v % 1 === 0 ? v : v.toFixed(1)} L`; }
+      return `${total} ml`;
+    }
+    const v = total % 1 === 0 ? total : parseFloat(total.toFixed(1));
+    return `${v} ${suffix}`;
   }
 
   onRefresh(event: any) {

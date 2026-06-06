@@ -74,8 +74,6 @@ import { NotificationStateService } from '../../core/services/notification-state
     <ion-content [scrollEvents]="true" [fullscreen]="false" class="home-content"
       style="--padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px))">
 
-      <div class="error-banner-top" *ngIf="errorMsg()">{{ errorMsg() }}</div>
-
       <!-- ══ ADMIN ANNOUNCEMENT BANNER ══ -->
       <div class="admin-announce-strip"
            *ngIf="announcementBanner()?.active && !bannerDismissed()"
@@ -118,8 +116,8 @@ import { NotificationStateService } from '../../core/services/notification-state
               <div class="prod-name">{{ p.name }}</div>
               <div class="prod-unit">{{ scaledUnit(p.unit, cartQty(p.id)) }}</div>
               <div class="prod-price-row">
-                <span class="prod-mrp" *ngIf="getDiscount(p) > 0">₹{{ getOriginalPrice(p) }}</span>
-                <span class="prod-price">₹{{ p.sellingPrice }}</span>
+                <span class="prod-mrp" *ngIf="getDiscount(p) > 0">₹{{ getOriginalPrice(p) * cartQty(p.id) || getOriginalPrice(p) }}</span>
+                <span class="prod-price">₹{{ p.sellingPrice * (cartQty(p.id) || 1) }}</span>
               </div>
               <div class="prod-actions" (click)="$event.stopPropagation()">
                 <ng-container *ngIf="cartQty(p.id) === 0; else srchStep">
@@ -284,8 +282,8 @@ import { NotificationStateService } from '../../core/services/notification-state
             <h2 class="qv-name">{{ product.name }}</h2>
             <div class="qv-unit" *ngIf="product.unit">{{ product.unit }}</div>
             <div class="qv-price-row">
-              <span class="qv-price">₹{{ product.sellingPrice }}</span>
-              <span class="qv-mrp" *ngIf="product.mrp && product.mrp > product.sellingPrice">₹{{ product.mrp }}</span>
+              <span class="qv-price">₹{{ product.sellingPrice * (cartQty(product.id) || 1) }}</span>
+              <span class="qv-mrp" *ngIf="product.mrp && product.mrp > product.sellingPrice">₹{{ product.mrp * (cartQty(product.id) || 1) }}</span>
               <span class="qv-discount" *ngIf="getDiscount(product) > 0">{{ getDiscount(product) }}% OFF</span>
             </div>
             <div class="qv-description" *ngIf="product.description">{{ product.description }}</div>

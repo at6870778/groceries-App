@@ -1273,7 +1273,8 @@ import { NotificationStateService } from '../../core/services/notification-state
     }
     .qv-image-wrap {
       width: 100%;
-      height: 480px;
+      max-height: 50vh;
+      min-height: 180px;
       border-radius: 16px 16px 0 0;
       overflow: hidden;
       margin: 0;
@@ -1281,7 +1282,7 @@ import { NotificationStateService } from '../../core/services/notification-state
       align-items: center;
       justify-content: center;
       background: linear-gradient(135deg, #f8f9f0 0%, #fafbf7 100%);
-      flex-shrink: 0;
+      flex-shrink: 1;
       position: relative;
       box-shadow: 0 4px 20px rgba(0,0,0,0.08);
       overflow: hidden;

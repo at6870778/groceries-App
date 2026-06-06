@@ -324,17 +324,22 @@ import { takeUntil } from 'rxjs/operators';
       white-space: nowrap;
       width: 100%;
       margin: 0;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #ffffff;
-      box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26);
-      border: none;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: #ffffff !important;
+      box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26) !important;
+      border: none !important;
       cursor: pointer;
       padding: 0;
     }
     .add-btn:active, .add-btn:focus {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26);
-      outline: none;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26) !important;
+      outline: none !important;
+      color: #ffffff !important;
+    }
+    .add-btn:hover {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: #ffffff !important;
     }
     .add-btn.adding {
       opacity: 0.7;
@@ -364,20 +369,25 @@ import { takeUntil } from 'rxjs/operators';
     .buy-btn {
       width: 100%;
       margin: 0;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #ffffff;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: #ffffff !important;
       border-radius: 10px;
-      box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26);
+      box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26) !important;
       font-weight: 700;
-      border: none;
+      border: none !important;
       cursor: pointer;
       padding: 8px 16px;
       font-size: 0.95rem;
     }
     .buy-btn:active, .buy-btn:focus {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26);
-      outline: none;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      box-shadow: 0 6px 14px rgba(108, 71, 255, 0.26) !important;
+      outline: none !important;
+      color: #ffffff !important;
+    }
+    .buy-btn:hover {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: #ffffff !important;
     }
     .buy-btn.adding {
       opacity: 0.7;
@@ -428,7 +438,7 @@ import { takeUntil } from 'rxjs/operators';
     .modal-content {
       width: 100%;
       max-width: 450px;
-      max-height: 80vh;
+      max-height: 90vh;
       background: #fff;
       border-radius: 20px;
       animation: zoom-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -489,7 +499,8 @@ import { takeUntil } from 'rxjs/operators';
     }
     .qv-image-wrap {
       width: 100%;
-      height: 480px;
+      max-height: 50vh;
+      min-height: 180px;
       border-radius: 16px 16px 0 0;
       overflow: hidden;
       margin: 0;
@@ -497,7 +508,7 @@ import { takeUntil } from 'rxjs/operators';
       align-items: center;
       justify-content: center;
       background: linear-gradient(135deg, #f8f9f0 0%, #fafbf7 100%);
-      flex-shrink: 0;
+      flex-shrink: 1;
       position: relative;
       box-shadow: 0 4px 20px rgba(0,0,0,0.08);
       overflow: hidden;

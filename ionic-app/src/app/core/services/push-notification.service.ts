@@ -70,14 +70,9 @@ export class PushNotificationService {
 
     // Foreground notification — show as an in-app toast with image support
     PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
-      const imageUrl = notification.data?.['imageUrl'];
-      if (imageUrl) {
-        // Show image notification using custom component
-        this.showImageNotification(notification.title ?? 'Khanago', notification.body ?? '', imageUrl);
-      } else {
-        // Fallback to text-only toast
-        this.showToast(notification.title ?? 'Khanago', notification.body ?? '');
-      }
+      // IMPORTANT: Don't show toast in app - only show when app is backgrounded
+      // User will see the system notification instead
+      console.log('📬 Notification received (foreground):', notification.title, notification.body);
       // Optimistic update: increment immediately for instant UI feedback
       this.notifState.unreadCount.update(c => c + 1);
       // Then refresh from server in background

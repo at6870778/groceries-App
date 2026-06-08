@@ -10,11 +10,18 @@ import com.khanago.grocery.common.dto.ApiSuccessResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -55,6 +62,30 @@ public class AuthController {
     @PostMapping("/refresh")
     public ApiSuccessResponse<AuthResponseDto> refresh(@Valid @RequestBody RefreshTokenRequestDto request) {
         return new ApiSuccessResponse<>("Token refreshed", otpAuthService.refresh(request));
+    }
+
+    @PostMapping("/keep-alive")
+    public ApiSuccessResponse<Map<String, String>> keepAlive(HttpServletRequest httpRequest) {
+        String clientIp = extractClientIp(httpRequest);
+        log.debug("🔄 Keep-alive heartbeat from IP: {}", clientIp);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "alive");
+        response.put("timestamp", LocalDateTime.now().toString());
+        response.put("serverTime", String.valueOf(System.currentTimeMillis()));
+        
+        return new ApiSuccessResponse<>("keep-alive acknowledged", response);
+    }
+
+    @GetMapping("/health")
+    public ApiSuccessResponse<Map<String, Object>> health() {
+        Map<String, Object> health = new HashMap<>();
+        health.put("status", "UP");
+        health.put("timestamp", LocalDateTime.now());
+        health.put("service", "OrderKro Auth Service");
+        health.put("version", "1.0.0");
+        
+        return new ApiSuccessResponse<>("Health check passed", health);
     }
 
     /** Prefer X-Forwarded-For (set by Nginx/load-balancer) over the raw socket address. */

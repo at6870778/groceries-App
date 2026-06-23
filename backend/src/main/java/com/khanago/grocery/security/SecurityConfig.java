@@ -42,7 +42,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/auth/request-otp", "/api/auth/verify-otp", "/api/auth/refresh", "/api/auth/keep-alive", "/api/auth/health").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/auth/health").permitAll()
-                        .requestMatchers("/api/auth/**", "/api/health", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/health", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/actuator/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/catalog/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
